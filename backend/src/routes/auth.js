@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
@@ -50,15 +51,26 @@ router.post('/login', limiter, wrap(async (req, res) => {
   const ok = user && (await bcrypt.compare(password, user.passwordHash));
   if (!ok) throw new HttpError(401, 'Incorrect username/phone number or password');
   if (!user.active) throw new HttpError(403, 'This account is disabled');
-  res.json({ token: signToken(user), user: publicUser(user) });
+
+  // Single-session: generate a new session token for non-viewer users.
+  // Viewers skip this so multiple people can share the same view-only login.
+  let sessionToken = '';
+  if (user.role !== 'viewer') {
+    sessionToken = crypto.randomBytes(16).toString('hex');
+    user.sessionToken = sessionToken;
+    await user.save();
+  }
+
+  res.json({ token: signToken(user, sessionToken), user: publicUser(user) });
 }));
 
 // Anyone can sign up. Every public sign-up is a normal "user" (never an admin).
 router.post('/register', limiter, wrap(async (req, res) => {
   const data = parse(registerSchema, req.body);
   await assertUnique(data);
-  const user = await User.create({ name: data.name, username: data.username, phone: data.phone, passwordHash: await bcrypt.hash(data.password, 10), role: 'user' });
-  res.status(201).json({ token: signToken(user), user: publicUser(user) });
+  const sessionToken = crypto.randomBytes(16).toString('hex');
+  const user = await User.create({ name: data.name, username: data.username, phone: data.phone, passwordHash: await bcrypt.hash(data.password, 10), role: 'user', sessionToken });
+  res.status(201).json({ token: signToken(user, sessionToken), user: publicUser(user) });
 }));
 
 router.get('/me', requireAuth, (req, res) => res.json({ user: publicUser(req.user) }));

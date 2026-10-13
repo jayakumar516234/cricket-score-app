@@ -3,7 +3,11 @@ import { config } from '../config.js';
 import { User } from '../models/User.js';
 import { HttpError, wrap } from '../utils/http.js';
 
-export const signToken = (user) => jwt.sign({ sub: String(user._id) }, config.jwtSecret, { expiresIn: config.jwtExpires });
+export const signToken = (user, sessionToken) => {
+  const payload = { sub: String(user._id) };
+  if (sessionToken) payload.sid = sessionToken;
+  return jwt.sign(payload, config.jwtSecret, { expiresIn: config.jwtExpires });
+};
 
 export const requireAuth = wrap(async (req, _res, next) => {
   const header = req.headers.authorization || '';
@@ -17,6 +21,13 @@ export const requireAuth = wrap(async (req, _res, next) => {
   }
   const user = await User.findById(payload.sub);
   if (!user || !user.active) throw new HttpError(401, 'Account not found or disabled');
+
+  // Single-session check: non-viewer users must have a matching session token.
+  // Viewers are allowed unlimited concurrent sessions.
+  if (user.role !== 'viewer' && user.sessionToken && payload.sid !== user.sessionToken) {
+    throw new HttpError(401, 'You have been logged in on another device. Please sign in again');
+  }
+
   req.user = user;
   next();
 });
