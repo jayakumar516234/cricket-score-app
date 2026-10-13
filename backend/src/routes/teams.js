@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { Team, BALL_TYPES } from '../models/Team.js';
 import { Player, PLAYER_ROLES } from '../models/Player.js';
 import { Match } from '../models/Match.js';
+import { Delivery } from '../models/Delivery.js';
 import { User } from '../models/User.js';
 import { requireAuth } from '../middleware/auth.js';
 import { HttpError, parse, wrap, escapeRegex, pageParams } from '../utils/http.js';
@@ -256,6 +257,150 @@ router.delete('/:id/viewer', wrap(async (req, res) => {
     await audit(req.user, 'team.viewer.delete', 'Team', team._id, { username: viewer.username });
   }
   res.json({ ok: true });
+}));
+
+// ---- player career stats (aggregated from match deliveries) ----
+router.get('/:id/player-stats', wrap(async (req, res) => {
+  const team = await Team.findById(req.params.id);
+  if (!team) throw new HttpError(404, 'Team not found');
+  if (!viewerMayViewTeam(req.user, team)) throw new HttpError(403, 'You can only view your own team');
+
+  const players = await Player.find({ team: team._id }).sort({ createdAt: 1, _id: 1 });
+  const teamId = String(team._id);
+
+  // Find all live/completed matches where this team played
+  const matches = await Match.find({
+    status: { $in: ['live', 'completed'] },
+    $or: [{ homeTeam: team._id }, { awayTeam: team._id }],
+  }).lean();
+
+  // Initialize stats per player
+  const stats = {};
+  for (const p of players) {
+    const pid = String(p._id);
+    stats[pid] = {
+      id: pid, name: p.name, photo: p.photo, role: p.role, jerseyNumber: p.jerseyNumber,
+      matches: 0,
+      innings: 0, runs: 0, ballsFaced: 0, fours: 0, sixes: 0, notOuts: 0, highestScore: 0,
+      bowlingInnings: 0, legalBallsBowled: 0, runsConceded: 0, wickets: 0,
+      catches: 0, runOuts: 0, stumpings: 0,
+    };
+  }
+
+  // Count matches per player from XI snapshots
+  for (const m of matches) {
+    const side = String(m.homeTeam) === teamId ? 'home' : 'away';
+    for (const x of (m.xi?.[side] || [])) {
+      const pid = String(x.player);
+      if (stats[pid]) stats[pid].matches++;
+    }
+  }
+
+  if (matches.length === 0) {
+    return res.json({ stats: Object.values(stats) });
+  }
+
+  // Get all deliveries for these matches
+  const deliveries = await Delivery.find({ match: { $in: matches.map((m) => m._id) } }).lean();
+
+  // Track per-innings batting to calculate highest score & innings count
+  const batInns = {}; // key: `${inningsId}_${playerId}`
+  const bowlInns = {}; // key: `${inningsId}_${playerId}`
+
+  for (const d of deliveries) {
+    const stk = d.striker;
+    const bwl = d.bowler;
+
+    // --- Batting (only for players of this team) ---
+    if (stats[stk]) {
+      const bk = `${d.innings}_${stk}`;
+      if (!batInns[bk]) batInns[bk] = { runs: 0, balls: 0, fours: 0, sixes: 0, out: false };
+      const bi = batInns[bk];
+      // Batter faces the ball unless it's a wide
+      if (d.extra !== 'wide') bi.balls++;
+      // Runs credited to batter: only when no bye/legbye extra
+      if (!d.extra || d.extra === 'noball') {
+        bi.runs += d.runs;
+        if (d.runs === 4) bi.fours++;
+        if (d.runs === 6) bi.sixes++;
+      }
+      // Striker dismissed
+      if (d.wicket?.type && d.wicket.dismissed === 'striker') bi.out = true;
+    }
+
+    // Non-striker dismissed (run out at non-striker end)
+    if (d.wicket?.type && d.wicket.dismissed === 'nonStriker' && stats[d.nonStriker]) {
+      const bk = `${d.innings}_${d.nonStriker}`;
+      if (!batInns[bk]) batInns[bk] = { runs: 0, balls: 0, fours: 0, sixes: 0, out: false };
+      batInns[bk].out = true;
+    }
+
+    // --- Bowling (only for players of this team) ---
+    if (stats[bwl]) {
+      const ok = `${d.innings}_${bwl}`;
+      if (!bowlInns[ok]) bowlInns[ok] = { legalBalls: 0, runs: 0, wickets: 0 };
+      const bo = bowlInns[ok];
+      if (d.extra !== 'wide' && d.extra !== 'noball') bo.legalBalls++;
+      // Runs conceded: everything except byes/legbyes
+      if (!d.extra || d.extra === 'wide' || d.extra === 'noball') {
+        bo.runs += d.runs;
+        if (d.extra === 'wide' || d.extra === 'noball') bo.runs += 1; // the 1-run penalty
+      }
+      if (d.wicket?.type && d.wicket.type !== 'runout') bo.wickets++;
+    }
+
+    // --- Fielding (catches, stumpings, run outs by name match) ---
+    if (d.wicket?.type && d.wicket.fielder) {
+      const fn = d.wicket.fielder.toLowerCase().trim();
+      for (const p of players) {
+        if (p.name.toLowerCase().trim() === fn) {
+          const pid = String(p._id);
+          if (d.wicket.type === 'caught') stats[pid].catches++;
+          else if (d.wicket.type === 'runout') stats[pid].runOuts++;
+          else if (d.wicket.type === 'stumped') stats[pid].stumpings++;
+          break;
+        }
+      }
+    }
+  }
+
+  // Aggregate per-innings batting data into career stats
+  for (const [key, bi] of Object.entries(batInns)) {
+    const pid = key.split('_')[1];
+    if (!stats[pid]) continue;
+    stats[pid].innings++;
+    stats[pid].runs += bi.runs;
+    stats[pid].ballsFaced += bi.balls;
+    stats[pid].fours += bi.fours;
+    stats[pid].sixes += bi.sixes;
+    if (!bi.out) stats[pid].notOuts++;
+    if (bi.runs > stats[pid].highestScore) stats[pid].highestScore = bi.runs;
+  }
+
+  // Aggregate per-innings bowling data
+  for (const [key, bo] of Object.entries(bowlInns)) {
+    const pid = key.split('_')[1];
+    if (!stats[pid]) continue;
+    stats[pid].bowlingInnings++;
+    stats[pid].legalBallsBowled += bo.legalBalls;
+    stats[pid].runsConceded += bo.runs;
+    stats[pid].wickets += bo.wickets;
+  }
+
+  // Compute averages and format
+  const result = Object.values(stats).map((s) => {
+    const dismissed = s.innings - s.notOuts;
+    return {
+      ...s,
+      battingAvg: dismissed > 0 ? +(s.runs / dismissed).toFixed(2) : s.runs > 0 ? null : 0,
+      strikeRate: s.ballsFaced > 0 ? +((s.runs / s.ballsFaced) * 100).toFixed(1) : 0,
+      oversDisplay: `${Math.floor(s.legalBallsBowled / 6)}.${s.legalBallsBowled % 6}`,
+      bowlingAvg: s.wickets > 0 ? +(s.runsConceded / s.wickets).toFixed(2) : null,
+      economyRate: s.legalBallsBowled > 0 ? +((s.runsConceded / s.legalBallsBowled) * 6).toFixed(2) : null,
+    };
+  });
+
+  res.json({ stats: result });
 }));
 
 router.delete('/:id', wrap(async (req, res) => {
