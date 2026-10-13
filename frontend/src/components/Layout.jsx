@@ -1,6 +1,6 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { LayoutDashboard, Shield, Trophy, Users, ScrollText, LogOut, Menu, X, CircleDot } from 'lucide-react';
+import { LayoutDashboard, Shield, Trophy, Users, ScrollText, Lightbulb, LogOut, Menu, X, CircleDot } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 
 export default function Layout() {
@@ -12,6 +12,7 @@ export default function Layout() {
     { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
     { to: '/teams', label: 'Teams', icon: Shield },
     { to: '/matches', label: 'Matches', icon: Trophy },
+    { to: '/suggestions', label: 'Suggestions', icon: Lightbulb },
     ...(isSuper ? [{ to: '/users', label: 'Users', icon: Users }, { to: '/audit', label: 'Audit log', icon: ScrollText }] : []),
   ];
 

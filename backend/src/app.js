@@ -6,6 +6,7 @@ import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
 import teamRoutes from './routes/teams.js';
 import matchRoutes from './routes/matches.js';
+import suggestionRoutes from './routes/suggestions.js';
 import miscRoutes from './routes/misc.js';
 import { errorHandler } from './utils/http.js';
 
@@ -19,6 +20,7 @@ export function createApp() {
   app.use('/api/users', userRoutes);
   app.use('/api/teams', teamRoutes);
   app.use('/api/matches', matchRoutes);
+  app.use('/api/suggestions', suggestionRoutes);
   app.use('/api', miscRoutes);
   app.use('/api', (_req, res) => res.status(404).json({ error: 'Not found' }));
   app.use(errorHandler);
