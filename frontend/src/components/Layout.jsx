@@ -12,7 +12,7 @@ export default function Layout() {
     { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
     { to: '/teams', label: 'Teams', icon: Shield },
     { to: '/matches', label: 'Matches', icon: Trophy },
-    { to: '/suggestions', label: 'Suggestions', icon: Lightbulb },
+    // { to: '/suggestions', label: 'Suggestions', icon: Lightbulb }, // Hidden for now
     ...(isSuper ? [{ to: '/users', label: 'Users', icon: Users }, { to: '/audit', label: 'Audit log', icon: ScrollText }] : []),
   ];
 

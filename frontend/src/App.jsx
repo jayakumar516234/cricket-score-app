@@ -42,7 +42,7 @@ export default function App() {
         <Route path="matches/new" element={<Protected noViewer><CreateMatch /></Protected>} />
         <Route path="matches/:id" element={<MatchPage />} />
         <Route path="matches/:id/scorecard" element={<Scorecard />} />
-        <Route path="suggestions" element={<Suggestions />} />
+        {/* <Route path="suggestions" element={<Suggestions />} /> */}
         <Route path="users" element={<Protected superOnly><UsersPage /></Protected>} />
         <Route path="audit" element={<Protected superOnly><Audit /></Protected>} />
       </Route>
