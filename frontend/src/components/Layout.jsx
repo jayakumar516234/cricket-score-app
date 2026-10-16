@@ -63,7 +63,7 @@ export default function Layout() {
           <span className="font-bold lg:hidden">Cricket Score</span>
           <div className="ml-auto flex items-center gap-2 text-sm">
             <span className="hidden text-slate-300 sm:inline">{user?.name}</span>
-            <span className="badge bg-pitch-600/20 text-pitch-400 capitalize">{user?.role === 'superadmin' ? 'Super Admin' : user?.role === 'viewer' ? 'View only' : 'Player'}</span>
+            <span className="badge bg-pitch-600/20 text-pitch-400 capitalize">{user?.role === 'superadmin' ? 'Super Admin' : user?.role === 'viewer' ? 'View only' : 'Admin'}</span>
           </div>
         </header>
         <main className="mx-auto w-full max-w-5xl flex-1 p-4 pb-24 sm:p-6 lg:pb-6">

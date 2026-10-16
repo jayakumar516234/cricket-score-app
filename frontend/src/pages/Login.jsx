@@ -33,8 +33,8 @@ export default function Login() {
       </div>
       <form onSubmit={submit} className="w-full max-w-sm space-y-4 rounded-2xl bg-white p-6 shadow-2xl" noValidate>
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Login</h2>
-          <p className="text-sm text-slate-500">Sign in to continue</p>
+          <h2 className="text-2xl font-bold text-slate-900">Admin Login</h2>
+          <p className="text-sm text-slate-500">Sign in to manage your team & matches</p>
         </div>
         <ErrorBox message={error} />
         <div>

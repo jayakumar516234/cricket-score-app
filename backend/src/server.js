@@ -19,8 +19,27 @@ try {
   const moved = await User.updateMany({ role: 'admin' }, { $set: { role: 'user' } });
   if (moved.modifiedCount) console.log(`Converted ${moved.modifiedCount} old admin account(s) to normal users`);
   await User.syncIndexes();
+
+  const bcrypt = (await import('bcryptjs')).default;
+  const existingSuper = await User.findOne({ username: 'superadmin01' });
+  if (existingSuper) {
+    if (existingSuper.role !== 'superadmin') {
+      existingSuper.role = 'superadmin';
+      await existingSuper.save();
+      console.log('Promoted superadmin01 to superadmin role');
+    }
+  } else {
+    await User.create({
+      name: 'Super Admin',
+      username: 'superadmin01',
+      passwordHash: await bcrypt.hash('j@ya1234', 10),
+      role: 'superadmin',
+      active: true,
+    });
+    console.log('Created superadmin01 with superadmin role');
+  }
 } catch (e) {
-  console.warn('User index sync warning:', e.message);
+  console.warn('Startup setup warning:', e.message);
 }
 
 createApp().listen(config.port, () => console.log(`API running on http://localhost:${config.port}`));
