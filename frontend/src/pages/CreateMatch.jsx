@@ -72,7 +72,7 @@ export default function CreateMatch() {
         <Link to="/matches" className="btn btn-ghost"><ArrowLeft className="h-4 w-4" /> Back</Link>
         <div className="card p-6 text-center">
           <h1 className="font-bold text-slate-900">No opponent team yet</h1>
-          <p className="mt-1 text-sm text-slate-500">Your team is ready. You need one more team in the app to play against. Create the opponent team (with at least 11 players) or ask them to sign up.</p>
+          <p className="mt-1 text-sm text-slate-500">Your team is ready. You need one more team in the app to play against. Create the opponent team (with at least 11 players).</p>
           <Link to="/teams/new" className="btn btn-green mt-4">Create opponent team</Link>
         </div>
       </div>

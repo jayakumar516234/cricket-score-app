@@ -74,7 +74,7 @@ export default function UsersPage() {
       </div>
       <div className="mb-3"><ErrorBox message={actionError} /></div>
       {loading && !data ? <Spinner /> : error ? <ErrorBox message={error} onRetry={reload} /> : data.items.length === 0 ? (
-        <Empty icon={Users} title={q ? 'No users match your search' : 'No users yet'} text="People appear here after they sign up." />
+        <Empty icon={Users} title={q ? 'No users match your search' : 'No users yet'} text="Add users using the 'New user' button above." />
       ) : (
         <>
           <div className="card overflow-x-auto">

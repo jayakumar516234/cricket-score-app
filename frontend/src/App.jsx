@@ -3,7 +3,6 @@ import { useAuth } from './context/AuthContext.jsx';
 import Layout from './components/Layout.jsx';
 import { Spinner } from './components/ui.jsx';
 import Login from './pages/Login.jsx';
-import Register from './pages/Register.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Teams from './pages/Teams.jsx';
 import TeamForm from './pages/TeamForm.jsx';
@@ -31,7 +30,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
-      <Route path="/register" element={user ? <Navigate to="/" replace /> : <Register />} />
+      <Route path="/register" element={<Navigate to="/login" replace />} />
       <Route element={<Protected><Layout /></Protected>}>
         <Route index element={<Dashboard />} />
         <Route path="teams" element={<Teams />} />

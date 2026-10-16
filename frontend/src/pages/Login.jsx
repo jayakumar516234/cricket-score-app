@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { CircleDot, Eye, EyeOff, Lock, User, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { ErrorBox } from '../components/ui.jsx';
@@ -57,9 +56,6 @@ export default function Login() {
         </div>
         <button className="btn btn-primary w-full" disabled={busy}>{busy && <Loader2 className="h-4 w-4 animate-spin" />} Login</button>
         <p className="text-center text-xs text-slate-500">Team view login? Use the username and password your team owner gave you.</p>
-        <p className="text-center text-sm text-slate-500">
-          New here? <Link to="/register" className="font-semibold text-blue-600 hover:underline">Sign up with your phone number</Link>
-        </p>
       </form>
     </div>
   );

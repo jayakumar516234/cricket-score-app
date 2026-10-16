@@ -6,6 +6,7 @@ import { useFetch } from '../useFetch.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { ConfirmDialog, ErrorBox, Modal, Spinner, StatusBadge, TeamLogo, fmtDate } from '../components/ui.jsx';
 import { BatTable, BowlTable, ExtrasLine, OverByOver, ScorecardTabs, teamOf } from '../components/ScoreParts.jsx';
+import { useBallQueue } from '../useBallQueue.js';
 
 const WICKET_LABELS = { bowled: 'Bowled', caught: 'Caught', lbw: 'LBW', runout: 'Run out', stumped: 'Stumped', hitwicket: 'Hit wicket' };
 const ALLOWED = {
@@ -48,6 +49,8 @@ export default function MatchPage() {
     }
   };
 
+  const queueProps = useBallQueue({ matchId: id, view, setData, setActError, act });
+
   if (loading && !view) return <Spinner />;
   if (error) return <ErrorBox message={error} onRetry={reload} />;
   const { match } = view;
@@ -59,7 +62,7 @@ export default function MatchPage() {
   else {
     const inn = view.innings[match.currentInnings - 1];
     if (match.currentInnings === 1 && inn?.state.completed) body = <TargetView view={view} act={act} busy={busy} id={id} />;
-    else body = <LiveView view={view} act={act} busy={busy} id={id} />;
+    else body = <LiveView view={view} act={act} busy={busy} id={id} queueProps={queueProps} />;
   }
 
   return (
@@ -275,13 +278,14 @@ function TargetView({ view, act, busy, id }) {
 }
 
 // ---------------------------------------------------------------- live scoring
-function LiveView({ view, act, busy, id }) {
+function LiveView({ view, act, busy, id, queueProps }) {
   const { match } = view;
   const inn = view.innings[match.currentInnings - 1];
   const st = inn.state;
   const batting = teamOf(view, inn.battingTeam);
   const bowling = teamOf(view, inn.bowlingTeam);
   const manage = view.canManage;
+  const { queue, syncStatus, sendBall, undoBall } = queueProps || { queue: [], syncStatus: 'synced', sendBall: () => {}, undoBall: () => {} };
 
   const [extra, setExtra] = useState(null);
   const [extraRuns, setExtraRuns] = useState(0); // runs on a wide / no ball / bye / leg bye ball, chosen before confirming
@@ -306,11 +310,18 @@ function LiveView({ view, act, busy, id }) {
   const firstInnings = view.innings[0].state;
   const needsTieWinner = match.currentInnings === 2 && match.tieBreaker === 'manual' && st.runs === firstInnings.runs;
 
-  const send = async (runs, wicket, ex = extra) => {
-    const body = { striker, nonStriker, bowler, runs, extra: ex, wicket: wicket || null };
-    const r = await act(() => api(`/matches/${id}/balls`, { method: 'POST', body }));
-    if (r.ok) { setExtra(null); setExtraRuns(0); setSel({ striker: '', nonStriker: '', bowler: '' }); }
-    return r.ok;
+  const send = (runs, wicket, ex = extra) => {
+    const candidate = { striker, nonStriker, bowler, runs, extra: ex, wicket: wicket || null };
+    sendBall(candidate);
+    setExtra(null);
+    setExtraRuns(0);
+    setSel({ striker: '', nonStriker: '', bowler: '' });
+    return true;
+  };
+
+  const handleUndo = async () => {
+    setUndoOpen(false);
+    await undoBall();
   };
 
   const batterOptions = (exclude) => st.availableBatters.filter((p) => p.id !== exclude);
@@ -325,7 +336,24 @@ function LiveView({ view, act, busy, id }) {
       <section className="overflow-hidden rounded-2xl bg-navy-900 text-white shadow">
         <div className="flex items-center justify-between bg-navy-950 px-4 py-2 text-sm">
           <span className="text-slate-300">Innings {inn.number} · {bowling.name} bowling</span>
-          <span className="badge bg-red-600 text-white"><span className="mr-1.5 h-1.5 w-1.5 animate-pulse rounded-full bg-white" />LIVE</span>
+          <div className="flex items-center gap-2">
+            {syncStatus === 'syncing' && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/20 px-2 py-0.5 text-xs text-amber-300">
+                <Loader2 className="h-3 w-3 animate-spin" /> Syncing ({queue.length})
+              </span>
+            )}
+            {syncStatus === 'offline' && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/20 px-2 py-0.5 text-xs text-rose-300">
+                Saved offline ({queue.length})
+              </span>
+            )}
+            {syncStatus === 'synced' && queue.length === 0 && (
+              <span className="inline-flex items-center gap-1 text-xs text-emerald-400">
+                ✓ Saved
+              </span>
+            )}
+            <span className="badge bg-red-600 text-white"><span className="mr-1.5 h-1.5 w-1.5 animate-pulse rounded-full bg-white" />LIVE</span>
+          </div>
         </div>
         <div className="space-y-4 p-4">
           <div className="flex items-end justify-between gap-3">
@@ -405,9 +433,15 @@ function LiveView({ view, act, busy, id }) {
           )}
 
           <section className="card space-y-3 p-3" aria-label="Scoring controls">
+            {queue.length > 0 && (
+              <div className="flex items-center justify-between rounded-lg bg-navy-950 p-2.5 text-xs text-pitch-300 ring-1 ring-pitch-500/30">
+                <span>⚡ Score updated instantly! Saving {queue.length} ball{queue.length > 1 ? 's' : ''} to server in background...</span>
+                {syncStatus === 'syncing' && <Loader2 className="h-3.5 w-3.5 animate-spin text-pitch-400" />}
+              </div>
+            )}
             <div className="grid grid-cols-4 gap-2">
               {EXTRA_BUTTONS.map(([v, label]) => (
-                <button key={v} type="button" aria-pressed={extra === v} disabled={!ready || busy} onClick={() => { setExtra(extra === v ? null : v); setExtraRuns(0); }}
+                <button key={v} type="button" aria-pressed={extra === v} disabled={!ready} onClick={() => { setExtra(extra === v ? null : v); setExtraRuns(0); }}
                   className={`btn !px-1 ${extra === v ? 'bg-amber-400 text-amber-950' : 'bg-slate-100 text-slate-800 hover:bg-slate-200'}`}>{label}</button>
               ))}
             </div>
@@ -419,7 +453,7 @@ function LiveView({ view, act, busy, id }) {
                 </p>
                 <div className="grid grid-cols-6 gap-2">
                   {RUN_BUTTONS.map((r) => (
-                    <button key={r} type="button" disabled={!ready || busy} aria-pressed={extraRuns === r} onClick={() => setExtraRuns(r)}
+                    <button key={r} type="button" disabled={!ready} aria-pressed={extraRuns === r} onClick={() => setExtraRuns(r)}
                       className={`btn !px-0 !py-3 text-base ${extraRuns === r ? 'bg-amber-500 text-amber-950 ring-2 ring-amber-700' : 'bg-white text-slate-800 ring-1 ring-slate-300 hover:bg-slate-50'}`}>{r}</button>
                   ))}
                 </div>
@@ -427,14 +461,14 @@ function LiveView({ view, act, busy, id }) {
                   {EXTRA_LABEL[extra]}{extraRuns ? ` + ${extraRuns} run${extraRuns > 1 ? 's' : ''}` : ''} = <span className="font-bold">{extraRuns + (extra === 'wide' || extra === 'noball' ? 1 : 0)} for the team</span>
                 </p>
                 <div className="grid grid-cols-2 gap-2">
-                  <button type="button" disabled={!ready || busy} onClick={() => send(extraRuns, null)} className="btn btn-green">Add this ball</button>
-                  <button type="button" disabled={!ready || busy} onClick={() => { setWicketType('runout'); setWicketOpen(true); }} className="btn btn-danger">+ Run out / Wicket</button>
+                  <button type="button" disabled={!ready} onClick={() => send(extraRuns, null)} className="btn btn-green">Add this ball</button>
+                  <button type="button" disabled={!ready} onClick={() => { setWicketType('runout'); setWicketOpen(true); }} className="btn btn-danger">+ Run out / Wicket</button>
                 </div>
               </div>
             ) : (
               <div className="grid grid-cols-6 gap-2">
                 {RUN_BUTTONS.map((r) => (
-                  <button key={r} type="button" disabled={!ready || busy} onClick={() => send(r)}
+                  <button key={r} type="button" disabled={!ready} onClick={() => send(r)}
                     className={`btn !px-0 !py-3 text-base ${r === 4 ? 'bg-blue-600 text-white hover:bg-blue-700' : r === 6 ? 'bg-pitch-600 text-white hover:bg-pitch-700' : 'bg-navy-800 text-white hover:bg-navy-700'}`}>
                     {r === 0 ? 'Dot' : r}
                   </button>
@@ -443,9 +477,9 @@ function LiveView({ view, act, busy, id }) {
             )}
 
             <div className="grid grid-cols-3 gap-2">
-              <button type="button" disabled={!ready || busy} onClick={() => { setWicketType(null); setWicketOpen(true); }} className="btn btn-danger">Wicket</button>
-              <button type="button" disabled={!ready || busy} onClick={() => { setWicketType('runout'); setWicketOpen(true); }} className="btn border border-red-300 bg-red-50 text-red-700 hover:bg-red-100">Run Out</button>
-              <button type="button" disabled={busy || !hasBalls} onClick={() => setUndoOpen(true)} className="btn btn-outline"><Undo2 className="h-4 w-4" /> Undo</button>
+              <button type="button" disabled={!ready} onClick={() => { setWicketType(null); setWicketOpen(true); }} className="btn btn-danger">Wicket</button>
+              <button type="button" disabled={!ready} onClick={() => { setWicketType('runout'); setWicketOpen(true); }} className="btn border border-red-300 bg-red-50 text-red-700 hover:bg-red-100">Run Out</button>
+              <button type="button" disabled={busy || (!hasBalls && queue.length === 0)} onClick={() => setUndoOpen(true)} className="btn btn-outline"><Undo2 className="h-4 w-4" /> Undo</button>
             </div>
             <details className="rounded-lg bg-slate-50 p-3 text-sm text-slate-600">
               <summary className="cursor-pointer font-semibold text-slate-700">How to score (simple guide)</summary>
@@ -484,11 +518,11 @@ function LiveView({ view, act, busy, id }) {
 
       <WicketModal open={wicketOpen} onClose={() => setWicketOpen(false)} initialExtra={extra} initialRuns={extra ? extraRuns : 0} initialType={wicketType} busy={busy}
         names={{ striker: nameOf(st.battingCard, striker) || nameOf(st.availableBatters, striker), nonStriker: nameOf(st.battingCard, nonStriker) || nameOf(st.availableBatters, nonStriker) }}
-        onSubmit={async (runs, wicket, ex) => { if (await send(runs, wicket, ex)) setWicketOpen(false); }} />
+        onSubmit={(runs, wicket, ex) => { send(runs, wicket, ex); setWicketOpen(false); }} />
 
       <ConfirmDialog open={undoOpen} title="Undo last ball?" confirmLabel="Undo last ball" busy={busy} onCancel={() => setUndoOpen(false)}
-        message="The last ball will be removed and the scorecard recalculated. This action is recorded in the audit log."
-        onConfirm={async () => { await act(() => api(`/matches/${id}/balls/last`, { method: 'DELETE' })); setUndoOpen(false); }} />
+        message="The last ball will be removed and the scorecard recalculated."
+        onConfirm={handleUndo} />
 
       <ConfirmDialog open={endOpen} title={endForce ? 'End match early?' : 'End match?'} confirmLabel="End match" busy={busy} onCancel={() => setEndOpen(false)}
         message={endForce ? 'The second innings is still in progress. The result will be calculated from the current scores.' : 'This finalises the result. Only the Super Admin can correct a completed match.'}
