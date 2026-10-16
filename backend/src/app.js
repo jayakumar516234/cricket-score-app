@@ -13,7 +13,7 @@ import { errorHandler } from './utils/http.js';
 export function createApp() {
   const app = express();
   app.use(helmet());
-  app.use(cors({ origin: config.clientOrigin.split(','), credentials: false }));
+  app.use(cors({ origin: true, credentials: false }));
   app.use(express.json({ limit: '6mb' })); // team save sends 11 small player photos
   app.get('/api/health', (_req, res) => res.json({ ok: true }));
   app.use('/api/auth', authRoutes);
