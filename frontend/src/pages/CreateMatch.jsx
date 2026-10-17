@@ -203,12 +203,6 @@ export default function CreateMatch() {
             ))}
           </div>
         </fieldset>
-        <Field label="If the scores are tied" htmlFor="tie" hint="Choose how a tied match is decided.">
-          <select id="tie" className="input" value={f.tieBreaker} onChange={(e) => set({ tieBreaker: e.target.value })}>
-            <option value="tie">Declare the match tied</option>
-            <option value="manual">Pick the winner of a tie-breaker (e.g. super over, bowl-out)</option>
-          </select>
-        </Field>
       </section>
 
       <button className="btn btn-primary w-full" disabled={busy}>{busy && <Loader2 className="h-4 w-4 animate-spin" />} Create Match</button>

@@ -300,9 +300,9 @@ export function computeResult({ first, second, firstTeam, secondTeam, names = {}
     return { winner: firstTeam, tie: false, byTieBreak: false, margin: { type: 'runs', value }, summary: `${nm(firstTeam)} won by ${value} run${value === 1 ? '' : 's'}` };
   }
   if (tieBreakWinner) {
-    return { winner: tieBreakWinner, tie: true, byTieBreak: true, margin: { type: 'tiebreak', value: 0 }, summary: `Match tied - ${nm(tieBreakWinner)} won the tie-breaker` };
+    return { winner: tieBreakWinner, tie: true, byTieBreak: true, margin: { type: 'tiebreak', value: 0 }, summary: `Match tied - ${nm(tieBreakWinner)} won the Super Over` };
   }
-  return { winner: null, tie: true, byTieBreak: false, margin: { type: 'tie', value: 0 }, summary: 'Match tied' };
+  return { winner: null, tie: true, byTieBreak: false, margin: { type: 'tie', value: 0 }, summary: 'Match tied / Drawn' };
 }
 
 const battingPoints = (b) => b.runs + b.fours + 2 * b.sixes;

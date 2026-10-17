@@ -296,6 +296,7 @@ function LiveView({ view, act, busy, id, queueProps }) {
   const [endOpen, setEndOpen] = useState(false);
   const [endForce, setEndForce] = useState(false);
   const [tieWinner, setTieWinner] = useState('');
+  const [tieDecision, setTieDecision] = useState('draw');
   const [showCard, setShowCard] = useState(false);
 
   const striker = st.striker || sel.striker;
@@ -307,8 +308,9 @@ function LiveView({ view, act, busy, id, queueProps }) {
 
   const atCrease = st.battingCard.filter((b) => !b.out && (b.id === st.striker || b.id === st.nonStriker));
   const rrr = st.target != null && st.ballsRemaining > 0 ? ((st.runsRequired / st.ballsRemaining) * 6).toFixed(2) : null;
-  const firstInnings = view.innings[0].state;
-  const needsTieWinner = match.currentInnings === 2 && match.tieBreaker === 'manual' && st.runs === firstInnings.runs;
+  const firstInnings = view.innings[0]?.state;
+  const isTied = match.currentInnings === 2 && firstInnings && st.runs === firstInnings.runs;
+  const needsTieWinner = isTied && tieDecision === 'super_over';
 
   const send = (runs, wicket, ex = extra) => {
     const candidate = { striker, nonStriker, bowler, runs, extra: ex, wicket: wicket || null };
@@ -327,7 +329,8 @@ function LiveView({ view, act, busy, id, queueProps }) {
   const batterOptions = (exclude) => st.availableBatters.filter((p) => p.id !== exclude);
 
   const endMatch = async () => {
-    const r = await act(() => api(`/matches/${id}/finish`, { method: 'POST', body: { force: endForce || undefined, tieBreakWinner: needsTieWinner ? tieWinner : undefined } }));
+    const winnerToSend = isTied && tieDecision === 'super_over' ? tieWinner : undefined;
+    const r = await act(() => api(`/matches/${id}/finish`, { method: 'POST', body: { force: endForce || undefined, tieBreakWinner: winnerToSend } }));
     if (r.ok) setEndOpen(false);
   };
 
@@ -497,14 +500,102 @@ function LiveView({ view, act, busy, id, queueProps }) {
       )}
 
       {manage && st.completed && match.currentInnings === 2 && (
-        <section className="card space-y-3 border-l-4 border-pitch-600 p-4">
-          <h3 className="font-bold text-slate-900">Innings complete</h3>
-          <p className="text-sm text-slate-600">The second innings is over. End the match to publish the result.</p>
-          <div className="flex flex-wrap gap-2">
-            <button className="btn btn-green" disabled={busy} onClick={() => { setEndForce(false); setEndOpen(true); }}><Trophy className="h-4 w-4" /> End Match</button>
-            <button className="btn btn-outline" disabled={busy || !hasBalls} onClick={() => setUndoOpen(true)}><Undo2 className="h-4 w-4" /> Undo Last Ball</button>
-          </div>
-        </section>
+        isTied ? (
+          <section className="card space-y-4 border-2 border-amber-500 bg-amber-50/50 p-5 shadow-sm">
+            <div className="flex items-start gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-xl text-white">
+                🤝
+              </span>
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">Match Tied! Scores are Level</h3>
+                <p className="text-xs text-slate-600 mt-0.5">
+                  Both teams completed their innings on <strong className="text-slate-900">{st.runs} runs</strong>. Choose how you want to settle the match result:
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3 pt-2 border-t border-amber-200">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label className={`flex cursor-pointer flex-col rounded-xl border-2 p-3 transition ${tieDecision === 'draw' ? 'border-blue-600 bg-blue-50/80 shadow-sm' : 'border-slate-200 bg-white hover:bg-slate-50'}`}>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="tie_opt"
+                      className="accent-blue-600"
+                      checked={tieDecision === 'draw'}
+                      onChange={() => { setTieDecision('draw'); setTieWinner(''); }}
+                    />
+                    <span className="font-bold text-sm text-slate-900">🤝 Declare Match Drawn / Tied</span>
+                  </div>
+                  <span className="text-xs text-slate-500 mt-1 pl-6">
+                    Declare match as an official Draw / Tie with equal points.
+                  </span>
+                </label>
+
+                <label className={`flex cursor-pointer flex-col rounded-xl border-2 p-3 transition ${tieDecision === 'super_over' ? 'border-amber-600 bg-amber-100/70 shadow-sm' : 'border-slate-200 bg-white hover:bg-slate-50'}`}>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="tie_opt"
+                      className="accent-amber-600"
+                      checked={tieDecision === 'super_over'}
+                      onChange={() => setTieDecision('super_over')}
+                    />
+                    <span className="font-bold text-sm text-slate-900">⚡ Decide via Super Over</span>
+                  </div>
+                  <span className="text-xs text-slate-500 mt-1 pl-6">
+                    Play a Super Over and select the winning team below.
+                  </span>
+                </label>
+              </div>
+
+              {tieDecision === 'super_over' && (
+                <div className="rounded-xl border border-amber-300 bg-white p-3.5 space-y-2">
+                  <label className="label font-bold text-slate-900">
+                    Who won the Super Over?
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[match.homeTeam, match.awayTeam].map((t) => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => setTieWinner(t.id)}
+                        className={`btn text-xs font-bold py-2.5 transition ${tieWinner === t.id ? 'btn-green ring-2 ring-emerald-500' : 'btn-outline text-slate-700 hover:bg-slate-100'}`}
+                      >
+                        🏆 {t.name}
+                      </button>
+                    ))}
+                  </div>
+                  {!tieWinner && (
+                    <p className="text-xs text-amber-700 font-medium">Please select which team won the Super Over before finishing.</p>
+                  )}
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-2 pt-2">
+                <button
+                  className="btn btn-green font-bold"
+                  disabled={busy || (tieDecision === 'super_over' && !tieWinner)}
+                  onClick={() => { setEndForce(false); setEndOpen(true); }}
+                >
+                  <Trophy className="h-4 w-4" /> Finish & Publish Result
+                </button>
+                <button className="btn btn-outline" disabled={busy || !hasBalls} onClick={() => setUndoOpen(true)}>
+                  <Undo2 className="h-4 w-4" /> Undo Last Ball
+                </button>
+              </div>
+            </div>
+          </section>
+        ) : (
+          <section className="card space-y-3 border-l-4 border-pitch-600 p-4">
+            <h3 className="font-bold text-slate-900">Innings complete</h3>
+            <p className="text-sm text-slate-600">The second innings is over. End the match to publish the result.</p>
+            <div className="flex flex-wrap gap-2">
+              <button className="btn btn-green" disabled={busy} onClick={() => { setEndForce(false); setEndOpen(true); }}><Trophy className="h-4 w-4" /> End Match</button>
+              <button className="btn btn-outline" disabled={busy || !hasBalls} onClick={() => setUndoOpen(true)}><Undo2 className="h-4 w-4" /> Undo Last Ball</button>
+            </div>
+          </section>
+        )
       )}
 
       {manage && match.currentInnings === 2 && !st.completed && (
@@ -524,20 +615,23 @@ function LiveView({ view, act, busy, id, queueProps }) {
         message="The last ball will be removed and the scorecard recalculated."
         onConfirm={handleUndo} />
 
-      <ConfirmDialog open={endOpen} title={endForce ? 'End match early?' : 'End match?'} confirmLabel="End match" busy={busy} onCancel={() => setEndOpen(false)}
-        message={endForce ? 'The second innings is still in progress. The result will be calculated from the current scores.' : 'This finalises the result. Only the Super Admin can correct a completed match.'}
-        onConfirm={endMatch}>
-        {needsTieWinner && (
-          <div className="mt-3">
-            <label className="label" htmlFor="tie-winner">Scores are level. Who won the tie-breaker?</label>
-            <select id="tie-winner" className="input" value={tieWinner} onChange={(e) => setTieWinner(e.target.value)}>
-              <option value="">Select winner</option>
-              <option value={match.homeTeam.id}>{match.homeTeam.name}</option>
-              <option value={match.awayTeam.id}>{match.awayTeam.name}</option>
-            </select>
-          </div>
-        )}
-      </ConfirmDialog>
+      <ConfirmDialog
+        open={endOpen}
+        title={endForce ? 'End match early?' : isTied ? 'Confirm match result' : 'End match?'}
+        confirmLabel="Confirm & Finish"
+        busy={busy}
+        onCancel={() => setEndOpen(false)}
+        message={
+          endForce
+            ? 'The second innings is still in progress. The result will be calculated from the current scores.'
+            : isTied
+            ? tieDecision === 'super_over'
+              ? `Finalise match with ${match.homeTeam.id === tieWinner ? match.homeTeam.name : match.awayTeam.name} winning the Super Over?`
+              : 'Finalise match as an official Draw / Tie?'
+            : 'This finalises the result. Only the Super Admin can correct a completed match.'
+        }
+        onConfirm={endMatch}
+      />
     </div>
   );
 }
@@ -646,16 +740,26 @@ function ResultView({ view }) {
   const scoreOf = (team) => view.innings.find((i) => i.battingTeam === team.id)?.state;
   const won = r.winner === home.id;
   const lost = r.winner === away.id;
-  const headline = r.winner ? (won ? 'Congratulations! You Won the Match!' : 'Better Luck Next Time!') : 'The match is tied';
+  const headline = r.byTieBreak
+    ? (won ? '🎉 Won the Super Over!' : `${r.winner === away.id ? away.name : 'Opponent'} Won the Super Over!`)
+    : r.winner
+    ? (won ? 'Congratulations! You Won the Match!' : 'Better Luck Next Time!')
+    : '🤝 Match Tied / Drawn!';
   const pom = match.playerOfMatch;
 
   return (
     <div className="mx-auto max-w-md space-y-4">
       <section className="rounded-2xl bg-gradient-to-b from-navy-950 to-navy-800 p-6 text-center text-white shadow">
-        <Trophy className={`mx-auto h-14 w-14 ${lost ? 'text-slate-400' : 'text-amber-400'}`} aria-hidden />
+        <Trophy className={`mx-auto h-14 w-14 ${!r.winner ? 'text-amber-400' : lost ? 'text-slate-400' : 'text-amber-400'}`} aria-hidden />
         <h2 className="mt-2 text-2xl font-extrabold">{headline}</h2>
-        <p className="mt-1 text-slate-300">{r.summary}</p>
-        {r.winner && <p className="mt-1 text-xs text-slate-400">{won ? `${home.name} is your own team` : `Your own team is ${home.name}`}</p>}
+        <p className="mt-1 text-slate-300 font-medium">{r.summary}</p>
+        {!r.winner && (
+          <p className="mt-1 text-xs text-amber-200/90">Both teams finished with equal scores. The match ended in an official Draw.</p>
+        )}
+        {r.byTieBreak && (
+          <p className="mt-1 text-xs text-amber-200/90">Scores were level after regular overs. Decided via Super Over.</p>
+        )}
+        {r.winner && !r.byTieBreak && <p className="mt-1 text-xs text-slate-400">{won ? `${home.name} is your own team` : `Your own team is ${home.name}`}</p>}
         <div className="mt-5 grid grid-cols-2 gap-3">
           {[home, away].map((t) => {
             const s = scoreOf(t);

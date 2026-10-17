@@ -386,8 +386,7 @@ router.post('/:id/finish', wrap(async (req, res) => {
 
   const tied = s1.runs === s2.runs;
   let tieBreakWinner = null;
-  if (tied && match.tieBreaker === 'manual') {
-    if (!body.tieBreakWinner) throw new HttpError(409, 'The scores are level. Choose the tie-breaker winner', { code: 'TIE_BREAK_REQUIRED' });
+  if (tied && body.tieBreakWinner) {
     if (![sid(match.homeTeam), sid(match.awayTeam)].includes(body.tieBreakWinner)) throw new HttpError(400, 'The tie-breaker winner must be one of the two teams');
     tieBreakWinner = body.tieBreakWinner;
   }
