@@ -28,6 +28,10 @@ router.get('/stats', requireAuth, wrap(async (req, res) => {
   const recentTeams = await Team.find(vt ? { _id: vt } : {}).sort({ createdAt: -1 }).limit(3).select('name logo');
   const recentCounts = await Player.aggregate([{ $match: { team: { $in: recentTeams.map((t) => t._id) } } }, { $group: { _id: '$team', n: { $sum: 1 } } }]);
   const cm = Object.fromEntries(recentCounts.map((c) => [String(c._id), c.n]));
+  const ownedCount = (req.user.role === 'superadmin' || req.user.role === 'admin') ? 0 : await Team.countDocuments({ createdBy: req.user._id });
+  const myTeamDoc = await Team.findOne({ createdBy: req.user._id }).select('_id name');
+  const myTeam = myTeamDoc ? { id: sid(myTeamDoc._id), name: myTeamDoc.name } : null;
+
   res.json({
     totals: { teams, players, matches, live, completed },
     recentMatches: recent.map((m) => ({
@@ -42,15 +46,16 @@ router.get('/stats', requireAuth, wrap(async (req, res) => {
     })),
     recentTeams: recentTeams.map((t) => ({ id: sid(t._id), name: t.name, logo: t.logo, playerCount: cm[String(t._id)] || 0 })),
     can: {
-      createTeam: canCreateTeams(req.user, await Team.countDocuments({ createdBy: req.user._id })),
+      createTeam: canCreateTeams(req.user, ownedCount),
       createMatch: canCreateMatches(req.user),
     },
+    myTeam,
     // progress of a normal user (used for the "get started" guide on the dashboard)
     mine: (req.user.role === 'user' || req.user.role === 'teamadmin')
       ? {
-          teams: await Team.countDocuments({ createdBy: req.user._id }),
+          teams: ownedCount,
           matches: await Match.countDocuments({ createdBy: req.user._id }),
-          myTeam: await Team.findOne({ createdBy: req.user._id }).select('_id name').then((t) => t ? { id: String(t._id), name: t.name } : null),
+          myTeam,
         }
       : null,
   });
