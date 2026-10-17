@@ -12,11 +12,15 @@ import { signupFields, assertUnique } from './auth.js';
 const router = Router();
 router.use(requireAuth, requireRole('superadmin'));
 
-const createSchema = z.object(signupFields);
+const createSchema = z.object({
+  ...signupFields,
+  role: z.enum(['admin', 'user', 'viewer']).optional().default('user'),
+});
 const updateSchema = z.object({
   name: signupFields.name.optional(),
   phone: signupFields.phone.optional(),
   password: signupFields.password.optional(),
+  role: z.enum(['admin', 'user', 'viewer']).optional(),
   active: z.boolean().optional(),
 });
 
@@ -53,8 +57,8 @@ router.get('/', wrap(async (req, res) => {
 router.post('/', wrap(async (req, res) => {
   const data = parse(createSchema, req.body);
   await assertUnique(data);
-  const user = await User.create({ name: data.name, username: data.username, phone: data.phone, passwordHash: await bcrypt.hash(data.password, 10), role: 'user' });
-  await audit(req.user, 'user.create', 'User', user._id, { username: user.username, phone: user.phone });
+  const user = await User.create({ name: data.name, username: data.username, phone: data.phone, passwordHash: await bcrypt.hash(data.password, 10), role: data.role || 'user' });
+  await audit(req.user, 'user.create', 'User', user._id, { username: user.username, phone: user.phone, role: user.role });
   res.status(201).json({ user: publicUser(user) });
 }));
 
@@ -66,6 +70,7 @@ router.put('/:id', wrap(async (req, res) => {
   if (data.phone) await assertUnique({ phone: data.phone }, user._id);
   if (data.name !== undefined) user.name = data.name;
   if (data.phone !== undefined) user.phone = data.phone;
+  if (data.role !== undefined) user.role = data.role;
   if (data.active !== undefined) user.active = data.active;
   if (data.password) user.passwordHash = await bcrypt.hash(data.password, 10);
   await user.save();

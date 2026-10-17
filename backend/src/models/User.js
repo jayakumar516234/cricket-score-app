@@ -11,7 +11,7 @@ const userSchema = new mongoose.Schema(
     phone: { type: String, trim: true, unique: true, sparse: true }, // 10 digits, normalised
     email: { type: String, lowercase: true, trim: true, unique: true, sparse: true }, // used by the Super Admin
     passwordHash: { type: String, required: true, select: false },
-    role: { type: String, enum: ['superadmin', 'user', 'viewer'], default: 'user' },
+    role: { type: String, enum: ['superadmin', 'admin', 'teamadmin', 'user', 'viewer'], default: 'user' },
     active: { type: Boolean, default: true },
     sessionToken: { type: String, default: '' }, // random token set on login; used to enforce single-session for non-viewer users
     viewTeam: { type: mongoose.Schema.Types.ObjectId, ref: 'Team', unique: true, sparse: true }, // viewers only: the one team they can see

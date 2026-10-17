@@ -124,7 +124,7 @@ router.get('/:id', wrap(async (req, res) => {
 
 router.post('/', wrap(async (req, res) => {
   if (!canCreateTeams(req.user)) throw new HttpError(403, 'You do not have permission to create teams');
-  if (req.user.role !== 'superadmin') {
+  if (req.user.role !== 'superadmin' && req.user.role !== 'admin') {
     const owned = await Team.countDocuments({ createdBy: req.user._id });
     if (owned >= config.maxTeamsPerUser) throw new HttpError(403, `You can create up to ${config.maxTeamsPerUser} teams`);
   }

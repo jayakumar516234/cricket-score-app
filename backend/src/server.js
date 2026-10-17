@@ -14,10 +14,7 @@ try {
   process.exit(1);
 }
 
-// Upgrade databases created by the earlier version (it had an "admin" role and a required email).
 try {
-  const moved = await User.updateMany({ role: 'admin' }, { $set: { role: 'user' } });
-  if (moved.modifiedCount) console.log(`Converted ${moved.modifiedCount} old admin account(s) to normal users`);
   await User.syncIndexes();
 
   const bcrypt = (await import('bcryptjs')).default;

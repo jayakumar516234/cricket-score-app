@@ -5,7 +5,7 @@ import { useFetch } from '../useFetch.js';
 import { Link } from 'react-router-dom';
 import { ConfirmDialog, Empty, ErrorBox, Field, Modal, Pagination, Spinner, fmtDate } from '../components/ui.jsx';
 
-const blank = { name: '', username: '', phone: '', password: '', active: true };
+const blank = { name: '', username: '', phone: '', password: '', role: 'user', active: true };
 
 // Visible to the Super Admin only.
 export default function UsersPage() {
@@ -36,9 +36,9 @@ export default function UsersPage() {
     setBusy(true);
     try {
       if (form.id) {
-        await api(`/users/${form.id}`, { method: 'PUT', body: { name: form.name.trim(), phone: form.phone, active: form.active, ...(form.password ? { password: form.password } : {}) } });
+        await api(`/users/${form.id}`, { method: 'PUT', body: { name: form.name.trim(), phone: form.phone, role: form.role, active: form.active, ...(form.password ? { password: form.password } : {}) } });
       } else {
-        await api('/users', { method: 'POST', body: { name: form.name.trim(), username: form.username.trim(), phone: form.phone, password: form.password } });
+        await api('/users', { method: 'POST', body: { name: form.name.trim(), username: form.username.trim(), phone: form.phone, role: form.role, password: form.password } });
       }
       setForm(null);
       reload();
@@ -78,12 +78,22 @@ export default function UsersPage() {
       ) : (
         <>
           <div className="card overflow-x-auto">
-            <table className="w-full min-w-[40rem] text-left text-sm">
-              <thead className="bg-slate-50 text-xs text-slate-500"><tr><th className="p-3">Name</th><th className="p-3">Phone</th><th className="p-3">Teams</th><th className="p-3">Joined</th><th className="p-3">Status</th><th className="p-3 text-right">Actions</th></tr></thead>
+            <table className="w-full min-w-[44rem] text-left text-sm">
+              <thead className="bg-slate-50 text-xs text-slate-500"><tr><th className="p-3">Name</th><th className="p-3">Role</th><th className="p-3">Phone</th><th className="p-3">Teams</th><th className="p-3">Joined</th><th className="p-3">Status</th><th className="p-3 text-right">Actions</th></tr></thead>
               <tbody>
                 {data.items.map((u) => (
                   <tr key={u.id} className="border-t border-slate-100">
-                    <td className="p-3"><div className="font-medium text-slate-900">{u.name}</div><div className="text-xs text-slate-500">{u.role === 'superadmin' ? 'Super Admin' : `@${u.username}`}{u.role === 'viewer' && ' · view only'}</div></td>
+                    <td className="p-3"><div className="font-medium text-slate-900">{u.name}</div><div className="text-xs text-slate-500">@{u.username}</div></td>
+                    <td className="p-3">
+                      <span className={`badge ${
+                        u.role === 'superadmin' ? 'bg-purple-100 text-purple-700' :
+                        u.role === 'admin' ? 'bg-indigo-100 text-indigo-700' :
+                        u.role === 'viewer' ? 'bg-amber-100 text-amber-700' :
+                        'bg-blue-100 text-blue-700'
+                      }`}>
+                        {u.role === 'superadmin' ? 'Super Admin' : u.role === 'admin' ? 'Admin' : u.role === 'viewer' ? 'Viewer' : 'Team Admin'}
+                      </span>
+                    </td>
                     <td className="p-3">{u.phone ? <a href={`tel:${u.phone}`} className="inline-flex items-center gap-1 text-blue-600 hover:underline"><Phone className="h-3.5 w-3.5" aria-hidden />{u.phone}</a> : '-'}</td>
                     <td className="p-3">
                       {u.role === 'viewer' ? (u.viewTeamInfo ? <span className="text-xs text-slate-600">Views <Link to={`/teams/${u.viewTeamInfo.id}`} className="font-semibold text-blue-600 hover:underline">{u.viewTeamInfo.name}</Link></span> : '-')
@@ -94,7 +104,7 @@ export default function UsersPage() {
                     <td className="p-3 text-right">
                       {u.role !== 'superadmin' && (
                         <>
-                          <button className="btn btn-ghost !p-2" onClick={() => { setFormError(''); setForm({ id: u.id, name: u.name, username: u.username, phone: u.phone || '', password: '', active: u.active }); }} aria-label={`Edit ${u.name}`}><Pencil className="h-4 w-4" /></button>
+                          <button className="btn btn-ghost !p-2" onClick={() => { setFormError(''); setForm({ id: u.id, name: u.name, username: u.username, phone: u.phone || '', role: u.role || 'user', password: '', active: u.active }); }} aria-label={`Edit ${u.name}`}><Pencil className="h-4 w-4" /></button>
                           <button className="btn btn-ghost !p-2 text-red-600" onClick={() => setDel(u)} aria-label={`Delete ${u.name}`}><Trash2 className="h-4 w-4" /></button>
                         </>
                       )}
@@ -115,6 +125,15 @@ export default function UsersPage() {
             <Field label="Name" required htmlFor="u-name"><input id="u-name" className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
             <Field label="Username" required htmlFor="u-username"><input id="u-username" className="input" autoCapitalize="none" disabled={!!form.id} value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} /></Field>
             <Field label="Phone number" required htmlFor="u-phone"><input id="u-phone" type="tel" className="input" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></Field>
+            {form.role !== 'superadmin' && (
+              <Field label="Role" required htmlFor="u-role">
+                <select id="u-role" className="input" value={form.role || 'user'} onChange={(e) => setForm({ ...form, role: e.target.value })}>
+                  <option value="user">Team Admin (Own team & matches)</option>
+                  <option value="admin">Admin (All teams, players & matches)</option>
+                  {form.role === 'viewer' && <option value="viewer">Viewer (Read only)</option>}
+                </select>
+              </Field>
+            )}
             <Field label={form.id ? 'New password (leave blank to keep the old one)' : 'Password'} required={!form.id} htmlFor="u-pass"><input id="u-pass" type="password" autoComplete="new-password" className="input" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></Field>
             {form.id && <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="h-4 w-4 accent-blue-600" checked={form.active} onChange={(e) => setForm({ ...form, active: e.target.checked })} /> Account is active</label>}
             <div className="flex justify-end gap-2">
