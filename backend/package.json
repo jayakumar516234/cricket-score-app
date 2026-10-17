@@ -8,7 +8,7 @@
     "start": "node src/server.js",
     "seed": "node src/seed.js",
     "seed:sample": "node src/seed.js --sample",
-    "test": "node --test --test-concurrency=1 tests/",
+    "test": "node --test --test-concurrency=1 tests/*.test.js",
     "test:engine": "node --test tests/engine.test.js"
   },
   "dependencies": {

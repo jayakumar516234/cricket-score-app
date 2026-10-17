@@ -33,6 +33,7 @@ export default function App() {
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
       <Route path="/super-login" element={user ? <Navigate to="/" replace /> : <SuperLogin />} />
       <Route path="/register" element={<Navigate to="/login" replace />} />
+      <Route path="/signup" element={<Navigate to="/login" replace />} />
       <Route element={<Protected><Layout /></Protected>}>
         <Route index element={<Dashboard />} />
         <Route path="teams" element={<Teams />} />
