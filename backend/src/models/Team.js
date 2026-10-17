@@ -20,6 +20,7 @@ const teamSchema = new mongoose.Schema(
     description: { type: String, trim: true, maxlength: 500, default: '' },
     ballType: { type: String, enum: BALL_TYPES, default: 'Leather Ball' },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    isGuest: { type: Boolean, default: false, index: true },
   },
   { timestamps: true }
 );

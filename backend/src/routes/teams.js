@@ -76,6 +76,7 @@ const teamOut = (t, extra = {}) => ({
   description: t.description,
   ballType: t.ballType,
   createdAt: t.createdAt,
+  createdBy: t.createdBy ? String(t.createdBy) : undefined,
   ...extra,
 });
 const playerOut = (p) => ({
@@ -91,7 +92,7 @@ const playerOut = (p) => ({
 
 router.get('/', wrap(async (req, res) => {
   const { page, limit, skip } = pageParams(req.query);
-  const filter = {};
+  const filter = { isGuest: { $ne: true } };
   if (isViewer(req.user)) filter._id = req.user.viewTeam; // viewers see only their own team
   if (req.query.search) {
     const rx = new RegExp(escapeRegex(String(req.query.search)), 'i');
@@ -104,15 +105,46 @@ router.get('/', wrap(async (req, res) => {
   ]);
   const counts = await Player.aggregate([{ $match: { team: { $in: teams.map((t) => t._id) } } }, { $group: { _id: '$team', n: { $sum: 1 } } }]);
   const countMap = Object.fromEntries(counts.map((c) => [String(c._id), c.n]));
-  const ownedCount = (req.user.role === 'superadmin' || req.user.role === 'admin') ? 0 : await Team.countDocuments({ createdBy: req.user._id });
-  const myTeamDoc = await Team.findOne({ createdBy: req.user._id }).select('_id name');
+  const ownedCount = (req.user.role === 'superadmin' || req.user.role === 'admin') ? 0 : await Team.countDocuments({ createdBy: req.user._id, isGuest: { $ne: true } });
+  const myTeamDoc = await Team.findOne({ createdBy: req.user._id, isGuest: { $ne: true } }).select('_id name code logo location ballType');
+
+  const connectedTeamIds = new Set();
+  let pendingIncomingCount = 0;
+  if (myTeamDoc) {
+    const [conns, pendingCount] = await Promise.all([
+      TeamConnection.find({
+        $or: [{ fromTeam: myTeamDoc._id }, { toTeam: myTeamDoc._id }],
+        status: 'accepted',
+      }).select('fromTeam toTeam'),
+      TeamConnection.countDocuments({ toTeam: myTeamDoc._id, status: 'pending' }),
+    ]);
+    for (const c of conns) {
+      const oppId = String(c.fromTeam) === String(myTeamDoc._id) ? String(c.toTeam) : String(c.fromTeam);
+      connectedTeamIds.add(oppId);
+    }
+    pendingIncomingCount = pendingCount;
+  }
+
   res.json({
-    items: teams.map((t) => teamOut(t, { playerCount: countMap[String(t._id)] || 0, canManage: canManageTeam(req.user, t) })),
+    items: teams.map((t) => teamOut(t, {
+      playerCount: countMap[String(t._id)] || 0,
+      canManage: canManageTeam(req.user, t),
+      isOwn: String(t.createdBy) === String(req.user._id),
+      isConnectedOpponent: connectedTeamIds.has(String(t._id)),
+    })),
     total,
     page,
     pages: Math.ceil(total / limit) || 1,
     canCreate: canCreateTeams(req.user, ownedCount),
-    myTeam: myTeamDoc ? { id: String(myTeamDoc._id), name: myTeamDoc.name } : null,
+    myTeam: myTeamDoc ? {
+      id: String(myTeamDoc._id),
+      name: myTeamDoc.name,
+      code: myTeamDoc.code,
+      logo: myTeamDoc.logo,
+      location: myTeamDoc.location,
+      ballType: myTeamDoc.ballType,
+    } : null,
+    pendingIncomingCount,
   });
 }));
 
@@ -131,7 +163,7 @@ router.get('/:id', wrap(async (req, res) => {
 router.post('/', wrap(async (req, res) => {
   if (!canCreateTeams(req.user)) throw new HttpError(403, 'You do not have permission to create teams');
   if (req.user.role !== 'superadmin' && req.user.role !== 'admin') {
-    const owned = await Team.countDocuments({ createdBy: req.user._id });
+    const owned = await Team.countDocuments({ createdBy: req.user._id, isGuest: { $ne: true } });
     if (owned >= 1) throw new HttpError(403, 'Team Admin can create only 1 team. You can edit your existing team.');
   }
   const data = parse(teamSchema, req.body);

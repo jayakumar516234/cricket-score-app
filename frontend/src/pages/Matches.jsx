@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Search, Trash2, Trophy } from 'lucide-react';
 import { api, qs } from '../api.js';
 import { useFetch } from '../useFetch.js';
-import { ConfirmDialog, Empty, ErrorBox, Pagination, Spinner, StatusBadge, TeamLogo, fmtDate } from '../components/ui.jsx';
+import { ConfirmDialog, Empty, ErrorBox, Pagination, Spinner, StatusBadge, TeamLogo, DropdownSelect, fmtDate } from '../components/ui.jsx';
 
 export function MatchScoreLine({ match }) {
   const sc = (teamId) => match.scores?.find((s) => s.team === teamId);
@@ -67,13 +67,20 @@ export default function Matches() {
           <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" aria-hidden />
           <input className="input pl-9" placeholder="Search by match, team or venue..." aria-label="Search matches" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
-        <select className="input sm:w-44" aria-label="Filter by status" value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }}>
-          <option value="">All statuses</option>
-          <option value="scheduled">Scheduled</option>
-          <option value="live">Live</option>
-          <option value="completed">Completed</option>
-          <option value="abandoned">Abandoned</option>
-        </select>
+        <div className="sm:w-44">
+          <DropdownSelect
+            value={status}
+            onChange={(v) => { setStatus(v); setPage(1); }}
+            options={[
+              { value: '', label: 'All statuses' },
+              { value: 'scheduled', label: 'Scheduled' },
+              { value: 'live', label: 'Live' },
+              { value: 'completed', label: 'Completed' },
+              { value: 'abandoned', label: 'Abandoned' },
+            ]}
+            placeholder="All statuses"
+          />
+        </div>
       </div>
       <div className="mb-3"><ErrorBox message={actionError} /></div>
       {loading && !data ? <Spinner /> : error ? <ErrorBox message={error} onRetry={reload} /> : data.items.length === 0 ? (

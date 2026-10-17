@@ -220,3 +220,71 @@ test('9. Can now create a match between connected opponents', async () => {
   assert.equal(match.body.match.homeTeam.id, teamA.id);
   assert.equal(match.body.match.awayTeam.id, teamB.id);
 });
+
+test('10. Teams listing marks own team (isOwn=true) and opponent (isOwn=false, isConnectedOpponent=true)', async () => {
+  const res = await api()
+    .get('/api/teams')
+    .set(auth(tokAdminA));
+  assert.equal(res.status, 200);
+  assert.ok(res.body.myTeam);
+  assert.equal(res.body.myTeam.id, teamA.id);
+  assert.ok(res.body.myTeam.code);
+
+  const own = res.body.items.find((t) => t.id === teamA.id);
+  const opp = res.body.items.find((t) => t.id === teamB.id);
+  assert.ok(own);
+  assert.ok(opp);
+
+  assert.equal(own.isOwn, true);
+  assert.equal(own.canManage, true);
+  assert.equal(opp.isOwn, false);
+  assert.equal(opp.canManage, false);
+  assert.equal(opp.isConnectedOpponent, true);
+});
+
+test('11. Dashboard /api/stats returns recentOpponents for Team Admin', async () => {
+  const statsA = await api()
+    .get('/api/stats')
+    .set(auth(tokAdminA));
+  assert.equal(statsA.status, 200);
+  assert.ok(Array.isArray(statsA.body.recentOpponents));
+  assert.equal(statsA.body.recentOpponents.length, 1);
+  assert.equal(statsA.body.recentOpponents[0].id, teamB.id);
+  assert.equal(statsA.body.recentOpponents[0].isOpponent, true);
+});
+
+test('12. Can create match against a Guest Team with manual 11s', async () => {
+  const manualPlayers = Array.from({ length: 11 }, (_, i) => ({
+    name: `Warrior ${i + 1}`,
+    role: i < 5 ? 'Batsman' : 'Bowler',
+  }));
+
+  const res = await api()
+    .post('/api/matches')
+    .set(auth(tokAdminA))
+    .send({
+      homeTeam: teamA.id,
+      awayTeam: 'guest',
+      isGuestOpponent: true,
+      guestTeam: {
+        name: 'Street Warriors',
+        players: manualPlayers,
+      },
+      format: 'T20',
+      tossWinner: 'guest',
+      tossDecision: 'bat',
+    });
+
+  assert.equal(res.status, 201);
+  assert.match(res.body.match.awayTeam.name, /Street Warriors/);
+  assert.equal(res.body.match.xi.away.length, 11);
+  assert.equal(res.body.match.xi.away[0].name, 'Warrior 1');
+
+  // Verify that guest team does not appear in public teams list
+  const teamsList = await api()
+    .get('/api/teams')
+    .set(auth(tokAdminA));
+  assert.equal(teamsList.body.items.some((t) => t.name.includes('Street Warriors')), false);
+});
+
+

@@ -4,6 +4,7 @@ import { Player } from '../models/Player.js';
 import { Match } from '../models/Match.js';
 import { Innings } from '../models/Innings.js';
 import { AuditLog } from '../models/AuditLog.js';
+import { TeamConnection } from '../models/TeamConnection.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { wrap, pageParams, escapeRegex } from '../utils/http.js';
 import { canCreateTeams, canCreateMatches } from '../utils/permissions.js';
@@ -28,9 +29,64 @@ router.get('/stats', requireAuth, wrap(async (req, res) => {
   const recentTeams = await Team.find(vt ? { _id: vt } : {}).sort({ createdAt: -1 }).limit(3).select('name logo');
   const recentCounts = await Player.aggregate([{ $match: { team: { $in: recentTeams.map((t) => t._id) } } }, { $group: { _id: '$team', n: { $sum: 1 } } }]);
   const cm = Object.fromEntries(recentCounts.map((c) => [String(c._id), c.n]));
-  const ownedCount = (req.user.role === 'superadmin' || req.user.role === 'admin') ? 0 : await Team.countDocuments({ createdBy: req.user._id });
-  const myTeamDoc = await Team.findOne({ createdBy: req.user._id }).select('_id name');
-  const myTeam = myTeamDoc ? { id: sid(myTeamDoc._id), name: myTeamDoc.name } : null;
+  const ownedCount = (req.user.role === 'superadmin' || req.user.role === 'admin') ? 0 : await Team.countDocuments({ createdBy: req.user._id, isGuest: { $ne: true } });
+  const myTeamDoc = await Team.findOne({ createdBy: req.user._id, isGuest: { $ne: true } }).select('_id name code logo location ballType');
+  const myTeam = myTeamDoc ? { id: sid(myTeamDoc._id), name: myTeamDoc.name, code: myTeamDoc.code } : null;
+
+  let recentOpponents = [];
+  if (myTeamDoc) {
+    const conns = await TeamConnection.find({
+      $or: [{ fromTeam: myTeamDoc._id }, { toTeam: myTeamDoc._id }],
+      status: 'accepted',
+    }).populate('fromTeam toTeam').sort({ updatedAt: -1 }).limit(10);
+
+    const oppIdSet = new Set();
+    const oppTeamDocs = [];
+
+    for (const c of conns) {
+      const opp = sid(c.fromTeam?._id) === sid(myTeamDoc._id) ? c.toTeam : c.fromTeam;
+      if (opp && !oppIdSet.has(sid(opp._id))) {
+        oppIdSet.add(sid(opp._id));
+        oppTeamDocs.push(opp);
+      }
+    }
+
+    const myMatches = await Match.find({
+      $or: [{ homeTeam: myTeamDoc._id }, { awayTeam: myTeamDoc._id }],
+    }).sort({ createdAt: -1 }).limit(10);
+
+    const matchOppIds = [];
+    for (const m of myMatches) {
+      const oppId = sid(m.homeTeam) === sid(myTeamDoc._id) ? sid(m.awayTeam) : sid(m.homeTeam);
+      if (oppId && !oppIdSet.has(oppId)) {
+        oppIdSet.add(oppId);
+        matchOppIds.push(oppId);
+      }
+    }
+
+    if (matchOppIds.length > 0) {
+      const moreOpps = await Team.find({ _id: { $in: matchOppIds } }).select('name logo location ballType code');
+      oppTeamDocs.push(...moreOpps);
+    }
+
+    if (oppTeamDocs.length > 0) {
+      const oppCounts = await Player.aggregate([
+        { $match: { team: { $in: oppTeamDocs.map((t) => t._id) } } },
+        { $group: { _id: '$team', n: { $sum: 1 } } },
+      ]);
+      const ocm = Object.fromEntries(oppCounts.map((c) => [String(c._id), c.n]));
+      recentOpponents = oppTeamDocs.slice(0, 5).map((t) => ({
+        id: sid(t._id),
+        name: t.name,
+        logo: t.logo,
+        code: t.code,
+        location: t.location,
+        ballType: t.ballType,
+        playerCount: ocm[String(t._id)] || 0,
+        isOpponent: true,
+      }));
+    }
+  }
 
   res.json({
     totals: { teams, players, matches, live, completed },
@@ -45,6 +101,7 @@ router.get('/stats', requireAuth, wrap(async (req, res) => {
       resultSummary: m.status === 'completed' ? m.result?.summary : null,
     })),
     recentTeams: recentTeams.map((t) => ({ id: sid(t._id), name: t.name, logo: t.logo, playerCount: cm[String(t._id)] || 0 })),
+    recentOpponents,
     can: {
       createTeam: canCreateTeams(req.user, ownedCount),
       createMatch: canCreateMatches(req.user),

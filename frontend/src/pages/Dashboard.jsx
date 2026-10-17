@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronRight, Shield, Trophy, Users, Activity, CheckCircle2, Plus, Pencil } from 'lucide-react';
+import { ChevronRight, Shield, Trophy, Users, Activity, CheckCircle2, Plus, Pencil, Handshake } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useFetch } from '../useFetch.js';
 import { Empty, ErrorBox, Spinner, StatusBadge, TeamLogo } from '../components/ui.jsx';
@@ -103,61 +103,67 @@ export default function Dashboard() {
 
         <section>
           <div className="mb-2 flex items-center justify-between">
-            <h2 className="font-bold text-slate-900">Recent Teams</h2>
+            <h2 className="font-bold text-slate-900">{user?.role === 'superadmin' || user?.role === 'admin' ? 'Recent Teams' : 'Recent Opponents'}</h2>
             <div className="flex items-center gap-2">
-              {data.can?.createTeam ? (
+              {(user?.role === 'superadmin' || user?.role === 'admin') ? (
+                data.can?.createTeam ? (
+                  <Link to="/teams/new" className="btn btn-green text-xs !py-1 !px-2.5">
+                    <Plus className="h-3.5 w-3.5" /> Create Team
+                  </Link>
+                ) : null
+              ) : myTeam ? (
+                <Link to="/teams?add=opponent" className="btn btn-primary text-xs !py-1 !px-2.5">
+                  <Plus className="h-3.5 w-3.5" /> Add Opponent
+                </Link>
+              ) : data.can?.createTeam ? (
                 <Link to="/teams/new" className="btn btn-green text-xs !py-1 !px-2.5">
                   <Plus className="h-3.5 w-3.5" /> Create Team
-                </Link>
-              ) : myTeam ? (
-                <Link to={`/teams/${myTeam.id}/edit`} className="btn btn-primary text-xs !py-1 !px-2.5">
-                  <Pencil className="h-3.5 w-3.5" /> Update Team
                 </Link>
               ) : null}
               <Link to="/teams" className="text-sm font-semibold text-blue-600 hover:underline">View all</Link>
             </div>
           </div>
-          {data.recentTeams.length === 0 ? (
+          {((user?.role === 'superadmin' || user?.role === 'admin') ? data.recentTeams : (data.recentOpponents || [])).length === 0 ? (
             <Empty
-              icon={Shield}
-              title="No teams yet"
-              text={myTeam ? 'Update your team to get started.' : 'Create your first team with 11 players.'}
+              icon={user?.role === 'superadmin' || user?.role === 'admin' ? Shield : Handshake}
+              title={user?.role === 'superadmin' || user?.role === 'admin' ? 'No teams yet' : 'No opponents yet'}
+              text={
+                user?.role === 'superadmin' || user?.role === 'admin'
+                  ? 'Create a team with 11 players to get started.'
+                  : myTeam
+                  ? 'Connect with opponent teams using their 6-character team code to play matches.'
+                  : 'Create your team first to connect with opponents.'
+              }
               action={
-                data.can?.createTeam ? (
-                  <Link to="/teams/new" className="btn btn-green">Create Team</Link>
+                (user?.role === 'superadmin' || user?.role === 'admin') ? (
+                  data.can?.createTeam ? <Link to="/teams/new" className="btn btn-green">Create Team</Link> : null
                 ) : myTeam ? (
-                  <Link to={`/teams/${myTeam.id}/edit`} className="btn btn-green">Update Team</Link>
+                  <Link to="/teams?add=opponent" className="btn btn-primary">Add New Opponent</Link>
+                ) : data.can?.createTeam ? (
+                  <Link to="/teams/new" className="btn btn-green">Create Team</Link>
                 ) : null
               }
             />
           ) : (
             <ul className="space-y-2">
-              {data.recentTeams.map((tm) => (
+              {((user?.role === 'superadmin' || user?.role === 'admin') ? data.recentTeams : data.recentOpponents).map((tm) => (
                 <li key={tm.id}>
                   <Link to={`/teams/${tm.id}`} className="card flex items-center gap-3 p-3 hover:ring-blue-300">
                     <TeamLogo team={tm} />
                     <div className="flex-1">
                       <div className="text-sm font-semibold text-slate-900 flex items-center gap-2">
                         {tm.name}
-                        {myTeam && tm.id === myTeam.id && (
+                        {tm.isOpponent && (
+                          <span className="badge bg-blue-100 text-blue-700 text-[10px]">Opponent</span>
+                        )}
+                        {(user?.role === 'superadmin' || user?.role === 'admin') && myTeam && tm.id === myTeam.id && (
                           <span className="badge bg-green-100 text-green-700 text-[10px]">Your Team</span>
                         )}
                       </div>
-                      <div className="text-xs text-slate-500">{tm.playerCount} Players</div>
+                      <div className="text-xs text-slate-500">
+                        {tm.playerCount} Players{tm.location ? ` · ${tm.location}` : ''}{tm.ballType ? ` · ${tm.ballType}` : ''}
+                      </div>
                     </div>
-                    {myTeam && tm.id === myTeam.id && (
-                      <span
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          nav(`/teams/${tm.id}/edit`);
-                        }}
-                        className="btn btn-outline text-xs !py-1 !px-2 text-slate-700 hover:bg-slate-100 mr-1"
-                        title="Update this team"
-                      >
-                        <Pencil className="h-3 w-3" /> Update Team
-                      </span>
-                    )}
                     <ChevronRight className="h-4 w-4 text-slate-400" aria-hidden />
                   </Link>
                 </li>

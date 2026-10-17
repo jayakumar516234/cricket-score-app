@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import mongoose from 'mongoose';
 import { Match } from '../models/Match.js';
-import { Team } from '../models/Team.js';
+import { Team, generateTeamCode } from '../models/Team.js';
 import { TeamConnection } from '../models/TeamConnection.js';
 import { Player, PLAYER_ROLES } from '../models/Player.js';
 import { Innings } from '../models/Innings.js';
@@ -23,15 +23,27 @@ const FORMAT_OVERS = { T10: 10, T20: 20, ODI: 50 };
 const oid = z.string().regex(/^[a-f\d]{24}$/i, 'Invalid id');
 const sid = (v) => String(v?._id ?? v);
 
+const manualPlayerSchema = z.object({
+  name: z.string().trim().min(1, 'Player name is required').max(60),
+  role: z.enum(PLAYER_ROLES).optional().default('Batsman'),
+});
+
+const guestTeamSchema = z.object({
+  name: z.string().trim().max(60).optional().default('Guest Team'),
+  players: z.array(manualPlayerSchema).optional(),
+});
+
 const createSchema = z.object({
   name: z.string().trim().max(100).optional().default(''),
   homeTeam: oid,
-  awayTeam: oid,
+  awayTeam: z.union([oid, z.literal('guest')]),
+  isGuestOpponent: z.boolean().optional(),
+  guestTeam: guestTeamSchema.optional(),
   format: z.enum(['T10', 'T20', 'ODI', 'Custom'], { errorMap: () => ({ message: 'Select a match format' }) }),
   overs: z.coerce.number().int('Overs must be a whole number').min(1, 'Overs must be at least 1').max(50, 'Overs cannot be more than 50').optional(),
   date: z.string().optional().refine((v) => !v || !Number.isNaN(Date.parse(v)), 'Invalid date'),
   venue: z.string().trim().max(100).optional().default(''),
-  tossWinner: oid,
+  tossWinner: z.union([oid, z.literal('guest'), z.literal('home'), z.literal('away')]),
   tossDecision: z.enum(['bat', 'bowl'], { errorMap: () => ({ message: 'Select bat or bowl' }) }),
   tieBreaker: z.enum(['tie', 'manual']).optional().default('tie'),
 });
@@ -141,31 +153,84 @@ router.get('/:id', wrap(async (req, res) => {
 router.post('/', wrap(async (req, res) => {
   if (!canCreateMatches(req.user)) throw new HttpError(403, 'You do not have permission to create matches');
   const d = parse(createSchema, req.body);
-  if (d.homeTeam === d.awayTeam) throw new HttpError(400, 'Your team and the opponent must be different teams');
-  if (![d.homeTeam, d.awayTeam].includes(d.tossWinner)) throw new HttpError(400, 'The toss winner must be one of the two teams');
   const overs = FORMAT_OVERS[d.format] ?? d.overs;
   if (!overs) throw new HttpError(400, 'Enter the number of overs for a custom match');
 
-  const [home, away] = await Promise.all([Team.findById(d.homeTeam), Team.findById(d.awayTeam)]);
-  if (!home || !away) throw new HttpError(404, 'Team not found');
+  const home = await Team.findById(d.homeTeam);
+  if (!home) throw new HttpError(404, 'Your team not found');
   if (!canManageTeam(req.user, home)) throw new HttpError(403, 'You can only create matches for your own team');
 
-  if (req.user.role !== 'superadmin' && req.user.role !== 'admin' && (process.env.NODE_ENV !== 'test' || process.env.STRICT_CONNECTIONS === 'true')) {
-    const isConn = await TeamConnection.findOne({
-      status: 'accepted',
-      $or: [
-        { fromTeam: home._id, toTeam: away._id },
-        { fromTeam: away._id, toTeam: home._id },
-      ],
-    });
-    if (!isConn && !canManageTeam(req.user, away)) {
-      throw new HttpError(403, `${away.name} is not an accepted opponent. Send an opponent request using their team code and wait for them to accept.`);
+  const homeCount = await Player.countDocuments({ team: home._id });
+  if (homeCount < MIN_SQUAD) throw new HttpError(400, `${home.name} needs at least ${MIN_SQUAD} players before a match can be created`);
+
+  const isGuest = d.awayTeam === 'guest' || d.isGuestOpponent;
+  let away;
+  let createdAwayPlayers = [];
+
+  if (isGuest) {
+    let baseName = (d.guestTeam?.name || 'Guest Team').trim();
+    if (!baseName) baseName = 'Guest Team';
+    let uniqueName = baseName;
+    let suffix = 1;
+    while (await Team.findOne({ name: uniqueName }).collation({ locale: 'en', strength: 2 })) {
+      uniqueName = `${baseName} (${suffix++})`;
     }
+    let code;
+    while (!code || (await Team.exists({ code }))) {
+      code = generateTeamCode();
+    }
+    away = await Team.create({
+      name: uniqueName,
+      code,
+      ballType: home.ballType || 'Tennis Ball',
+      createdBy: req.user._id,
+      isGuest: true,
+    });
+
+    const playerList = d.guestTeam?.players && d.guestTeam.players.length >= 11
+      ? d.guestTeam.players
+      : Array.from({ length: 11 }, (_, i) => ({
+          name: `Player ${i + 1}`,
+          role: i < 4 ? 'Batsman' : i === 4 ? 'Wicket Keeper' : i < 7 ? 'All-rounder' : 'Bowler',
+        }));
+
+    createdAwayPlayers = await Player.insertMany(
+      playerList.slice(0, 11).map((p, i) => ({
+        name: p.name.trim() || `Player ${i + 1}`,
+        role: p.role || (i < 4 ? 'Batsman' : i === 4 ? 'Wicket Keeper' : i < 7 ? 'All-rounder' : 'Bowler'),
+        team: away._id,
+        jerseyNumber: i + 1,
+      }))
+    );
+  } else {
+    away = await Team.findById(d.awayTeam);
+    if (!away) throw new HttpError(404, 'Opponent team not found');
+    if (String(home._id) === String(away._id)) throw new HttpError(400, 'Your team and the opponent must be different teams');
+
+    if (req.user.role !== 'superadmin' && req.user.role !== 'admin' && (process.env.NODE_ENV !== 'test' || process.env.STRICT_CONNECTIONS === 'true')) {
+      const isConn = await TeamConnection.findOne({
+        status: 'accepted',
+        $or: [
+          { fromTeam: home._id, toTeam: away._id },
+          { fromTeam: away._id, toTeam: home._id },
+        ],
+      });
+      if (!isConn && !canManageTeam(req.user, away)) {
+        throw new HttpError(403, `${away.name} is not an accepted opponent. Send an opponent request using their team code and wait for them to accept.`);
+      }
+    }
+
+    const awayCount = await Player.countDocuments({ team: away._id });
+    if (awayCount < MIN_SQUAD) throw new HttpError(400, `${away.name} needs at least ${MIN_SQUAD} players before a match can be created`);
   }
 
-  for (const team of [home, away]) {
-    const count = await Player.countDocuments({ team: team._id });
-    if (count < MIN_SQUAD) throw new HttpError(400, `${team.name} needs at least ${MIN_SQUAD} players before a match can be created`);
+  let tossWinnerId;
+  if (d.tossWinner === 'guest' || d.tossWinner === 'away' || String(d.tossWinner) === String(away._id)) {
+    tossWinnerId = away._id;
+  } else if (d.tossWinner === 'home' || String(d.tossWinner) === String(home._id)) {
+    tossWinnerId = home._id;
+  } else {
+    throw new HttpError(400, 'The toss winner must be one of the two teams');
   }
 
   const match = await Match.create({
@@ -176,12 +241,23 @@ router.post('/', wrap(async (req, res) => {
     venue: d.venue,
     homeTeam: home._id,
     awayTeam: away._id,
-    toss: { winner: d.tossWinner, decision: d.tossDecision },
-    xi: { home: [], away: [] }, // the playing XI is chosen when the match starts
+    toss: { winner: tossWinnerId, decision: d.tossDecision },
+    xi: {
+      home: [],
+      away: isGuest
+        ? createdAwayPlayers.map((p) => ({
+            player: p._id,
+            name: p.name,
+            role: p.role,
+            jerseyNumber: p.jerseyNumber,
+            guest: true,
+          }))
+        : [],
+    },
     tieBreaker: d.tieBreaker,
     createdBy: req.user._id,
   });
-  await audit(req.user, 'match.create', 'Match', match._id, { name: match.name, format: match.format, overs });
+  await audit(req.user, 'match.create', 'Match', match._id, { name: match.name, format: match.format, overs, isGuest });
   res.status(201).json(await buildView(match, req.user));
 }));
 
@@ -276,6 +352,12 @@ router.post('/:id/start', wrap(async (req, res) => {
   const body = parse(startSchema, req.body || {});
   const [home, away] = await Promise.all([Team.findById(match.homeTeam), Team.findById(match.awayTeam)]);
   if (!home || !away) throw new HttpError(404, 'One of the teams no longer exists');
+  if (body.away.playerIds.length === 0 && body.away.guests.length === 0) {
+    const awayPlayers = await Player.find({ team: away._id });
+    if (awayPlayers.length === XI_SIZE) {
+      body.away.playerIds = awayPlayers.map((p) => String(p._id));
+    }
+  }
   match.xi = { home: await buildXI(home, body.home), away: await buildXI(away, body.away) };
 
   const tossWinner = sid(match.toss.winner);

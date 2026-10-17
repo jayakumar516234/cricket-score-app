@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { AlertCircle, ChevronLeft, ChevronRight, Loader2, Shield, ImagePlus, X } from 'lucide-react';
+import { AlertCircle, ChevronLeft, ChevronRight, ChevronDown, Check, Loader2, Shield, ImagePlus, X } from 'lucide-react';
 
 export const Spinner = ({ label = 'Loading...' }) => (
   <div className="flex items-center justify-center gap-2 py-16 text-slate-500" role="status">
@@ -155,3 +155,87 @@ export function ImagePicker({ value, onChange, label = 'Add image', size = 72, r
 }
 
 export const fmtDate = (d) => (d ? new Date(d).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '');
+ 
+export function DropdownSelect({
+  id,
+  value,
+  onChange,
+  options = [],
+  placeholder = 'Select option',
+  disabled = false,
+  className = '',
+  error = false,
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleClick = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    document.addEventListener('touchstart', handleClick);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('touchstart', handleClick);
+    };
+  }, [open]);
+
+  const normalizedOptions = options.map((opt) =>
+    typeof opt === 'object' && opt !== null ? opt : { value: opt, label: String(opt) }
+  );
+
+  const selectedOption = normalizedOptions.find((opt) => String(opt.value) === String(value));
+
+  return (
+    <div className={`relative ${className}`} ref={ref}>
+      <button
+        id={id}
+        type="button"
+        disabled={disabled}
+        onClick={() => setOpen((prev) => !prev)}
+        className={`input flex w-full items-center justify-between text-left ${error ? 'input-error' : ''} ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+      >
+        <span className={`truncate ${!selectedOption && (value === '' || value === undefined) ? 'text-slate-400' : 'text-slate-900 font-medium'}`}>
+          {selectedOption ? selectedOption.label : placeholder}
+        </span>
+        <ChevronDown className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 top-full z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-xl">
+          {placeholder && (
+            <div
+              onClick={() => { onChange(''); setOpen(false); }}
+              className="cursor-pointer px-3 py-2 text-sm text-slate-500 hover:bg-slate-50 transition"
+            >
+              {placeholder}
+            </div>
+          )}
+          {normalizedOptions.map((opt) => {
+            const isSelected = String(opt.value) === String(value);
+            return (
+              <div
+                key={String(opt.value)}
+                onClick={() => { onChange(opt.value); setOpen(false); }}
+                className={`flex cursor-pointer items-center justify-between px-3 py-2 text-sm transition ${
+                  isSelected ? 'bg-blue-50 font-semibold text-blue-700' : 'text-slate-800 hover:bg-slate-100'
+                }`}
+              >
+                <div className="flex items-center gap-2 truncate">
+                  <span className="truncate">{opt.label}</span>
+                  {opt.badge && <span className="badge bg-blue-100 text-blue-700 text-[10px]">{opt.badge}</span>}
+                </div>
+                {isSelected && <Check className="h-4 w-4 text-blue-600 shrink-0" />}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+

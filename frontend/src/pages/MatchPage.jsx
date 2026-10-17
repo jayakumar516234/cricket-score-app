@@ -4,7 +4,7 @@ import { ArrowLeft, Crosshair, Loader2, Play, Trophy, Undo2, Crown, UserPlus, X 
 import { api } from '../api.js';
 import { useFetch } from '../useFetch.js';
 import { useAuth } from '../context/AuthContext.jsx';
-import { ConfirmDialog, ErrorBox, Modal, Spinner, StatusBadge, TeamLogo, fmtDate } from '../components/ui.jsx';
+import { ConfirmDialog, ErrorBox, Modal, Spinner, StatusBadge, TeamLogo, DropdownSelect, fmtDate } from '../components/ui.jsx';
 import { BatTable, BowlTable, ExtrasLine, OverByOver, ScorecardTabs, teamOf } from '../components/ScoreParts.jsx';
 import { useBallQueue } from '../useBallQueue.js';
 
@@ -228,7 +228,8 @@ function AddPlayerModal({ open, onClose, teamName, onAdd }) {
         <div><label className="label" htmlFor="np-name">Player name <span className="text-red-500">*</span></label><input id="np-name" className="input" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} maxLength={60} autoFocus /></div>
         <div className="grid grid-cols-2 gap-3">
           <div><label className="label" htmlFor="np-role">Role</label>
-            <select id="np-role" className="input" value={f.role} onChange={(e) => setF({ ...f, role: e.target.value })}>{['Batsman', 'Bowler', 'All-rounder', 'Wicket Keeper'].map((r) => <option key={r}>{r}</option>)}</select></div>
+            <DropdownSelect id="np-role" value={f.role} onChange={(v) => setF({ ...f, role: v })} options={['Batsman', 'Bowler', 'All-rounder', 'Wicket Keeper']} />
+          </div>
           <div><label className="label" htmlFor="np-jersey">Jersey no (optional)</label><input id="np-jersey" inputMode="numeric" className="input" value={f.jersey} onChange={(e) => setF({ ...f, jersey: e.target.value.replace(/\D/g, '') })} /></div>
         </div>
         <div className="flex justify-end gap-2">
@@ -398,28 +399,37 @@ function LiveView({ view, act, busy, id, queueProps }) {
               {!st.striker && (
                 <div>
                   <label className="label" htmlFor="sel-striker">{hasBalls ? 'New batter' : 'Striker'}</label>
-                  <select id="sel-striker" className="input" value={sel.striker} onChange={(e) => setSel({ ...sel, striker: e.target.value })}>
-                    <option value="">Select batter</option>
-                    {batterOptions(sel.nonStriker).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                  </select>
+                  <DropdownSelect
+                    id="sel-striker"
+                    value={sel.striker}
+                    onChange={(v) => setSel({ ...sel, striker: v })}
+                    options={batterOptions(sel.nonStriker).map((p) => ({ value: p.id, label: p.name }))}
+                    placeholder="Select batter"
+                  />
                 </div>
               )}
               {!st.nonStriker && (
                 <div>
                   <label className="label" htmlFor="sel-non">{hasBalls && st.striker ? 'New batter' : 'Non-striker'}</label>
-                  <select id="sel-non" className="input" value={sel.nonStriker} onChange={(e) => setSel({ ...sel, nonStriker: e.target.value })}>
-                    <option value="">Select batter</option>
-                    {batterOptions(sel.striker).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                  </select>
+                  <DropdownSelect
+                    id="sel-non"
+                    value={sel.nonStriker}
+                    onChange={(v) => setSel({ ...sel, nonStriker: v })}
+                    options={batterOptions(sel.striker).map((p) => ({ value: p.id, label: p.name }))}
+                    placeholder="Select batter"
+                  />
                 </div>
               )}
               {!st.bowler && (
                 <div>
                   <label className="label" htmlFor="sel-bowler">{hasBalls ? 'Next bowler' : 'Bowler'}</label>
-                  <select id="sel-bowler" className="input" value={sel.bowler} onChange={(e) => setSel({ ...sel, bowler: e.target.value })}>
-                    <option value="">Select bowler</option>
-                    {st.eligibleBowlers.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                  </select>
+                  <DropdownSelect
+                    id="sel-bowler"
+                    value={sel.bowler}
+                    onChange={(v) => setSel({ ...sel, bowler: v })}
+                    options={st.eligibleBowlers.map((p) => ({ value: p.id, label: p.name }))}
+                    placeholder="Select bowler"
+                  />
                   <p className="mt-1 text-xs text-slate-500">A bowler cannot bowl two overs in a row or more than {Math.ceil(match.overs / 5)} over{Math.ceil(match.overs / 5) === 1 ? '' : 's'}.</p>
                 </div>
               )}
@@ -708,7 +718,7 @@ function WicketModal({ open, onClose, initialExtra, initialRuns = 0, initialType
             </fieldset>
             <div>
               <label className="label" htmlFor="w-runs">{ex === 'wide' || ex === 'noball' ? `Runs run before the run out (the 1 ${EXTRA_LABEL[ex].toLowerCase()} run is added automatically)` : 'Runs completed before the run out'}</label>
-              <select id="w-runs" className="input" value={runs} onChange={(e) => setRuns(Number(e.target.value))}>{[0, 1, 2, 3, 4, 5, 6].map((r) => <option key={r} value={r}>{r}</option>)}</select>
+              <DropdownSelect id="w-runs" value={runs} onChange={(v) => setRuns(Number(v))} options={[0, 1, 2, 3, 4, 5, 6].map((r) => ({ value: r, label: String(r) }))} />
             </div>
           </>
         )}
