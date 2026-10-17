@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ShieldCheck, Eye, EyeOff, Lock, User, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { ErrorBox } from '../components/ui.jsx';
+import { APP_VERSION } from '../version.js';
 
 export default function SuperLogin() {
   const { login, logout } = useAuth();
@@ -99,6 +100,7 @@ export default function SuperLogin() {
           </Link>
         </p>
       </form>
+      <p className="mt-4 text-center text-xs text-slate-500">Cricket Score {APP_VERSION}</p>
     </div>
   );
 }

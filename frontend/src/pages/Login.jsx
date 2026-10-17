@@ -3,6 +3,8 @@ import { CircleDot, Eye, EyeOff, Lock, User, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { ErrorBox } from '../components/ui.jsx';
 
+import { APP_VERSION } from '../version.js';
+
 export default function Login() {
   const { login } = useAuth();
   const [identifier, setIdentifier] = useState('');
@@ -57,6 +59,7 @@ export default function Login() {
         <button className="btn btn-primary w-full" disabled={busy}>{busy && <Loader2 className="h-4 w-4 animate-spin" />} Login</button>
         <p className="text-center text-xs text-slate-500">Team view login? Use the username and password your team owner gave you.</p>
       </form>
+      <p className="mt-4 text-center text-xs text-slate-400">Cricket Score {APP_VERSION}</p>
     </div>
   );
 }

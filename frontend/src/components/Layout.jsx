@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { LayoutDashboard, Shield, Trophy, Users, ScrollText, Lightbulb, LogOut, Menu, X, CircleDot } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 
+import { APP_VERSION } from '../version.js';
+
 export default function Layout() {
   const { user, logout, isSuper } = useAuth();
   const navigate = useNavigate();
@@ -26,16 +28,24 @@ export default function Layout() {
           <Icon className="h-5 w-5" aria-hidden /> {label}
         </NavLink>
       ))}
-      <button onClick={doLogout} className="mt-auto flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 hover:bg-navy-800 hover:text-white">
-        <LogOut className="h-5 w-5" aria-hidden /> Sign out
-      </button>
+      <div className="mt-auto flex flex-col gap-1 pt-2 border-t border-navy-800">
+        <button onClick={doLogout} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 hover:bg-navy-800 hover:text-white">
+          <LogOut className="h-5 w-5" aria-hidden /> Sign out
+        </button>
+        <div className="px-3 py-1 text-center text-[11px] font-medium text-slate-400">
+          Version {APP_VERSION}
+        </div>
+      </div>
     </nav>
   );
 
   const brand = (
-    <div className="flex items-center gap-2 px-4 py-4 text-white">
-      <CircleDot className="h-6 w-6 text-pitch-400" aria-hidden />
-      <span className="text-lg font-bold tracking-tight">Cricket Score</span>
+    <div className="flex items-center justify-between px-4 py-4 text-white">
+      <div className="flex items-center gap-2">
+        <CircleDot className="h-6 w-6 text-pitch-400" aria-hidden />
+        <span className="text-lg font-bold tracking-tight">Cricket Score</span>
+      </div>
+      <span className="rounded bg-navy-800 px-1.5 py-0.5 text-[10px] font-semibold text-slate-400">{APP_VERSION}</span>
     </div>
   );
 
@@ -61,6 +71,7 @@ export default function Layout() {
         <header className="sticky top-0 z-30 flex items-center gap-3 bg-navy-900 px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] text-white shadow">
           <button className="lg:hidden" onClick={() => setOpen(true)} aria-label="Open menu"><Menu className="h-6 w-6" /></button>
           <span className="font-bold lg:hidden">Cricket Score</span>
+          <span className="rounded bg-navy-800 px-1.5 py-0.5 text-[10px] font-semibold text-slate-400 lg:hidden">{APP_VERSION}</span>
           <div className="ml-auto flex items-center gap-2 text-sm">
             <span className="hidden text-slate-300 sm:inline">{user?.name}</span>
             <span className="badge bg-pitch-600/20 text-pitch-400 capitalize">{user?.role === 'superadmin' ? 'Super Admin' : user?.role === 'admin' ? 'Admin' : user?.role === 'viewer' ? 'View only' : 'Team Admin'}</span>
