@@ -22,7 +22,7 @@ export default function TeamDetail() {
       <div className="flex items-center gap-2">
         <Link to="/teams" className="btn btn-ghost !p-2" aria-label="Back to teams"><ArrowLeft className="h-5 w-5" /></Link>
         <h1 className="flex-1 text-xl font-bold text-slate-900">{team.name}</h1>
-        {team.canManage && <Link to={`/teams/${team.id}/edit`} className="btn btn-outline"><Pencil className="h-4 w-4" /> Edit</Link>}
+        {team.canManage && <Link to={`/teams/${team.id}/edit`} className="btn btn-outline"><Pencil className="h-4 w-4" /> Update Team</Link>}
       </div>
 
       <section className="card p-4">

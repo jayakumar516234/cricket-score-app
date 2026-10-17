@@ -93,7 +93,7 @@ export default function TeamForm() {
     <form onSubmit={submit} noValidate className="space-y-5">
       <div className="flex items-center gap-2">
         <button type="button" onClick={() => nav(-1)} className="btn btn-ghost !p-2" aria-label="Go back"><ArrowLeft className="h-5 w-5" /></button>
-        <h1 className="text-xl font-bold text-slate-900">{editing ? 'Edit Team' : 'Create Team'}</h1>
+        <h1 className="text-xl font-bold text-slate-900">{editing ? 'Update Team' : 'Create Team'}</h1>
       </div>
       <ErrorBox message={formError} />
 
@@ -181,7 +181,7 @@ export default function TeamForm() {
       </section>
 
       <button className="btn btn-primary w-full sm:w-auto sm:min-w-48" disabled={busy}>
-        {busy && <Loader2 className="h-4 w-4 animate-spin" />} {editing ? 'Save changes' : 'Create Team'}
+        {busy && <Loader2 className="h-4 w-4 animate-spin" />} {editing ? 'Update Team' : 'Create Team'}
       </button>
     </form>
   );

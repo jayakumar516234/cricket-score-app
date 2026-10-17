@@ -41,7 +41,11 @@ export default function Teams() {
     <div>
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-xl font-bold text-slate-900">Teams</h1>
-        {data?.canCreate && <Link to="/teams/new" className="btn btn-green"><Plus className="h-4 w-4" /> Create Team</Link>}
+        {data?.canCreate ? (
+          <Link to="/teams/new" className="btn btn-green"><Plus className="h-4 w-4" /> Create Team</Link>
+        ) : data?.myTeam ? (
+          <Link to={`/teams/${data.myTeam.id}/edit`} className="btn btn-primary"><Pencil className="h-4 w-4" /> Update Team</Link>
+        ) : null}
       </div>
 
       <div className="mb-4 flex flex-col gap-2 sm:flex-row">

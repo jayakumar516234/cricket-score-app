@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ChevronRight, Shield, Trophy, Users, Activity, CheckCircle2, Plus } from 'lucide-react';
+import { ChevronRight, Shield, Trophy, Users, Activity, CheckCircle2, Plus, Pencil } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useFetch } from '../useFetch.js';
 import { Empty, ErrorBox, Spinner, StatusBadge, TeamLogo } from '../components/ui.jsx';
@@ -17,7 +17,7 @@ const Stat = ({ icon: Icon, label, value, tone }) => (
 
 function GetStarted({ mine }) {
   const steps = [
-    { done: mine.teams > 0, title: 'Create your team', text: 'Give it a name and add at least 11 players.', to: '/teams/new', cta: 'Create team' },
+    { done: mine.teams > 0, title: mine.teams > 0 ? 'Team created' : 'Create your team', text: mine.teams > 0 ? 'Update players, squad or details anytime.' : 'Give it a name and add at least 11 players.', to: mine.teams > 0 && mine.myTeam ? `/teams/${mine.myTeam.id}/edit` : '/teams/new', cta: mine.teams > 0 ? 'Update team' : 'Create team' },
     { done: mine.matches > 0, title: 'Create a match', text: 'Choose your team, the opponent, the overs and who won the toss.', to: '/matches/new', cta: 'Create match' },
     { done: false, title: 'Start the match and score it', text: 'Open the match, pick the playing 11 for both teams and tap Start Match.', to: '/matches', cta: 'Open my matches' },
   ];
@@ -53,9 +53,13 @@ export default function Dashboard() {
       <section className="rounded-2xl bg-gradient-to-br from-navy-900 to-navy-700 p-6 text-white shadow">
         <h1 className="text-2xl font-bold">Welcome, {user.name}</h1>
         <p className="text-sm text-slate-300">Manage your teams and matches</p>
-        {(data.can.createTeam || data.can.createMatch) && (
+        {(data.can.createTeam || data.can.createMatch || data.mine?.myTeam) && (
           <div className="mt-4 flex flex-wrap gap-3">
-            {data.can.createTeam && <Link to="/teams/new" className="btn btn-green"><Plus className="h-4 w-4" /> Create Team</Link>}
+            {data.can.createTeam ? (
+              <Link to="/teams/new" className="btn btn-green"><Plus className="h-4 w-4" /> Create Team</Link>
+            ) : data.mine?.myTeam ? (
+              <Link to={`/teams/${data.mine.myTeam.id}/edit`} className="btn btn-outline border-white text-white hover:bg-white/10"><Pencil className="h-4 w-4" /> Update Team</Link>
+            ) : null}
             {data.can.createMatch && <Link to="/matches/new" className="btn btn-primary"><Trophy className="h-4 w-4" /> Create Match</Link>}
           </div>
         )}

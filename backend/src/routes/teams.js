@@ -105,12 +105,14 @@ router.get('/', wrap(async (req, res) => {
   const counts = await Player.aggregate([{ $match: { team: { $in: teams.map((t) => t._id) } } }, { $group: { _id: '$team', n: { $sum: 1 } } }]);
   const countMap = Object.fromEntries(counts.map((c) => [String(c._id), c.n]));
   const ownedCount = (req.user.role === 'superadmin' || req.user.role === 'admin') ? 0 : await Team.countDocuments({ createdBy: req.user._id });
+  const myTeamDoc = await Team.findOne({ createdBy: req.user._id }).select('_id name');
   res.json({
     items: teams.map((t) => teamOut(t, { playerCount: countMap[String(t._id)] || 0, canManage: canManageTeam(req.user, t) })),
     total,
     page,
     pages: Math.ceil(total / limit) || 1,
     canCreate: canCreateTeams(req.user, ownedCount),
+    myTeam: myTeamDoc ? { id: String(myTeamDoc._id), name: myTeamDoc.name } : null,
   });
 }));
 

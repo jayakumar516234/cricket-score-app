@@ -47,7 +47,11 @@ router.get('/stats', requireAuth, wrap(async (req, res) => {
     },
     // progress of a normal user (used for the "get started" guide on the dashboard)
     mine: (req.user.role === 'user' || req.user.role === 'teamadmin')
-      ? { teams: await Team.countDocuments({ createdBy: req.user._id }), matches: await Match.countDocuments({ createdBy: req.user._id }) }
+      ? {
+          teams: await Team.countDocuments({ createdBy: req.user._id }),
+          matches: await Match.countDocuments({ createdBy: req.user._id }),
+          myTeam: await Team.findOne({ createdBy: req.user._id }).select('_id name').then((t) => t ? { id: String(t._id), name: t.name } : null),
+        }
       : null,
   });
 }));
