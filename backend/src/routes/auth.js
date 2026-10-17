@@ -58,8 +58,11 @@ router.post('/login', limiter, wrap(async (req, res) => {
   if (user.role !== 'viewer') {
     sessionToken = crypto.randomBytes(16).toString('hex');
     user.sessionToken = sessionToken;
-    await user.save();
   }
+  const now = new Date();
+  user.lastLoginAt = now;
+  user.lastActiveAt = now;
+  await user.save();
 
   res.json({ token: signToken(user, sessionToken), user: publicUser(user) });
 }));

@@ -28,6 +28,13 @@ export const requireAuth = wrap(async (req, _res, next) => {
     throw new HttpError(401, 'You have been logged in on another device. Please sign in again');
   }
 
+  // Keep track of user's last active timestamp (throttled to once per minute)
+  const now = new Date();
+  if (!user.lastActiveAt || (now.getTime() - new Date(user.lastActiveAt).getTime() > 60 * 1000)) {
+    User.updateOne({ _id: user._id }, { $set: { lastActiveAt: now } }).exec().catch(() => {});
+    user.lastActiveAt = now;
+  }
+
   req.user = user;
   next();
 });
@@ -37,14 +44,22 @@ export const requireRole = (...roles) => (req, _res, next) => {
   next();
 };
 
-export const publicUser = (u) => ({
-  id: String(u._id),
-  name: u.name,
-  username: u.username || null,
-  phone: u.phone || null,
-  email: u.email || null,
-  role: u.role,
-  active: u.active,
-  viewTeam: u.viewTeam ? String(u.viewTeam) : null,
-  createdAt: u.createdAt,
-});
+export const publicUser = (u) => {
+  const lastActive = u.lastActiveAt ? new Date(u.lastActiveAt) : null;
+  // Consider user "online" if active within the last 5 minutes
+  const isOnline = !!lastActive && (Date.now() - lastActive.getTime() < 5 * 60 * 1000);
+  return {
+    id: String(u._id),
+    name: u.name,
+    username: u.username || null,
+    phone: u.phone || null,
+    email: u.email || null,
+    role: u.role,
+    active: u.active,
+    viewTeam: u.viewTeam ? String(u.viewTeam) : null,
+    lastActiveAt: u.lastActiveAt || null,
+    lastLoginAt: u.lastLoginAt || null,
+    isOnline,
+    createdAt: u.createdAt,
+  };
+};

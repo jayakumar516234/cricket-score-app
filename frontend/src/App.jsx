@@ -16,11 +16,12 @@ import UsersPage from './pages/Users.jsx';
 import Audit from './pages/Audit.jsx';
 import Suggestions from './pages/Suggestions.jsx';
 
-function Protected({ children, superOnly, noViewer }) {
-  const { user, loading, isSuper, isViewer } = useAuth();
+function Protected({ children, superOnly, adminOnly, noViewer }) {
+  const { user, loading, isSuper, isAdmin, isViewer } = useAuth();
   if (loading) return <Spinner />;
   if (!user) return <Navigate to="/login" replace />;
   if (superOnly && !isSuper) return <Navigate to="/" replace />;
+  if (adminOnly && !isAdmin) return <Navigate to="/" replace />;
   if (noViewer && isViewer) return <Navigate to="/" replace />;
   return children;
 }
@@ -45,7 +46,7 @@ export default function App() {
         <Route path="matches/:id" element={<MatchPage />} />
         <Route path="matches/:id/scorecard" element={<Scorecard />} />
         {/* <Route path="suggestions" element={<Suggestions />} /> */}
-        <Route path="users" element={<Protected superOnly><UsersPage /></Protected>} />
+        <Route path="users" element={<Protected adminOnly><UsersPage /></Protected>} />
         <Route path="audit" element={<Protected superOnly><Audit /></Protected>} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

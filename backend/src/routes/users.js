@@ -10,7 +10,7 @@ import { audit } from '../utils/audit.js';
 import { signupFields, assertUnique } from './auth.js';
 
 const router = Router();
-router.use(requireAuth, requireRole('superadmin'));
+router.use(requireAuth, requireRole('superadmin', 'admin'));
 
 const createSchema = z.object({
   ...signupFields,
@@ -31,9 +31,14 @@ router.get('/', wrap(async (req, res) => {
     const rx = new RegExp(escapeRegex(String(req.query.search)), 'i');
     filter.$or = [{ name: rx }, { username: rx }, { phone: rx }, { email: rx }];
   }
-  const [items, total] = await Promise.all([
-    User.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
+  if (req.query.online === 'true') {
+    filter.lastActiveAt = { $gte: new Date(Date.now() - 5 * 60 * 1000) };
+  }
+  const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
+  const [items, total, onlineTotal] = await Promise.all([
+    User.find(filter).sort({ lastActiveAt: -1, createdAt: -1 }).skip(skip).limit(limit),
     User.countDocuments(filter),
+    User.countDocuments({ lastActiveAt: { $gte: fiveMinAgo } }),
   ]);
   const ids = items.map((u) => u._id);
   const owned = await Team.find({ createdBy: { $in: ids } }).select('name createdBy').sort({ name: 1 });
@@ -49,6 +54,7 @@ router.get('/', wrap(async (req, res) => {
       viewTeamInfo: u.viewTeam ? vm[String(u.viewTeam)] || null : null,
     })),
     total,
+    onlineTotal,
     page,
     pages: Math.ceil(total / limit) || 1,
   });
@@ -56,6 +62,9 @@ router.get('/', wrap(async (req, res) => {
 
 router.post('/', wrap(async (req, res) => {
   const data = parse(createSchema, req.body);
+  if (req.user.role !== 'superadmin' && data.role === 'admin') {
+    throw new HttpError(403, 'Only Super Admin can create Admin accounts');
+  }
   await assertUnique(data);
   const user = await User.create({ name: data.name, username: data.username, phone: data.phone, passwordHash: await bcrypt.hash(data.password, 10), role: data.role || 'user' });
   await audit(req.user, 'user.create', 'User', user._id, { username: user.username, phone: user.phone, role: user.role });
@@ -67,6 +76,12 @@ router.put('/:id', wrap(async (req, res) => {
   const user = await User.findById(req.params.id);
   if (!user) throw new HttpError(404, 'User not found');
   if (user.role === 'superadmin') throw new HttpError(403, 'The Super Admin account cannot be changed here');
+  if (req.user.role !== 'superadmin' && user.role === 'admin') {
+    throw new HttpError(403, 'Only Super Admin can edit Admin accounts');
+  }
+  if (req.user.role !== 'superadmin' && data.role === 'admin') {
+    throw new HttpError(403, 'Only Super Admin can assign Admin role');
+  }
   if (data.phone) await assertUnique({ phone: data.phone }, user._id);
   if (data.name !== undefined) user.name = data.name;
   if (data.phone !== undefined) user.phone = data.phone;
@@ -83,6 +98,9 @@ router.delete('/:id', wrap(async (req, res) => {
   const user = await User.findById(req.params.id);
   if (!user) throw new HttpError(404, 'User not found');
   if (user.role === 'superadmin') throw new HttpError(403, 'The Super Admin account cannot be deleted');
+  if (req.user.role !== 'superadmin' && user.role === 'admin') {
+    throw new HttpError(403, 'Only Super Admin can delete Admin accounts');
+  }
   await user.deleteOne();
   await audit(req.user, 'user.delete', 'User', user._id, { username: user.username, phone: user.phone });
   res.json({ ok: true });

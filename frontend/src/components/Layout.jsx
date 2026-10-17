@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { APP_VERSION } from '../version.js';
 
 export default function Layout() {
-  const { user, logout, isSuper } = useAuth();
+  const { user, logout, isSuper, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
@@ -15,7 +15,8 @@ export default function Layout() {
     { to: '/teams', label: 'Teams', icon: Shield },
     { to: '/matches', label: 'Matches', icon: Trophy },
     // { to: '/suggestions', label: 'Suggestions', icon: Lightbulb }, // Hidden for now
-    ...(isSuper ? [{ to: '/users', label: 'Users', icon: Users }, { to: '/audit', label: 'Audit log', icon: ScrollText }] : []),
+    ...(isAdmin ? [{ to: '/users', label: 'Users', icon: Users }] : []),
+    ...(isSuper ? [{ to: '/audit', label: 'Audit log', icon: ScrollText }] : []),
   ];
 
   const doLogout = () => { logout(); navigate('/login'); };

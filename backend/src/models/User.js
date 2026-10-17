@@ -15,6 +15,8 @@ const userSchema = new mongoose.Schema(
     active: { type: Boolean, default: true },
     sessionToken: { type: String, default: '' }, // random token set on login; used to enforce single-session for non-viewer users
     viewTeam: { type: mongoose.Schema.Types.ObjectId, ref: 'Team', unique: true, sparse: true }, // viewers only: the one team they can see
+    lastActiveAt: { type: Date, default: null },
+    lastLoginAt: { type: Date, default: null },
   },
   { timestamps: true }
 );
