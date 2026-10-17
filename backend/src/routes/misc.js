@@ -41,7 +41,10 @@ router.get('/stats', requireAuth, wrap(async (req, res) => {
       resultSummary: m.status === 'completed' ? m.result?.summary : null,
     })),
     recentTeams: recentTeams.map((t) => ({ id: sid(t._id), name: t.name, logo: t.logo, playerCount: cm[String(t._id)] || 0 })),
-    can: { createTeam: canCreateTeams(req.user), createMatch: canCreateMatches(req.user) },
+    can: {
+      createTeam: canCreateTeams(req.user, await Team.countDocuments({ createdBy: req.user._id })),
+      createMatch: canCreateMatches(req.user),
+    },
     // progress of a normal user (used for the "get started" guide on the dashboard)
     mine: (req.user.role === 'user' || req.user.role === 'teamadmin')
       ? { teams: await Team.countDocuments({ createdBy: req.user._id }), matches: await Match.countDocuments({ createdBy: req.user._id }) }

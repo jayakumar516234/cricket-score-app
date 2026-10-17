@@ -1,7 +1,9 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
+import mongoose from 'mongoose';
 import { z } from 'zod';
-import { Team, BALL_TYPES } from '../models/Team.js';
+import { Team, BALL_TYPES, generateTeamCode } from '../models/Team.js';
+import { TeamConnection } from '../models/TeamConnection.js';
 import { Player, PLAYER_ROLES } from '../models/Player.js';
 import { Match } from '../models/Match.js';
 import { Delivery } from '../models/Delivery.js';
@@ -68,6 +70,7 @@ async function assertNameFree(name, exceptId) {
 const teamOut = (t, extra = {}) => ({
   id: String(t._id),
   name: t.name,
+  code: t.code,
   logo: t.logo,
   location: t.location,
   description: t.description,
@@ -101,12 +104,13 @@ router.get('/', wrap(async (req, res) => {
   ]);
   const counts = await Player.aggregate([{ $match: { team: { $in: teams.map((t) => t._id) } } }, { $group: { _id: '$team', n: { $sum: 1 } } }]);
   const countMap = Object.fromEntries(counts.map((c) => [String(c._id), c.n]));
+  const ownedCount = (req.user.role === 'superadmin' || req.user.role === 'admin') ? 0 : await Team.countDocuments({ createdBy: req.user._id });
   res.json({
     items: teams.map((t) => teamOut(t, { playerCount: countMap[String(t._id)] || 0, canManage: canManageTeam(req.user, t) })),
     total,
     page,
     pages: Math.ceil(total / limit) || 1,
-    canCreate: canCreateTeams(req.user),
+    canCreate: canCreateTeams(req.user, ownedCount),
   });
 }));
 
@@ -126,13 +130,17 @@ router.post('/', wrap(async (req, res) => {
   if (!canCreateTeams(req.user)) throw new HttpError(403, 'You do not have permission to create teams');
   if (req.user.role !== 'superadmin' && req.user.role !== 'admin') {
     const owned = await Team.countDocuments({ createdBy: req.user._id });
-    if (owned >= config.maxTeamsPerUser) throw new HttpError(403, `You can create up to ${config.maxTeamsPerUser} teams`);
+    if (owned >= 1) throw new HttpError(403, 'Team Admin can create only 1 team. You can edit your existing team.');
   }
   const data = parse(teamSchema, req.body);
   await assertNameFree(data.name);
+  let code;
+  while (!code || (await Team.exists({ code }))) {
+    code = generateTeamCode();
+  }
   let team;
   try {
-    team = await Team.create({ name: data.name, logo: data.logo || '', location: data.location, description: data.description, ballType: data.ballType, createdBy: req.user._id });
+    team = await Team.create({ name: data.name, code, logo: data.logo || '', location: data.location, description: data.description, ballType: data.ballType, createdBy: req.user._id });
   } catch (e) {
     if (e.code === 11000) throw new HttpError(409, 'A team with this name already exists. Please choose a different team name');
     throw e;
@@ -256,6 +264,155 @@ router.delete('/:id/viewer', wrap(async (req, res) => {
     await viewer.deleteOne();
     await audit(req.user, 'team.viewer.delete', 'Team', team._id, { username: viewer.username });
   }
+  res.json({ ok: true });
+}));
+
+// ---- Opponent team connections & requests ----
+// Send opponent request using team code
+router.post('/:id/connect', wrap(async (req, res) => {
+  const team = await Team.findById(req.params.id);
+  if (!team) throw new HttpError(404, 'Team not found');
+  if (!canManageTeam(req.user, team)) throw new HttpError(403, 'Only team managers can send opponent requests');
+
+  const { code } = parse(z.object({ code: z.string().trim().min(3).max(20) }), req.body);
+  const target = await Team.findOne({ code: code.toUpperCase() });
+  if (!target) throw new HttpError(404, 'Invalid team code. No team found with this code');
+  if (String(target._id) === String(team._id)) throw new HttpError(400, 'You cannot send an opponent request to your own team');
+
+  const existing = await TeamConnection.findOne({
+    $or: [
+      { fromTeam: team._id, toTeam: target._id },
+      { fromTeam: target._id, toTeam: team._id },
+    ],
+  });
+
+  if (existing) {
+    if (existing.status === 'accepted') {
+      throw new HttpError(400, `Already connected with ${target.name}`);
+    }
+    if (String(existing.fromTeam) === String(team._id) && existing.status === 'pending') {
+      throw new HttpError(400, `Request already sent to ${target.name}. Waiting for them to accept`);
+    }
+    if (String(existing.toTeam) === String(team._id) && existing.status === 'pending') {
+      existing.status = 'accepted';
+      await existing.save();
+      await audit(req.user, 'team.connection.accept', 'TeamConnection', existing._id, { from: target.name, to: team.name });
+      return res.json({ ok: true, status: 'accepted', message: `Connected with ${target.name}!` });
+    }
+    existing.fromTeam = team._id;
+    existing.toTeam = target._id;
+    existing.fromUser = req.user._id;
+    existing.status = 'pending';
+    await existing.save();
+    await audit(req.user, 'team.connection.request', 'TeamConnection', existing._id, { from: team.name, to: target.name });
+    return res.status(201).json({ ok: true, status: 'pending', message: `Opponent request sent to ${target.name}` });
+  }
+
+  const conn = await TeamConnection.create({
+    fromTeam: team._id,
+    toTeam: target._id,
+    fromUser: req.user._id,
+    status: 'pending',
+  });
+  await audit(req.user, 'team.connection.request', 'TeamConnection', conn._id, { from: team.name, to: target.name });
+  res.status(201).json({ ok: true, status: 'pending', message: `Opponent request sent to ${target.name}` });
+}));
+
+// Get connections (accepted opponent teams, incoming requests, outgoing requests)
+router.get('/:id/connections', wrap(async (req, res) => {
+  const team = await Team.findById(req.params.id);
+  if (!team) throw new HttpError(404, 'Team not found');
+
+  const allConns = await TeamConnection.find({
+    $or: [{ fromTeam: team._id }, { toTeam: team._id }],
+  }).populate('fromTeam toTeam').sort({ updatedAt: -1 });
+
+  const connected = [];
+  const incoming = [];
+  const outgoing = [];
+
+  for (const c of allConns) {
+    if (c.status === 'accepted') {
+      const opp = String(c.fromTeam?._id) === String(team._id) ? c.toTeam : c.fromTeam;
+      if (opp) {
+        connected.push({
+          connectionId: String(c._id),
+          team: teamOut(opp),
+          connectedAt: c.updatedAt,
+        });
+      }
+    } else if (c.status === 'pending') {
+      if (String(c.toTeam?._id) === String(team._id)) {
+        if (c.fromTeam) {
+          incoming.push({
+            connectionId: String(c._id),
+            fromTeam: teamOut(c.fromTeam),
+            createdAt: c.createdAt,
+          });
+        }
+      } else {
+        if (c.toTeam) {
+          outgoing.push({
+            connectionId: String(c._id),
+            toTeam: teamOut(c.toTeam),
+            createdAt: c.createdAt,
+          });
+        }
+      }
+    }
+  }
+
+  const oppIds = connected.map((ct) => ct.team.id);
+  const counts = await Player.aggregate([
+    { $match: { team: { $in: oppIds.map((id) => new mongoose.Types.ObjectId(id)) } } },
+    { $group: { _id: '$team', n: { $sum: 1 } } },
+  ]);
+  const countMap = Object.fromEntries(counts.map((x) => [String(x._id), x.n]));
+  connected.forEach((ct) => {
+    ct.team.playerCount = countMap[ct.team.id] || 0;
+  });
+
+  res.json({
+    connected,
+    incoming,
+    outgoing,
+    canManage: canManageTeam(req.user, team),
+  });
+}));
+
+// Accept or reject connection request
+router.put('/:id/connections/:connId', wrap(async (req, res) => {
+  const team = await Team.findById(req.params.id);
+  if (!team) throw new HttpError(404, 'Team not found');
+  if (!canManageTeam(req.user, team)) throw new HttpError(403, 'Permission denied');
+
+  const { status } = parse(z.object({ status: z.enum(['accepted', 'rejected']) }), req.body);
+  const conn = await TeamConnection.findById(req.params.connId).populate('fromTeam toTeam');
+  if (!conn) throw new HttpError(404, 'Request not found');
+  if (String(conn.toTeam._id) !== String(team._id) && req.user.role !== 'superadmin' && req.user.role !== 'admin') {
+    throw new HttpError(403, 'Only the receiving team can accept or reject this request');
+  }
+
+  conn.status = status;
+  await conn.save();
+  await audit(req.user, `team.connection.${status}`, 'TeamConnection', conn._id, { from: conn.fromTeam.name, to: conn.toTeam.name });
+  res.json({ ok: true, status });
+}));
+
+// Remove connection or cancel request
+router.delete('/:id/connections/:connId', wrap(async (req, res) => {
+  const team = await Team.findById(req.params.id);
+  if (!team) throw new HttpError(404, 'Team not found');
+  if (!canManageTeam(req.user, team)) throw new HttpError(403, 'Permission denied');
+
+  const conn = await TeamConnection.findById(req.params.connId);
+  if (!conn) throw new HttpError(404, 'Connection not found');
+  if (String(conn.fromTeam) !== String(team._id) && String(conn.toTeam) !== String(team._id) && req.user.role !== 'superadmin' && req.user.role !== 'admin') {
+    throw new HttpError(403, 'Permission denied');
+  }
+
+  await conn.deleteOne();
+  await audit(req.user, 'team.connection.delete', 'TeamConnection', conn._id);
   res.json({ ok: true });
 }));
 

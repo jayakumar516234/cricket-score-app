@@ -15,6 +15,6 @@ export const config = {
   mongoUriTest: process.env.MONGO_URI_TEST || 'mongodb://127.0.0.1:27017/cricket_app_test',
   jwtSecret,
   jwtExpires: process.env.JWT_EXPIRES || '7d',
-  maxTeamsPerUser: Number(process.env.MAX_TEAMS_PER_USER) || 5,
+  maxTeamsPerUser: Number(process.env.MAX_TEAMS_PER_USER) || 1,
   clientOrigin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
 };

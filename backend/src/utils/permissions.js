@@ -7,8 +7,12 @@ export function canManageTeam(user, team) {
   return user.role === 'superadmin' || user.role === 'admin' || owns(user, team);
 }
 
-// Viewers can only look; they can never create or change anything.
-export const canCreateTeams = (user) => !!user && user.role !== 'viewer';
+// Viewers can only look; Team Admins can create at most 1 team; Super Admin / Admin unlimited.
+export const canCreateTeams = (user, ownedCount = 0) => {
+  if (!user || user.role === 'viewer') return false;
+  if (user.role === 'superadmin' || user.role === 'admin') return true;
+  return ownedCount < 1;
+};
 export const canCreateMatches = (user) => !!user && user.role !== 'viewer';
 
 export const isViewer = (user) => user?.role === 'viewer';

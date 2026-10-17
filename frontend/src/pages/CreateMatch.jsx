@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { ArrowLeft, Loader2, Handshake } from 'lucide-react';
 import { api } from '../api.js';
 import { useFetch } from '../useFetch.js';
+import { useAuth } from '../context/AuthContext.jsx';
 import { ErrorBox, Field, Spinner, TeamLogo } from '../components/ui.jsx';
 
 const FORMATS = [
@@ -14,17 +15,50 @@ const FORMATS = [
 
 export default function CreateMatch() {
   const nav = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { user, isSuper } = useAuth();
+  const isAdmin = isSuper || user?.role === 'admin';
+
   const { data, loading, error } = useFetch('/teams?limit=100');
-  const [f, setF] = useState({ name: '', homeTeam: '', awayTeam: '', format: 'T20', overs: '', date: '', venue: '', tossWinner: '', tossDecision: 'bat', tieBreaker: 'tie' });
+  const [f, setF] = useState({
+    name: '',
+    homeTeam: searchParams.get('home') || '',
+    awayTeam: searchParams.get('away') || '',
+    format: 'T20',
+    overs: '',
+    date: '',
+    venue: '',
+    tossWinner: '',
+    tossDecision: 'bat',
+    tieBreaker: 'tie',
+  });
   const [errors, setErrors] = useState({});
   const [formError, setFormError] = useState('');
   const [busy, setBusy] = useState(false);
   const set = (patch) => setF((p) => ({ ...p, ...patch }));
 
   const myTeams = useMemo(() => (data?.items || []).filter((t) => t.canManage && t.playerCount >= 11), [data]);
-  const opponents = useMemo(() => (data?.items || []).filter((t) => t.id !== f.homeTeam && t.playerCount >= 11), [data, f.homeTeam]);
+
+  // Fetch connections for selected homeTeam if not admin
+  const { data: connData, loading: connLoading } = useFetch(f.homeTeam && !isAdmin ? `/teams/${f.homeTeam}/connections` : null);
+
+  useEffect(() => {
+    if (!f.homeTeam && myTeams.length === 1) {
+      set({ homeTeam: myTeams[0].id });
+    }
+  }, [myTeams, f.homeTeam]);
+
+  const opponents = useMemo(() => {
+    if (isAdmin) {
+      return (data?.items || []).filter((t) => t.id !== f.homeTeam && t.playerCount >= 11);
+    }
+    if (!f.homeTeam) return [];
+    const connectedList = connData?.connected?.map((c) => c.team) || [];
+    return connectedList.filter((t) => (t.playerCount || 11) >= 11);
+  }, [isAdmin, data, f.homeTeam, connData]);
+
   const home = data?.items.find((t) => t.id === f.homeTeam);
-  const away = data?.items.find((t) => t.id === f.awayTeam);
+  const away = (data?.items || []).find((t) => t.id === f.awayTeam) || connData?.connected?.map((c) => c.team).find((t) => t.id === f.awayTeam);
 
   const changeHome = (id) => set({ homeTeam: id, awayTeam: f.awayTeam === id ? '' : f.awayTeam, tossWinner: '' });
   const changeAway = (id) => set({ awayTeam: id, tossWinner: '' });
@@ -103,10 +137,21 @@ export default function CreateMatch() {
         </div>
         <Field label="Opponent Team" required error={errors.awayTeam} htmlFor="away">
           <select id="away" className={`input ${errors.awayTeam ? 'input-error' : ''}`} value={f.awayTeam} onChange={(e) => changeAway(e.target.value)}>
-            <option value="">Choose opponent</option>
-            {opponents.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+            <option value="">{connLoading ? 'Loading connected opponents...' : 'Choose opponent'}</option>
+            {opponents.map((t) => <option key={t.id} value={t.id}>{t.name} ({t.playerCount || 11} players)</option>)}
           </select>
         </Field>
+        {!isAdmin && f.homeTeam && !connLoading && opponents.length === 0 && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+            <div className="font-semibold text-amber-900">No connected opponent teams found for {home?.name || 'your team'}.</div>
+            <p className="mt-1">Opponent teams must be connected using their Team Code before creating a match.</p>
+            <div className="mt-2">
+              <Link to={`/teams/${f.homeTeam}`} className="inline-flex items-center gap-1 font-semibold text-blue-700 underline hover:no-underline">
+                <Handshake className="h-3.5 w-3.5" /> Go to Team Page & Connect Opponent →
+              </Link>
+            </div>
+          </div>
+        )}
       </section>
 
       <section className="card space-y-4 p-4">

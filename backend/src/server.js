@@ -35,6 +35,22 @@ try {
     });
     console.log('Created superadmin01 with superadmin role');
   }
+
+  const { Team, generateTeamCode } = await import('./models/Team.js');
+  await Team.syncIndexes();
+  const teamsWithoutCode = await Team.find({ $or: [{ code: { $exists: false } }, { code: null }, { code: '' }] });
+  for (const t of teamsWithoutCode) {
+    let c;
+    while (!c || (await Team.exists({ code: c }))) {
+      c = generateTeamCode();
+    }
+    t.code = c;
+    await t.save();
+    console.log(`Assigned code ${c} to team ${t.name}`);
+  }
+
+  const { TeamConnection } = await import('./models/TeamConnection.js');
+  await TeamConnection.syncIndexes();
 } catch (e) {
   console.warn('Startup setup warning:', e.message);
 }

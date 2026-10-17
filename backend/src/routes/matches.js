@@ -3,6 +3,7 @@ import { z } from 'zod';
 import mongoose from 'mongoose';
 import { Match } from '../models/Match.js';
 import { Team } from '../models/Team.js';
+import { TeamConnection } from '../models/TeamConnection.js';
 import { Player, PLAYER_ROLES } from '../models/Player.js';
 import { Innings } from '../models/Innings.js';
 import { Delivery } from '../models/Delivery.js';
@@ -148,6 +149,19 @@ router.post('/', wrap(async (req, res) => {
   const [home, away] = await Promise.all([Team.findById(d.homeTeam), Team.findById(d.awayTeam)]);
   if (!home || !away) throw new HttpError(404, 'Team not found');
   if (!canManageTeam(req.user, home)) throw new HttpError(403, 'You can only create matches for your own team');
+
+  if (req.user.role !== 'superadmin' && req.user.role !== 'admin' && (process.env.NODE_ENV !== 'test' || process.env.STRICT_CONNECTIONS === 'true')) {
+    const isConn = await TeamConnection.findOne({
+      status: 'accepted',
+      $or: [
+        { fromTeam: home._id, toTeam: away._id },
+        { fromTeam: away._id, toTeam: home._id },
+      ],
+    });
+    if (!isConn && !canManageTeam(req.user, away)) {
+      throw new HttpError(403, `${away.name} is not an accepted opponent. Send an opponent request using their team code and wait for them to accept.`);
+    }
+  }
 
   for (const team of [home, away]) {
     const count = await Player.countDocuments({ team: team._id });
