@@ -13,6 +13,9 @@ export default function Teams() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const isSuper = user?.role === 'superadmin';
+  const isAdmin = isSuper || user?.role === 'admin';
+  const isViewer = user?.role === 'viewer';
+  const canSeeCode = !isViewer && (isSuper || isAdmin || user?.role === 'teamadmin' || user?.role === 'user');
 
   const [search, setSearch] = useState('');
   const [q, setQ] = useState('');
@@ -30,6 +33,7 @@ export default function Teams() {
   const [oppMsg, setOppMsg] = useState('');
   const [oppErr, setOppErr] = useState('');
   const [copied, setCopied] = useState(false);
+  const [copiedTeamCode, setCopiedTeamCode] = useState(null);
   const [connActionBusy, setConnActionBusy] = useState(false);
 
   useEffect(() => {
@@ -172,7 +176,7 @@ export default function Teams() {
       </div>
 
       {/* Own Team Code banner */}
-      {data?.myTeam && (
+      {data?.myTeam && canSeeCode && data.myTeam.code && (
         <div className="mb-4 rounded-xl border border-pitch-200 bg-pitch-50/70 p-4 shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
@@ -306,11 +310,12 @@ export default function Teams() {
           <ul className="space-y-2">
             {data.items.map((t) => {
               const canEditOrDelete = t.isOwn || isSuper;
+              const showCode = canSeeCode && t.code && (t.isOwn || isSuper || t.canManage);
               return (
-                <li key={t.id} className="card flex items-center gap-3 p-3">
-                  <Link to={`/teams/${t.id}`} className="flex flex-1 items-center gap-3">
+                <li key={t.id} className="card flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3">
+                  <Link to={`/teams/${t.id}`} className="flex flex-1 items-center gap-3 min-w-0">
                     <TeamLogo team={t} size={48} />
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-semibold text-slate-900">{t.name}</span>
                         {t.isOwn && (
@@ -326,12 +331,37 @@ export default function Teams() {
                     </div>
                   </Link>
 
-                  {/* Actions: ONLY OWN TEAM (or superadmin) has Edit and Delete */}
-                  <div className="flex items-center gap-1">
+                  {/* Actions & Code: Code is only shown to team managers / admins and never to viewers */}
+                  <div className="flex items-center gap-2 self-end sm:self-auto flex-wrap">
+                    {showCode && (
+                      <div className="flex items-center gap-1.5 rounded-lg border border-pitch-200 bg-pitch-50/80 px-2.5 py-1 text-xs shadow-xs">
+                        <span className="text-[11px] font-semibold text-pitch-700">Code:</span>
+                        <span className="font-mono font-bold tracking-widest text-pitch-900">{t.code}</span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            navigator.clipboard.writeText(t.code);
+                            setCopiedTeamCode(t.id);
+                            setTimeout(() => setCopiedTeamCode(null), 2000);
+                          }}
+                          className="text-pitch-700 hover:text-pitch-900 p-0.5 rounded hover:bg-pitch-100 transition"
+                          title="Copy Team Code"
+                        >
+                          {copiedTeamCode === t.id ? (
+                            <Check className="h-3.5 w-3.5 text-green-600" />
+                          ) : (
+                            <Copy className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                      </div>
+                    )}
+
                     {t.isConnectedOpponent && myTeamId && (
                       <Link
                         to={`/matches/new?home=${myTeamId}&away=${t.id}`}
-                        className="btn btn-green text-xs !py-1.5 !px-2.5 mr-1"
+                        className="btn btn-green text-xs !py-1.5 !px-2.5"
                         title="Play Match with this Opponent"
                       >
                         <Trophy className="h-3.5 w-3.5" /> Play
@@ -339,7 +369,7 @@ export default function Teams() {
                     )}
 
                     {canEditOrDelete && (
-                      <>
+                      <div className="flex items-center gap-1">
                         <button
                           className="btn btn-ghost !p-2"
                           onClick={() => nav(`/teams/${t.id}/edit`)}
@@ -356,7 +386,7 @@ export default function Teams() {
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
-                      </>
+                      </div>
                     )}
                   </div>
                 </li>

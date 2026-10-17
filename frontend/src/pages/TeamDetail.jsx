@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Eye, Loader2, Pencil, UserRound, BarChart3, Check, Copy, Handshake, Clock, Trophy, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
 import { api } from '../api.js';
+import { useAuth } from '../context/AuthContext.jsx';
 import { useFetch } from '../useFetch.js';
 import { ConfirmDialog, ErrorBox, Field, Spinner, TeamLogo } from '../components/ui.jsx';
 
@@ -9,6 +10,7 @@ const slug = (name) => name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^
 
 export default function TeamDetail() {
   const { id } = useParams();
+  const { user } = useAuth();
   const { data, error, loading, reload } = useFetch(`/teams/${id}`);
   const [tab, setTab] = useState('squad');
   const [copied, setCopied] = useState(false);
@@ -16,6 +18,7 @@ export default function TeamDetail() {
   if (loading) return <Spinner />;
   if (error) return <ErrorBox message={error} onRetry={reload} />;
   const { team, players, record } = data;
+  const canSeeCode = user?.role !== 'viewer' && (user?.role === 'superadmin' || user?.role === 'admin' || team.canManage);
 
   return (
     <div className="space-y-4">
@@ -33,7 +36,7 @@ export default function TeamDetail() {
             <div>{team.ballType} · {players.length} players</div>
             {team.description && <p className="mt-1 text-slate-500">{team.description}</p>}
           </div>
-          {team.code && (
+          {team.code && canSeeCode && (
             <div className="rounded-xl border border-pitch-200 bg-pitch-50/70 p-3 sm:text-right">
               <div className="text-xs font-semibold uppercase tracking-wider text-pitch-700">Team Code</div>
               <div className="mt-0.5 flex items-center gap-2 sm:justify-end">
@@ -489,7 +492,12 @@ function OpponentsSection({ team }) {
             <Handshake className="mx-auto mb-2 h-10 w-10 text-slate-300" />
             <p className="font-semibold text-slate-700">No connected opponent teams yet</p>
             <p className="mt-1 text-xs text-slate-500">
-              Share your Team Code (<strong>{team.code}</strong>) or enter an opponent's code above to connect. Once accepted, their team, full squad and player stats will appear here.
+              {team.code ? (
+                <>Share your Team Code (<strong>{team.code}</strong>) or enter an opponent's code above to connect. </>
+              ) : (
+                <>Connect with opponents using their Team Code. </>
+              )}
+              Once accepted, their team, full squad and player stats will appear here.
             </p>
           </div>
         ) : (

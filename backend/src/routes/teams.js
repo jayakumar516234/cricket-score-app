@@ -67,18 +67,44 @@ async function assertNameFree(name, exceptId) {
   if (clash) throw new HttpError(409, `A team named "${name}" already exists. Please choose a different team name`);
 }
 
-const teamOut = (t, extra = {}) => ({
-  id: String(t._id),
-  name: t.name,
-  code: t.code,
-  logo: t.logo,
-  location: t.location,
-  description: t.description,
-  ballType: t.ballType,
-  createdAt: t.createdAt,
-  createdBy: t.createdBy ? String(t.createdBy) : undefined,
-  ...extra,
-});
+// Ensure a team always has a unique 6-character team code
+async function ensureTeamCode(teamDoc) {
+  if (!teamDoc) return null;
+  if (!teamDoc.code) {
+    let code;
+    while (!code || (await Team.exists({ code }))) {
+      code = generateTeamCode();
+    }
+    teamDoc.code = code;
+    await Team.updateOne({ _id: teamDoc._id }, { $set: { code } });
+  }
+  return teamDoc.code;
+}
+
+const teamOut = (t, extra = {}, user = null) => {
+  const isView = isViewer(user);
+  const canSeeCode = !isView && (
+    !user ||
+    user.role === 'superadmin' ||
+    user.role === 'admin' ||
+    extra.canManage ||
+    extra.isOwn ||
+    canManageTeam(user, t)
+  );
+
+  return {
+    id: String(t._id),
+    name: t.name,
+    code: canSeeCode ? t.code : undefined,
+    logo: t.logo,
+    location: t.location,
+    description: t.description,
+    ballType: t.ballType,
+    createdAt: t.createdAt,
+    createdBy: t.createdBy ? String(t.createdBy) : undefined,
+    ...extra,
+  };
+};
 const playerOut = (p) => ({
   id: String(p._id),
   name: p.name,
@@ -106,7 +132,28 @@ router.get('/', wrap(async (req, res) => {
   const counts = await Player.aggregate([{ $match: { team: { $in: teams.map((t) => t._id) } } }, { $group: { _id: '$team', n: { $sum: 1 } } }]);
   const countMap = Object.fromEntries(counts.map((c) => [String(c._id), c.n]));
   const ownedCount = (req.user.role === 'superadmin' || req.user.role === 'admin') ? 0 : await Team.countDocuments({ createdBy: req.user._id, isGuest: { $ne: true } });
-  const myTeamDoc = await Team.findOne({ createdBy: req.user._id, isGuest: { $ne: true } }).select('_id name code logo location ballType');
+
+  // Resolve user's own team (myTeamDoc)
+  let myTeamDoc = null;
+  if (!isViewer(req.user)) {
+    myTeamDoc = await Team.findOne({ createdBy: req.user._id, isGuest: { $ne: true } }).select('_id name code logo location ballType');
+    if (!myTeamDoc && req.user.viewTeam) {
+      myTeamDoc = await Team.findOne({ _id: req.user.viewTeam, isGuest: { $ne: true } }).select('_id name code logo location ballType');
+    }
+    if (!myTeamDoc && (req.user.role === 'superadmin' || req.user.role === 'admin')) {
+      myTeamDoc = await Team.findOne({ isGuest: { $ne: true } }).select('_id name code logo location ballType');
+    }
+    if (myTeamDoc) {
+      await ensureTeamCode(myTeamDoc);
+    }
+  }
+
+  // Ensure all listed teams have a code
+  for (const t of teams) {
+    if (!t.code) {
+      await ensureTeamCode(t);
+    }
+  }
 
   const connectedTeamIds = new Set();
   let pendingIncomingCount = 0;
@@ -131,12 +178,12 @@ router.get('/', wrap(async (req, res) => {
       canManage: canManageTeam(req.user, t),
       isOwn: String(t.createdBy) === String(req.user._id),
       isConnectedOpponent: connectedTeamIds.has(String(t._id)),
-    })),
+    }, req.user)),
     total,
     page,
     pages: Math.ceil(total / limit) || 1,
     canCreate: canCreateTeams(req.user, ownedCount),
-    myTeam: myTeamDoc ? {
+    myTeam: myTeamDoc && !isViewer(req.user) ? {
       id: String(myTeamDoc._id),
       name: myTeamDoc.name,
       code: myTeamDoc.code,
@@ -152,12 +199,17 @@ router.get('/:id', wrap(async (req, res) => {
   const team = await Team.findById(req.params.id);
   if (!team) throw new HttpError(404, 'Team not found');
   if (!viewerMayViewTeam(req.user, team)) throw new HttpError(403, 'You can only view your own team');
+  await ensureTeamCode(team);
   const players = await Player.find({ team: team._id }).sort({ createdAt: 1, _id: 1 });
   const done = await Match.find({ status: 'completed', $or: [{ homeTeam: team._id }, { awayTeam: team._id }] }).select('result');
   const won = done.filter((m) => m.result?.winner && String(m.result.winner) === String(team._id)).length;
   const tied = done.filter((m) => !m.result?.winner).length;
   const record = { played: done.length, won, lost: done.length - won - tied, tied };
-  res.json({ team: teamOut(team, { canManage: canManageTeam(req.user, team) }), players: players.map(playerOut), record });
+  res.json({
+    team: teamOut(team, { canManage: canManageTeam(req.user, team) }, req.user),
+    players: players.map(playerOut),
+    record,
+  });
 }));
 
 router.post('/', wrap(async (req, res) => {

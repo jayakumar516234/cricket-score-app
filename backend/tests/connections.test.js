@@ -287,4 +287,57 @@ test('12. Can create match against a Guest Team with manual 11s', async () => {
   assert.equal(teamsList.body.items.some((t) => t.name.includes('Street Warriors')), false);
 });
 
+test('13. Team Code is visible to Team Admin and Super Admin, but hidden from Viewer', async () => {
+  // 1. Team Admin A can see their own team code
+  const resAdminA = await api().get('/api/teams').set(auth(tokAdminA));
+  assert.equal(resAdminA.status, 200);
+  assert.ok(resAdminA.body.myTeam?.code);
+  const ownTeamInList = resAdminA.body.items.find((t) => t.id === teamA.id);
+  assert.ok(ownTeamInList?.code);
+
+  // 2. Super Admin can see all team codes
+  const superUser = await User.create({
+    name: 'Super Admin',
+    email: 'super_' + Math.random().toString(36).substring(7) + '@test.com',
+    passwordHash: await bcrypt.hash('password123', 10),
+    role: 'superadmin',
+  });
+  const loginSuper = await api().post('/api/auth/login').send({
+    identifier: superUser.email,
+    password: 'password123',
+  });
+  const tokSuper = loginSuper.body.token;
+  const resSuper = await api().get('/api/teams').set(auth(tokSuper));
+  assert.equal(resSuper.status, 200);
+  const teamInSuperList = resSuper.body.items.find((t) => t.id === teamA.id);
+  assert.ok(teamInSuperList?.code);
+
+  // 3. Create viewer login for teamA
+  const vUser = 'view_team_a_' + Math.random().toString(36).substring(7);
+  await api()
+    .put(`/api/teams/${teamA.id}/viewer`)
+    .set(auth(tokAdminA))
+    .send({ username: vUser, password: 'password123' });
+
+  const loginViewer = await api()
+    .post('/api/auth/login')
+    .send({ identifier: vUser, password: 'password123' });
+  assert.equal(loginViewer.status, 200);
+  const tokViewer = loginViewer.body.token;
+
+  // 4. Viewer should NOT see team code in /api/teams
+  const resViewer = await api().get('/api/teams').set(auth(tokViewer));
+  assert.equal(resViewer.status, 200);
+  assert.equal(resViewer.body.myTeam, null);
+  for (const item of resViewer.body.items) {
+    assert.equal(item.code, undefined, 'Viewer must not see team code in teams list');
+  }
+
+  // 5. Viewer should NOT see team code in /api/teams/:id
+  const resViewerDetail = await api().get(`/api/teams/${teamA.id}`).set(auth(tokViewer));
+  assert.equal(resViewerDetail.status, 200);
+  assert.equal(resViewerDetail.body.team.code, undefined, 'Viewer must not see team code in team detail');
+});
+
+
 
