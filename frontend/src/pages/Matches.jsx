@@ -8,21 +8,38 @@ import { ConfirmDialog, Empty, ErrorBox, Pagination, Spinner, StatusBadge, TeamL
 export function MatchScoreLine({ match }) {
   const sc = (teamId) => match.scores?.find((s) => s.team === teamId);
   const Side = ({ team }) => {
-    const s = sc(team.id);
+    const s = sc(team?.id);
     return (
-      <div className="flex flex-1 items-center gap-2">
+      <div className="flex flex-1 items-center gap-2 min-w-0">
         <TeamLogo team={team} size={28} />
-        <div>
-          <div className="text-sm font-medium text-slate-800">{team.name}</div>
-          <div className="text-xs text-slate-500">{s ? `${s.runs}/${s.wickets}${s.overs ? ` (${s.overs})` : ''}` : 'Yet to bat'}</div>
+        <div className="min-w-0 flex-1">
+          <div className="text-xs sm:text-sm font-bold text-slate-800 truncate">{team?.name}</div>
+          <div className="text-xs font-semibold text-slate-600">
+            {s ? (
+              <span className="inline-flex items-center gap-1">
+                <span className="font-mono text-slate-900">{s.runs}/{s.wickets}</span>
+                {s.overs ? <span className="text-[10px] text-slate-400">({s.overs} ov)</span> : null}
+              </span>
+            ) : (
+              <span className="text-slate-400 font-normal text-[11px]">Yet to bat</span>
+            )}
+          </div>
         </div>
       </div>
     );
   };
   return (
     <>
-      <div className="mt-2 flex items-center gap-2"><Side team={match.homeTeam} /><span className="text-xs text-slate-400">vs</span><Side team={match.awayTeam} /></div>
-      {match.resultSummary && <p className="mt-2 text-xs font-semibold text-pitch-700">{match.resultSummary}</p>}
+      <div className="mt-2.5 flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-50 border border-slate-200/60">
+        <Side team={match.homeTeam} />
+        <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-200 text-[10px] font-extrabold text-slate-500">VS</div>
+        <Side team={match.awayTeam} />
+      </div>
+      {match.resultSummary && (
+        <p className="mt-2 text-xs font-bold text-pitch-700 bg-pitch-50/80 px-2.5 py-1 rounded-md border border-pitch-200 inline-block">
+          {match.resultSummary}
+        </p>
+      )}
     </>
   );
 }
@@ -88,20 +105,36 @@ export default function Matches() {
           action={!q && !status && data.canCreate && <Link to="/matches/new" className="btn btn-primary">Create Match</Link>} />
       ) : (
         <>
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             {data.items.map((m) => (
-              <li key={m.id} className="card p-3">
-                <div className="flex items-start gap-2">
-                  <Link to={`/matches/${m.id}`} className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-slate-900">{m.name}</span>
+              <li key={m.id} className="card p-3.5 sm:p-4 hover:shadow-xs transition border border-slate-200/80">
+                <div className="flex items-start justify-between gap-2">
+                  <Link to={`/matches/${m.id}`} className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="font-bold text-slate-900 text-sm sm:text-base truncate">{m.name}</span>
+                        <span className="badge bg-slate-100 text-slate-600 text-[10px] uppercase font-bold py-0.5 px-2">
+                          {m.format} • {m.overs} ov
+                        </span>
+                      </div>
                       <StatusBadge status={m.status} />
                     </div>
-                    <div className="text-xs text-slate-500">{m.format} · {m.overs} overs{m.venue ? ` · ${m.venue}` : ''}{m.date ? ` · ${fmtDate(m.date)}` : ''}</div>
+                    {(m.venue || m.date) && (
+                      <div className="text-[11px] text-slate-400 mt-1">
+                        {m.venue ? `${m.venue}` : ''}{m.venue && m.date ? ' • ' : ''}{m.date ? `${fmtDate(m.date)}` : ''}
+                      </div>
+                    )}
                     <MatchScoreLine match={m} />
                   </Link>
                   {m.canManage && (
-                    <button className="btn btn-ghost !p-2 text-red-600" onClick={() => setDel(m)} aria-label={`Delete ${m.name}`}><Trash2 className="h-4 w-4" /></button>
+                    <button
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600 transition"
+                      onClick={() => setDel(m)}
+                      aria-label={`Delete ${m.name}`}
+                      title="Delete Match"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   )}
                 </div>
               </li>

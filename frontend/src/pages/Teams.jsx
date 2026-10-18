@@ -177,25 +177,27 @@ export default function Teams() {
 
       {/* Own Team Code banner */}
       {data?.myTeam && canSeeCode && data.myTeam.code && (
-        <div className="mb-4 rounded-xl border border-pitch-200 bg-pitch-50/70 p-4 shadow-sm">
+        <div className="mb-4 rounded-2xl border border-pitch-300/80 bg-gradient-to-br from-pitch-50/90 to-emerald-50/40 p-4 shadow-xs">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <div className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-pitch-700" />
-                <span className="font-bold text-slate-900">{data.myTeam.name}</span>
-                <span className="badge bg-green-100 text-green-700 text-xs">Your Team</span>
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-pitch-600 text-white shadow-xs">
+                  <Shield className="h-4.5 w-4.5" />
+                </div>
+                <span className="font-bold text-slate-900 text-base">{data.myTeam.name}</span>
+                <span className="badge bg-green-100 text-green-700 text-xs border border-green-200 font-bold">Your Team</span>
               </div>
-              <p className="text-xs text-slate-600 mt-1">
+              <p className="text-xs text-slate-600 mt-1.5">
                 Share this unique 6-character team code with opponents so they can send you a match connection request.
               </p>
             </div>
-            <div className="flex items-center gap-2 rounded-lg border border-pitch-300 bg-white px-3 py-2 shadow-sm self-start sm:self-auto">
-              <div className="text-[11px] font-semibold uppercase text-slate-500">Team Code:</div>
-              <span className="font-mono text-lg font-bold tracking-widest text-pitch-900">{data.myTeam.code}</span>
+            <div className="flex items-center gap-2.5 rounded-xl border border-pitch-300 bg-white px-3.5 py-2 shadow-xs self-start sm:self-auto">
+              <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Team Code:</div>
+              <span className="font-mono text-xl font-extrabold tracking-widest text-pitch-900">{data.myTeam.code}</span>
               <button
                 type="button"
                 onClick={copyTeamCode}
-                className="btn btn-ghost !p-1 text-pitch-700 hover:bg-pitch-100"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-pitch-700 hover:bg-pitch-50 border border-pitch-200 transition"
                 title="Copy Team Code"
               >
                 {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
@@ -207,30 +209,30 @@ export default function Teams() {
 
       {/* Incoming Requests Alert Section */}
       {incomingRequests.length > 0 && (
-        <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-4 shadow-sm">
+        <div className="mb-4 rounded-2xl border border-amber-300 bg-amber-50/80 p-4 shadow-xs">
           <div className="flex items-center gap-2 text-amber-900 font-bold mb-1">
-            <Clock className="h-5 w-5 text-amber-600" />
+            <Clock className="h-5 w-5 text-amber-600 shrink-0" />
             <span>Incoming Opponent Requests ({incomingRequests.length})</span>
           </div>
           <p className="text-xs text-amber-800 mb-3">
             These teams want to connect with you. Accept their request to allow match scheduling and view full squads.
           </p>
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             {incomingRequests.map((inc) => (
-              <div key={inc.connectionId} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg border border-amber-200 bg-white p-3 shadow-xs">
+              <div key={inc.connectionId} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border border-amber-200 bg-white p-3.5 shadow-xs">
                 <div className="flex items-center gap-3">
-                  <TeamLogo team={inc.fromTeam} size={40} />
+                  <TeamLogo team={inc.fromTeam} size={42} />
                   <div>
-                    <div className="font-semibold text-slate-900">{inc.fromTeam.name}</div>
+                    <div className="font-bold text-slate-900 text-sm">{inc.fromTeam.name}</div>
                     <div className="text-xs text-slate-500">{inc.fromTeam.ballType}{inc.fromTeam.location ? ` · ${inc.fromTeam.location}` : ''}</div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
                   <button
                     type="button"
                     onClick={() => handleRespondRequest(inc.connectionId, 'accepted')}
                     disabled={connActionBusy}
-                    className="btn btn-green text-xs !py-1.5 !px-3"
+                    className="btn btn-green flex-1 sm:flex-none text-xs !py-2 !px-4 font-bold"
                   >
                     <Check className="h-3.5 w-3.5" /> Accept
                   </button>
@@ -238,7 +240,7 @@ export default function Teams() {
                     type="button"
                     onClick={() => handleRespondRequest(inc.connectionId, 'rejected')}
                     disabled={connActionBusy}
-                    className="btn btn-outline text-xs !py-1.5 !px-3 text-red-600 hover:bg-red-50 hover:border-red-200"
+                    className="btn btn-outline flex-1 sm:flex-none text-xs !py-2 !px-4 text-red-600 hover:bg-red-50 hover:border-red-200 font-bold"
                   >
                     Decline
                   </button>
@@ -312,83 +314,87 @@ export default function Teams() {
               const canEditOrDelete = t.isOwn || isSuper;
               const showCode = canSeeCode && t.code && (t.isOwn || isSuper || t.canManage);
               return (
-                <li key={t.id} className="card flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3">
+                <li key={t.id} className="card p-3.5 space-y-2.5 sm:space-y-0 sm:flex sm:items-center sm:justify-between sm:gap-3 hover:shadow-xs transition border border-slate-200/80">
                   <Link to={`/teams/${t.id}`} className="flex flex-1 items-center gap-3 min-w-0">
                     <TeamLogo team={t} size={48} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-slate-900">{t.name}</span>
+                        <span className="font-bold text-slate-900 truncate">{t.name}</span>
                         {t.isOwn && (
-                          <span className="badge bg-green-100 text-green-700 text-xs">Your Team</span>
+                          <span className="badge bg-green-100 text-green-700 text-xs border border-green-200 font-bold">Your Team</span>
                         )}
                         {t.isConnectedOpponent && (
-                          <span className="badge bg-blue-100 text-blue-700 text-xs">Connected Opponent</span>
+                          <span className="badge bg-blue-100 text-blue-700 text-xs border border-blue-200 font-bold">Connected Opponent</span>
                         )}
                       </div>
-                      <div className="text-xs text-slate-500">
+                      <div className="text-xs text-slate-500 mt-0.5">
                         {t.playerCount} Players{t.location ? ` · ${t.location}` : ''} · {t.ballType}
                       </div>
                     </div>
                   </Link>
 
-                  {/* Actions & Code: Code is only shown to team managers / admins and never to viewers */}
-                  <div className="flex items-center gap-2 self-end sm:self-auto flex-wrap">
-                    {showCode && (
-                      <div className="flex items-center gap-1.5 rounded-lg border border-pitch-200 bg-pitch-50/80 px-2.5 py-1 text-xs shadow-xs">
-                        <span className="text-[11px] font-semibold text-pitch-700">Code:</span>
-                        <span className="font-mono font-bold tracking-widest text-pitch-900">{t.code}</span>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            navigator.clipboard.writeText(t.code);
-                            setCopiedTeamCode(t.id);
-                            setTimeout(() => setCopiedTeamCode(null), 2000);
-                          }}
-                          className="text-pitch-700 hover:text-pitch-900 p-0.5 rounded hover:bg-pitch-100 transition"
-                          title="Copy Team Code"
-                        >
-                          {copiedTeamCode === t.id ? (
-                            <Check className="h-3.5 w-3.5 text-green-600" />
-                          ) : (
-                            <Copy className="h-3.5 w-3.5" />
-                          )}
-                        </button>
-                      </div>
-                    )}
+                  {/* Actions & Code Bar: on mobile, cleanly separated with border-t */}
+                  {(showCode || (t.isConnectedOpponent && myTeamId) || canEditOrDelete) && (
+                    <div className="flex items-center justify-between sm:justify-end gap-2 pt-2.5 sm:pt-0 border-t sm:border-t-0 border-slate-100 flex-wrap">
+                      {showCode && (
+                        <div className="flex items-center gap-1.5 rounded-lg border border-pitch-200 bg-pitch-50/80 px-2.5 py-1 text-xs shadow-2xs">
+                          <span className="text-[11px] font-bold text-pitch-700">Code:</span>
+                          <span className="font-mono font-bold tracking-widest text-pitch-900">{t.code}</span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              navigator.clipboard.writeText(t.code);
+                              setCopiedTeamCode(t.id);
+                              setTimeout(() => setCopiedTeamCode(null), 2000);
+                            }}
+                            className="flex h-6 w-6 items-center justify-center rounded text-pitch-700 hover:bg-pitch-100 transition"
+                            title="Copy Team Code"
+                          >
+                            {copiedTeamCode === t.id ? (
+                              <Check className="h-3.5 w-3.5 text-green-600" />
+                            ) : (
+                              <Copy className="h-3.5 w-3.5" />
+                            )}
+                          </button>
+                        </div>
+                      )}
 
-                    {t.isConnectedOpponent && myTeamId && (
-                      <Link
-                        to={`/matches/new?home=${myTeamId}&away=${t.id}`}
-                        className="btn btn-green text-xs !py-1.5 !px-2.5"
-                        title="Play Match with this Opponent"
-                      >
-                        <Trophy className="h-3.5 w-3.5" /> Play
-                      </Link>
-                    )}
+                      <div className="flex items-center gap-1.5 ml-auto sm:ml-0">
+                        {t.isConnectedOpponent && myTeamId && (
+                          <Link
+                            to={`/matches/new?home=${myTeamId}&away=${t.id}`}
+                            className="btn btn-green text-xs !py-1.5 !px-3 font-bold"
+                            title="Play Match with this Opponent"
+                          >
+                            <Trophy className="h-3.5 w-3.5" /> Play
+                          </Link>
+                        )}
 
-                    {canEditOrDelete && (
-                      <div className="flex items-center gap-1">
-                        <button
-                          className="btn btn-ghost !p-2"
-                          onClick={() => nav(`/teams/${t.id}/edit`)}
-                          aria-label={`Edit ${t.name}`}
-                          title="Edit Team"
-                        >
-                          <Pencil className="h-4 w-4 text-slate-600" />
-                        </button>
-                        <button
-                          className="btn btn-ghost !p-2 text-red-600"
-                          onClick={() => setDel(t)}
-                          aria-label={`Delete ${t.name}`}
-                          title="Delete Team"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        {canEditOrDelete && (
+                          <div className="flex items-center gap-1">
+                            <button
+                              className="btn btn-outline text-xs !py-1.5 !px-2.5 text-slate-700 font-medium"
+                              onClick={() => nav(`/teams/${t.id}/edit`)}
+                              aria-label={`Edit ${t.name}`}
+                              title="Edit Team"
+                            >
+                              <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
+                            </button>
+                            <button
+                              className="btn btn-ghost !p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                              onClick={() => setDel(t)}
+                              aria-label={`Delete ${t.name}`}
+                              title="Delete Team"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </li>
               );
             })}

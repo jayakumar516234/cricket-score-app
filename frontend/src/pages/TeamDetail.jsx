@@ -61,45 +61,92 @@ export default function TeamDetail() {
         </div>
       </section>
 
-      <section className="grid grid-cols-4 gap-2 text-center" aria-label="Match record">
-        {[['Played', record.played], ['Won', record.won], ['Lost', record.lost], ['Tied', record.tied]].map(([l, v]) => (
-          <div key={l} className="card p-3"><div className="text-xl font-bold text-slate-900">{v}</div><div className="text-xs text-slate-500">{l}</div></div>
+      <section className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 text-center" aria-label="Match record">
+        {[
+          ['Played', record.played, 'border-blue-200/80 bg-blue-50/40 text-blue-700'],
+          ['Won', record.won, 'border-emerald-200/80 bg-emerald-50/40 text-emerald-700'],
+          ['Lost', record.lost, 'border-red-200/80 bg-red-50/40 text-red-700'],
+          ['Tied', record.tied, 'border-amber-200/80 bg-amber-50/40 text-amber-700'],
+        ].map(([l, v, tone]) => (
+          <div key={l} className={`card p-3 sm:p-4 border ${tone.split(' ')[0]} ${tone.split(' ')[1]}`}>
+            <div className={`text-2xl font-extrabold ${tone.split(' ')[2]}`}>{v}</div>
+            <div className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-slate-500 mt-0.5">{l}</div>
+          </div>
         ))}
       </section>
 
       {team.canManage && <ViewerLogin team={team} />}
 
       {/* Tab switcher */}
-      <div className="flex gap-1 rounded-lg bg-slate-100 p-1">
-        <button onClick={() => setTab('squad')} className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition ${tab === 'squad' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Squad ({players.length})</button>
-        <button onClick={() => setTab('stats')} className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition ${tab === 'stats' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}><BarChart3 className="mr-1.5 inline h-4 w-4" />Career Stats</button>
-        <button onClick={() => setTab('opponents')} className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition ${tab === 'opponents' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}><Handshake className="mr-1.5 inline h-4 w-4" />Opponents</button>
+      <div className="flex gap-1.5 rounded-xl bg-slate-200/70 p-1.5 shadow-2xs">
+        <button onClick={() => setTab('squad')} className={`flex-1 rounded-lg px-3 py-2 text-xs sm:text-sm font-bold transition ${tab === 'squad' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}>Squad ({players.length})</button>
+        <button onClick={() => setTab('stats')} className={`flex-1 rounded-lg px-3 py-2 text-xs sm:text-sm font-bold transition ${tab === 'stats' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}><BarChart3 className="mr-1 inline h-3.5 w-3.5" />Stats</button>
+        <button onClick={() => setTab('opponents')} className={`flex-1 rounded-lg px-3 py-2 text-xs sm:text-sm font-bold transition ${tab === 'opponents' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}><Handshake className="mr-1 inline h-3.5 w-3.5" />Opponents</button>
       </div>
 
       {tab === 'squad' ? (
-        <section className="card overflow-x-auto">
-          <table className="w-full min-w-[34rem] text-left text-sm">
-            <thead className="bg-slate-50 text-xs text-slate-500">
-              <tr><th className="p-3">#</th><th className="p-3">Player</th><th className="p-3">Role</th><th className="p-3">Age</th><th className="p-3">Batting</th><th className="p-3">Bowling</th></tr>
-            </thead>
-            <tbody>
-              {players.map((p) => (
-                <tr key={p.id} className="border-t border-slate-100">
-                  <td className="p-3 text-slate-500">{p.jerseyNumber ?? '-'}</td>
-                  <td className="p-3">
-                    <div className="flex items-center gap-2">
-                      {p.photo ? <img src={p.photo} alt="" className="h-8 w-8 rounded-full object-cover" /> : <span className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-400"><UserRound className="h-4 w-4" /></span>}
-                      <span className="font-medium text-slate-900">{p.name}</span>
+        <section className="card overflow-hidden border border-slate-200/80">
+          {/* Mobile Player Cards (< sm) */}
+          <div className="divide-y divide-slate-100 sm:hidden">
+            {players.map((p) => (
+              <div key={p.id} className="p-3 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="relative shrink-0">
+                    {p.photo ? (
+                      <img src={p.photo} alt="" className="h-10 w-10 rounded-full object-cover border border-slate-200" />
+                    ) : (
+                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+                        <UserRound className="h-5 w-5" />
+                      </span>
+                    )}
+                    {p.jerseyNumber !== null && p.jerseyNumber !== undefined && (
+                      <span className="absolute -bottom-1 -right-1 flex h-4.5 min-w-[1.125rem] px-1 items-center justify-center rounded-full bg-navy-800 text-[10px] font-bold text-white shadow-2xs">
+                        #{p.jerseyNumber}
+                      </span>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-bold text-slate-900 text-sm truncate">{p.name}</div>
+                    <div className="text-[11px] text-slate-500 truncate">
+                      {p.battingStyle || p.bowlingStyle ? `${p.battingStyle || ''}${p.battingStyle && p.bowlingStyle ? ' • ' : ''}${p.bowlingStyle || ''}` : p.age ? `Age ${p.age}` : 'Player'}
                     </div>
-                  </td>
-                  <td className="p-3">{p.role}</td>
-                  <td className="p-3">{p.age ?? '-'}</td>
-                  <td className="p-3">{p.battingStyle || '-'}</td>
-                  <td className="p-3">{p.bowlingStyle || '-'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </div>
+                </div>
+                <div className="shrink-0 text-right">
+                  <span className="badge bg-slate-100 text-slate-700 text-[11px] font-semibold">
+                    {p.role}
+                  </span>
+                  {p.age && <div className="text-[10px] text-slate-400 mt-0.5">{p.age} yrs</div>}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table View (>= sm) */}
+          <div className="hidden sm:block overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-slate-50 text-xs text-slate-500 border-b border-slate-200">
+                <tr><th className="p-3">#</th><th className="p-3">Player</th><th className="p-3">Role</th><th className="p-3">Age</th><th className="p-3">Batting</th><th className="p-3">Bowling</th></tr>
+              </thead>
+              <tbody>
+                {players.map((p) => (
+                  <tr key={p.id} className="border-t border-slate-100 hover:bg-slate-50/60 transition">
+                    <td className="p-3 font-mono font-bold text-slate-600">{p.jerseyNumber ?? '-'}</td>
+                    <td className="p-3">
+                      <div className="flex items-center gap-2">
+                        {p.photo ? <img src={p.photo} alt="" className="h-8 w-8 rounded-full object-cover" /> : <span className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-400"><UserRound className="h-4 w-4" /></span>}
+                        <span className="font-medium text-slate-900">{p.name}</span>
+                      </div>
+                    </td>
+                    <td className="p-3"><span className="badge bg-slate-100 text-slate-700 text-xs">{p.role}</span></td>
+                    <td className="p-3">{p.age ?? '-'}</td>
+                    <td className="p-3 text-xs text-slate-600">{p.battingStyle || '-'}</td>
+                    <td className="p-3 text-xs text-slate-600">{p.bowlingStyle || '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
       ) : tab === 'stats' ? (
         <PlayerStats teamId={team.id} />
