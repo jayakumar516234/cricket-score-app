@@ -1,11 +1,105 @@
 import { useEffect, useRef, useState } from 'react';
 import { AlertCircle, ChevronLeft, ChevronRight, ChevronDown, Check, Loader2, Shield, ImagePlus, X } from 'lucide-react';
 
-export const Spinner = ({ label = 'Loading...' }) => (
-  <div className="flex items-center justify-center gap-2 py-16 text-slate-500" role="status">
-    <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> <span className="text-sm">{label}</span>
-  </div>
+export const CricketBallIcon = ({ className = "w-10 h-10" }) => (
+  <svg
+    viewBox="0 0 100 100"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+    aria-hidden="true"
+  >
+    <defs>
+      <radialGradient id="cricketBallGrad" cx="35%" cy="30%" r="65%">
+        <stop offset="0%" stopColor="#ef4444" />
+        <stop offset="45%" stopColor="#dc2626" />
+        <stop offset="85%" stopColor="#991b1b" />
+        <stop offset="100%" stopColor="#5f0f0f" />
+      </radialGradient>
+      <filter id="ballGlow" x="-20%" y="-20%" width="140%" height="140%">
+        <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#7f1d1d" floodOpacity="0.4" />
+      </filter>
+    </defs>
+    {/* Ball sphere */}
+    <circle cx="50" cy="50" r="46" fill="url(#cricketBallGrad)" filter="url(#ballGlow)" />
+    {/* Highlight shine */}
+    <ellipse cx="38" cy="26" rx="16" ry="10" transform="rotate(-30 38 26)" fill="white" fillOpacity="0.28" />
+    
+    {/* Cricket Ball Center Seam */}
+    <path
+      d="M50 4 C 62 28, 62 72, 50 96"
+      stroke="#fef08a"
+      strokeWidth="3.2"
+      strokeLinecap="round"
+      fill="none"
+    />
+    <path
+      d="M50 4 C 38 28, 38 72, 50 96"
+      stroke="#b91c1c"
+      strokeWidth="1.2"
+      fill="none"
+      opacity="0.6"
+    />
+    
+    {/* Seam stitches */}
+    <path
+      d="M44 14 L56 16 M47 24 L59 26 M49 35 L61 37 M50 47 L62 49 M49 59 L61 61 M47 71 L59 73 M44 82 L56 84"
+      stroke="#ffffff"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+    />
+  </svg>
 );
+
+export const Spinner = ({ label = 'Loading...', size = 'default' }) => {
+  const isSmall = size === 'sm';
+
+  if (isSmall) {
+    return (
+      <div className="inline-flex items-center gap-2 text-slate-500" role="status">
+        <div className="cricket-ball-spin shrink-0">
+          <CricketBallIcon className="h-5 w-5" />
+        </div>
+        {label && <span className="text-xs font-medium">{label}</span>}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-center justify-center py-12 px-4 select-none" role="status">
+      <div className="relative flex flex-col items-center justify-center h-24 w-32">
+        {/* Animated Cricket Ball */}
+        <div className="cricket-ball-bounce z-10 flex items-center justify-center">
+          <div className="cricket-ball-spin">
+            <CricketBallIcon className="h-12 w-12 drop-shadow-md" />
+          </div>
+        </div>
+        
+        {/* Pitch ground line & ball shadow */}
+        <div className="absolute bottom-2 flex flex-col items-center">
+          {/* Dynamic shadow */}
+          <div className="cricket-ball-shadow h-2.5 w-10 rounded-full bg-slate-400/40 blur-[1.5px]" />
+          {/* Turf / crease accent line */}
+          <div className="mt-1 flex items-center gap-1">
+            <span className="h-1 w-2 rounded-full bg-pitch-500/60" />
+            <span className="h-1 w-12 rounded-full bg-pitch-600 shadow-sm" />
+            <span className="h-1 w-2 rounded-full bg-pitch-500/60" />
+          </div>
+        </div>
+      </div>
+
+      {/* Label with bouncing dots */}
+      <div className="mt-3 flex items-center gap-2">
+        <span className="text-sm font-semibold tracking-wide text-slate-700">{label}</span>
+        <span className="inline-flex gap-1">
+          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-red-500 [animation-delay:-0.3s]" />
+          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-pitch-600 [animation-delay:-0.15s]" />
+          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-blue-600" />
+        </span>
+      </div>
+    </div>
+  );
+};
 
 export const ErrorBox = ({ message, onRetry }) =>
   message ? (
