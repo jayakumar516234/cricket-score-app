@@ -1,8 +1,8 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { LayoutDashboard, Shield, Trophy, Users, ScrollText, Lightbulb, LogOut, Menu, X, CircleDot } from 'lucide-react';
+import { LayoutDashboard, Shield, Trophy, Users, ScrollText, LogOut, Menu, X, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
-
+import { CricketBallIcon } from './ui.jsx';
 import { APP_VERSION } from '../version.js';
 
 export default function Layout() {
@@ -15,35 +15,53 @@ export default function Layout() {
     { to: '/teams', label: 'Teams', icon: Shield },
     { to: '/matches', label: 'Matches', icon: Trophy },
     ...(isAdmin ? [{ to: '/users', label: 'Users', icon: Users }] : []),
-    ...(isSuper ? [{ to: '/audit', label: 'Audit log', icon: ScrollText }] : []),
+    ...(isSuper ? [{ to: '/audit', label: 'Audit Log', icon: ScrollText }] : []),
   ];
 
   const doLogout = () => { logout(); navigate('/login'); };
   const userInitials = (user?.name || '?').split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
   const roleLabel = user?.role === 'superadmin' ? 'Super Admin' : user?.role === 'admin' ? 'Admin' : user?.role === 'viewer' ? 'Viewer' : 'Team Admin';
+  const roleBadgeStyle = user?.role === 'superadmin'
+    ? 'bg-amber-400/15 text-amber-300 border-amber-400/30'
+    : user?.role === 'admin'
+    ? 'bg-blue-400/15 text-blue-300 border-blue-400/30'
+    : user?.role === 'viewer'
+    ? 'bg-slate-400/15 text-slate-300 border-slate-400/30'
+    : 'bg-pitch-400/15 text-pitch-300 border-pitch-400/30';
 
   const userProfileCard = (
-    <div className="mx-3 my-2 flex items-center gap-3 rounded-xl border border-navy-700/60 bg-navy-800/80 p-3 shadow-xs">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-pitch-500 to-pitch-700 text-sm font-bold text-navy-950 shadow-xs">
-        {userInitials}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="truncate text-sm font-bold text-white">{user?.name}</div>
-        <div className="flex items-center gap-1.5 mt-0.5">
-          <span className="relative flex h-2 w-2 shrink-0">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-          </span>
-          <span className="text-[11px] font-semibold text-pitch-400">{roleLabel}</span>
+    <div className="relative mx-3 my-2.5 overflow-hidden rounded-2xl border border-navy-700/60 bg-gradient-to-br from-navy-900/90 via-navy-850/90 to-navy-900/90 p-3.5 shadow-md backdrop-blur-xs">
+      {/* Decorative ambient accent */}
+      <div className="pointer-events-none absolute -right-4 -bottom-4 h-14 w-14 rounded-full bg-pitch-500/15 blur-xl" />
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-pitch-600 via-pitch-500 to-emerald-400 font-black text-navy-950 text-sm shadow-glow-pitch">
+          {userInitials}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="truncate text-sm font-bold text-white tracking-tight">{user?.name}</div>
+          <div className="flex items-center gap-1.5 mt-1">
+            <span className="relative flex h-2 w-2 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pitch-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-pitch-500"></span>
+            </span>
+            <span className={`badge border text-[10px] font-bold uppercase tracking-wider py-0 px-1.5 rounded-md ${roleBadgeStyle}`}>
+              {roleLabel}
+            </span>
+          </div>
         </div>
       </div>
     </div>
   );
 
   const nav = (
-    <nav className="flex flex-1 flex-col gap-1 p-3" aria-label="Main">
+    <nav className="flex flex-1 flex-col gap-1.5 p-3" aria-label="Main navigation">
       {userProfileCard}
-      <div className="my-1 border-t border-navy-800/80" />
+      <div className="my-1.5 border-t border-navy-800/80" />
+      
+      <div className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+        Menu
+      </div>
+
       {links.map(({ to, label, icon: Icon, end }) => (
         <NavLink
           key={to}
@@ -51,42 +69,63 @@ export default function Layout() {
           end={end}
           onClick={() => setOpen(false)}
           className={({ isActive }) =>
-            `flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition ${
+            `group relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-all duration-150 ${
               isActive
-                ? 'bg-gradient-to-r from-pitch-600 to-pitch-700 text-white shadow-sm'
-                : 'text-slate-300 hover:bg-navy-800/80 hover:text-white'
+                ? 'bg-gradient-to-r from-pitch-600 via-emerald-600 to-teal-600 text-white shadow-glow-pitch'
+                : 'text-slate-300 hover:bg-navy-850/80 hover:text-white'
             }`
           }
         >
-          <Icon className="h-5 w-5 shrink-0" aria-hidden /> {label}
+          {({ isActive }) => (
+            <>
+              {isActive && (
+                <span className="absolute left-1 top-2 bottom-2 w-1 rounded-full bg-white/70" />
+              )}
+              <Icon
+                className={`h-5 w-5 shrink-0 transition-transform duration-150 group-hover:scale-105 ${
+                  isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'
+                }`}
+                aria-hidden
+              />
+              <span className="truncate">{label}</span>
+            </>
+          )}
         </NavLink>
       ))}
+
       <div className="mt-auto flex flex-col gap-1 pt-3 border-t border-navy-800/80">
         <button
           onClick={doLogout}
-          className="flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-red-400 hover:bg-red-500/10 hover:text-red-300 transition"
+          className="group flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-rose-300 hover:bg-rose-500/15 hover:text-rose-200 transition-all duration-150"
         >
-          <LogOut className="h-5 w-5 shrink-0" aria-hidden /> Sign out
+          <LogOut className="h-5 w-5 shrink-0 text-rose-400 group-hover:text-rose-300 group-hover:scale-105 transition-transform" aria-hidden />
+          <span>Sign Out</span>
         </button>
-        <div className="px-3 py-1.5 text-center text-[11px] font-medium text-slate-500">
-          Cricket Score App • v{APP_VERSION}
+        <div className="flex items-center justify-between px-3.5 py-1.5 text-[11px] font-medium text-slate-500">
+          <span>Cricket Score</span>
+          <span className="font-mono text-slate-400">v{APP_VERSION}</span>
         </div>
       </div>
     </nav>
   );
 
   const brand = (
-    <div className="flex items-center justify-between px-4 py-4 text-white border-b border-navy-800/70">
+    <div className="flex items-center justify-between px-4 py-4 text-white border-b border-navy-800/80 bg-navy-950/60">
       <div className="flex items-center gap-2.5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-pitch-500/20 text-pitch-400">
-          <CircleDot className="h-5 w-5" aria-hidden />
+        <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-pitch-500/20 to-navy-800 border border-pitch-500/30 text-pitch-400 shadow-glow-pitch">
+          <CricketBallIcon className="w-6 h-6" />
         </div>
         <div>
-          <span className="text-base font-bold tracking-tight text-white block leading-tight">Cricket Score</span>
-          <span className="text-[10px] text-slate-400 block font-medium">Tournament Manager</span>
+          <span className="text-base font-black tracking-tight text-white block leading-tight flex items-center gap-1.5">
+            <span>Cricket Score</span>
+            <Sparkles className="h-3 w-3 text-pitch-400 animate-pulse" />
+          </span>
+          <span className="text-[10px] text-pitch-400/90 block font-semibold uppercase tracking-wider">
+            Match Center
+          </span>
         </div>
       </div>
-      <span className="rounded-md bg-navy-800 px-1.5 py-0.5 text-[10px] font-semibold text-slate-400 border border-navy-700/60">
+      <span className="rounded-lg bg-navy-900 px-2 py-0.5 text-[10px] font-bold text-pitch-400 border border-navy-700/80 shadow-2xs">
         v{APP_VERSION}
       </span>
     </div>
@@ -97,18 +136,23 @@ export default function Layout() {
 
   return (
     <div className="flex min-h-dvh bg-slate-100">
-      <aside className="hidden w-64 shrink-0 flex-col bg-navy-950 border-r border-navy-800/80 lg:flex">
+      {/* Desktop Sidebar */}
+      <aside className="hidden w-64 shrink-0 flex-col bg-gradient-to-b from-navy-950 via-navy-900 to-navy-950 border-r border-navy-800/80 lg:flex shadow-xl">
         {brand}
         {nav}
       </aside>
 
+      {/* Mobile Drawer */}
       {open && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-xs transition-opacity" onClick={() => setOpen(false)} />
-          <aside className="relative flex h-full w-72 max-w-[85vw] flex-col bg-navy-950 shadow-2xl">
+        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true">
+          <div
+            className="absolute inset-0 bg-navy-950/80 backdrop-blur-sm transition-opacity"
+            onClick={() => setOpen(false)}
+          />
+          <aside className="relative flex h-full w-72 max-w-[85vw] flex-col bg-gradient-to-b from-navy-950 via-navy-900 to-navy-950 shadow-2xl border-r border-navy-800/80">
             <button
               onClick={() => setOpen(false)}
-              className="absolute right-3 top-3.5 flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-navy-800 hover:text-white transition"
+              className="absolute right-3 top-3.5 flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 hover:bg-navy-800 hover:text-white transition"
               aria-label="Close menu"
             >
               <X className="h-5 w-5" />
@@ -119,27 +163,32 @@ export default function Layout() {
         </div>
       )}
 
+      {/* Main Content Area */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-navy-800/70 bg-navy-950/95 px-3.5 pb-2.5 pt-[calc(0.6rem+env(safe-area-inset-top))] text-white backdrop-blur-md shadow-xs sm:px-4 sm:pb-3">
+        {/* Modern Glassmorphic Header */}
+        <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-navy-800/80 bg-navy-950/90 px-3.5 pb-2.5 pt-[calc(0.6rem+env(safe-area-inset-top))] text-white backdrop-blur-xl shadow-sm sm:px-5 sm:pb-3">
           <button
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-300 hover:bg-navy-800 transition lg:hidden"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-navy-700/60 bg-navy-900/80 text-slate-300 hover:bg-navy-800 hover:text-white transition lg:hidden shadow-xs"
             onClick={() => setOpen(true)}
             aria-label="Open menu"
           >
             <Menu className="h-5 w-5" />
           </button>
-          <div className="flex items-center gap-1.5 lg:hidden min-w-0">
-            <CircleDot className="h-5 w-5 text-pitch-400 shrink-0" aria-hidden />
-            <span className="font-bold text-sm tracking-tight text-white truncate">Cricket Score</span>
+          
+          <div className="flex items-center gap-2 lg:hidden min-w-0">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-pitch-500/20 border border-pitch-500/30 shrink-0">
+              <CricketBallIcon className="w-5 h-5" />
+            </div>
+            <span className="font-black text-sm tracking-tight text-white truncate">Cricket Score</span>
           </div>
 
           <div className="ml-auto flex items-center gap-2">
-            <div className="flex items-center gap-2 rounded-lg bg-navy-900/80 border border-navy-800 px-2.5 py-1 text-xs">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-pitch-500/20 font-bold text-pitch-400 text-[11px]">
+            <div className="flex items-center gap-2 rounded-xl bg-navy-900/90 border border-navy-700/70 p-1 pr-3 text-xs shadow-xs">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-tr from-pitch-600 to-emerald-400 font-black text-navy-950 text-xs shadow-glow-pitch">
                 {userInitials}
               </span>
-              <span className="font-semibold text-slate-200 hidden sm:inline max-w-[120px] truncate">{user?.name}</span>
-              <span className="badge bg-pitch-500/20 text-pitch-300 text-[10px] font-bold uppercase tracking-wider py-0.5 px-1.5 border border-pitch-500/30">
+              <span className="font-bold text-slate-200 hidden sm:inline max-w-[130px] truncate">{user?.name}</span>
+              <span className={`badge border text-[10px] font-bold uppercase tracking-wider py-0.5 px-2 rounded-md ${roleBadgeStyle}`}>
                 {roleLabel}
               </span>
             </div>
@@ -150,9 +199,9 @@ export default function Layout() {
           <Outlet />
         </main>
 
-        {/* Mobile App Bottom Navigation Bar */}
+        {/* Mobile App Bottom Navigation Dock */}
         <nav
-          className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-navy-800/80 bg-navy-950/95 px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-1.5 backdrop-blur-md shadow-lg lg:hidden"
+          className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-navy-800/80 bg-navy-950/95 px-2 pb-[calc(0.55rem+env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl shadow-2xl lg:hidden"
           aria-label="Quick navigation"
         >
           {bottomNavItems.map(({ to, label, icon: Icon, end }) => (
@@ -161,7 +210,7 @@ export default function Layout() {
               to={to}
               end={end}
               className={({ isActive }) =>
-                `flex flex-1 flex-col items-center justify-center py-1 text-[11px] font-semibold transition ${
+                `group flex flex-1 flex-col items-center justify-center py-1 text-[11px] font-bold transition-all duration-150 ${
                   isActive ? 'text-pitch-400' : 'text-slate-400 hover:text-slate-200'
                 }`
               }
@@ -169,25 +218,29 @@ export default function Layout() {
               {({ isActive }) => (
                 <>
                   <div
-                    className={`flex h-7 w-12 items-center justify-center rounded-full transition ${
-                      isActive ? 'bg-pitch-500/20 text-pitch-400' : 'text-slate-400'
+                    className={`flex h-8 w-13 items-center justify-center rounded-xl transition-all duration-150 ${
+                      isActive
+                        ? 'bg-pitch-500/20 text-pitch-400 border border-pitch-500/30 shadow-glow-pitch scale-105'
+                        : 'text-slate-400 group-hover:bg-navy-900/60'
                     }`}
                   >
                     <Icon className="h-4.5 w-4.5" aria-hidden />
                   </div>
-                  <span className="mt-0.5 tracking-tight">{label}</span>
+                  <span className={`mt-1 tracking-tight text-[10px] ${isActive ? 'font-black text-pitch-300' : 'font-semibold'}`}>
+                    {label}
+                  </span>
                 </>
               )}
             </NavLink>
           ))}
           <button
             onClick={() => setOpen(true)}
-            className="flex flex-1 flex-col items-center justify-center py-1 text-[11px] font-semibold text-slate-400 hover:text-slate-200 transition"
+            className="group flex flex-1 flex-col items-center justify-center py-1 text-[11px] font-semibold text-slate-400 hover:text-slate-200 transition-all duration-150"
           >
-            <div className="flex h-7 w-12 items-center justify-center rounded-full text-slate-400">
+            <div className="flex h-8 w-13 items-center justify-center rounded-xl text-slate-400 group-hover:bg-navy-900/60 transition-all">
               <Menu className="h-4.5 w-4.5" aria-hidden />
             </div>
-            <span className="mt-0.5 tracking-tight">More</span>
+            <span className="mt-1 tracking-tight text-[10px] font-semibold">More</span>
           </button>
         </nav>
       </div>
