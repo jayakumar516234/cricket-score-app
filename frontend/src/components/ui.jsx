@@ -371,18 +371,50 @@ export function Pagination({ page, pages, total, onPage }) {
   );
 }
 
-const STATUS_STYLES = {
-  live: 'bg-red-100 text-red-700',
-  scheduled: 'bg-blue-100 text-blue-700',
-  completed: 'bg-green-100 text-green-700',
-  abandoned: 'bg-slate-200 text-slate-600',
+const STATUS_CONFIGS = {
+  live: {
+    className: 'bg-red-500/10 text-red-600 border border-red-500/30 shadow-xs shadow-red-500/10',
+    dot: 'bg-red-600',
+    pulse: true,
+    label: 'LIVE',
+  },
+  completed: {
+    className: 'bg-emerald-500/10 text-emerald-700 border border-emerald-500/30 shadow-xs shadow-emerald-500/10',
+    dot: 'bg-emerald-600',
+    pulse: false,
+    label: 'COMPLETED',
+  },
+  scheduled: {
+    className: 'bg-blue-500/10 text-blue-700 border border-blue-500/30 shadow-xs',
+    dot: 'bg-blue-600',
+    pulse: false,
+    label: 'UPCOMING',
+  },
+  abandoned: {
+    className: 'bg-slate-500/10 text-slate-600 border border-slate-300',
+    dot: 'bg-slate-400',
+    pulse: false,
+    label: 'ABANDONED',
+  },
 };
-export const StatusBadge = ({ status }) => (
-  <span className={`badge capitalize ${STATUS_STYLES[status] || STATUS_STYLES.scheduled}`}>
-    {status === 'live' && <span className="mr-1.5 h-1.5 w-1.5 animate-pulse rounded-full bg-red-600" />}
-    {status}
-  </span>
-);
+
+export const StatusBadge = ({ status }) => {
+  const conf = STATUS_CONFIGS[status] || STATUS_CONFIGS.scheduled;
+  return (
+    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold tracking-wide transition ${conf.className}`}>
+      {conf.pulse ? (
+        <span className="relative flex h-2 w-2">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-red-600" />
+        </span>
+      ) : (
+        <span className={`h-1.5 w-1.5 rounded-full ${conf.dot}`} />
+      )}
+      {conf.label}
+    </span>
+  );
+};
+
 
 /** Resizes a picked image in the browser so only a small data URL is sent to the server. */
 export function resizeImage(file, max = 256, quality = 0.82) {

@@ -107,19 +107,32 @@ export default function Dashboard() {
           {data.recentMatches.length === 0 ? (
             <Empty icon={Trophy} title="No matches yet" text="Matches you create will show up here." />
           ) : (
-            <ul className="space-y-2">
-              {data.recentMatches.map((m) => (
-                <li key={m.id}>
-                  <Link to={`/matches/${m.id}`} className="card block p-3 hover:ring-blue-300">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-semibold text-slate-900">{m.name}</span>
-                      <StatusBadge status={m.status} />
-                    </div>
-                    <MatchScoreLine match={m} />
-                  </Link>
-                </li>
-              ))}
+            <ul className="space-y-2.5">
+              {data.recentMatches.map((m) => {
+                const borderAccent =
+                  m.status === 'live'
+                    ? 'border-l-4 border-l-red-500 border-red-200/80 bg-gradient-to-r from-red-50/40 to-white hover:border-red-300'
+                    : m.status === 'completed'
+                    ? 'border-l-4 border-l-emerald-500 border-emerald-200/70 bg-gradient-to-r from-emerald-50/25 to-white hover:border-emerald-300'
+                    : 'border-l-4 border-l-blue-500 border-slate-200/80 hover:border-blue-300';
+
+                return (
+                  <li key={m.id}>
+                    <Link
+                      to={`/matches/${m.id}`}
+                      className={`card block p-3.5 transition-all shadow-xs hover:shadow-md ${borderAccent}`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-bold text-slate-900 truncate">{m.name}</span>
+                        <StatusBadge status={m.status} />
+                      </div>
+                      <MatchScoreLine match={m} />
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
+
           )}
         </section>
 

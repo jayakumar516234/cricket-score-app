@@ -106,40 +106,50 @@ export default function Matches() {
       ) : (
         <>
           <ul className="space-y-3">
-            {data.items.map((m) => (
-              <li key={m.id} className="card p-3.5 sm:p-4 hover:shadow-xs transition border border-slate-200/80">
-                <div className="flex items-start justify-between gap-2">
-                  <Link to={`/matches/${m.id}`} className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="font-bold text-slate-900 text-sm sm:text-base truncate">{m.name}</span>
-                        <span className="badge bg-slate-100 text-slate-600 text-[10px] uppercase font-bold py-0.5 px-2">
-                          {m.format} • {m.overs} ov
-                        </span>
+            {data.items.map((m) => {
+              const borderAccent =
+                m.status === 'live'
+                  ? 'border-l-4 border-l-red-500 border-red-200/80 bg-gradient-to-r from-red-50/25 to-white'
+                  : m.status === 'completed'
+                  ? 'border-l-4 border-l-emerald-500 border-emerald-200/70 bg-gradient-to-r from-emerald-50/20 to-white'
+                  : 'border-l-4 border-l-blue-500 border-slate-200/80';
+
+              return (
+                <li key={m.id} className={`card p-3.5 sm:p-4 hover:shadow-md transition ${borderAccent}`}>
+                  <div className="flex items-start justify-between gap-2">
+                    <Link to={`/matches/${m.id}`} className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="font-bold text-slate-900 text-sm sm:text-base truncate">{m.name}</span>
+                          <span className="badge bg-slate-100 text-slate-600 text-[10px] uppercase font-bold py-0.5 px-2">
+                            {m.format} • {m.overs} ov
+                          </span>
+                        </div>
+                        <StatusBadge status={m.status} />
                       </div>
-                      <StatusBadge status={m.status} />
-                    </div>
-                    {(m.venue || m.date) && (
-                      <div className="text-[11px] text-slate-400 mt-1">
-                        {m.venue ? `${m.venue}` : ''}{m.venue && m.date ? ' • ' : ''}{m.date ? `${fmtDate(m.date)}` : ''}
-                      </div>
+                      {(m.venue || m.date) && (
+                        <div className="text-[11px] text-slate-400 mt-1">
+                          {m.venue ? `${m.venue}` : ''}{m.venue && m.date ? ' • ' : ''}{m.date ? `${fmtDate(m.date)}` : ''}
+                        </div>
+                      )}
+                      <MatchScoreLine match={m} />
+                    </Link>
+                    {m.canManage && (
+                      <button
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600 transition"
+                        onClick={() => setDel(m)}
+                        aria-label={`Delete ${m.name}`}
+                        title="Delete Match"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     )}
-                    <MatchScoreLine match={m} />
-                  </Link>
-                  {m.canManage && (
-                    <button
-                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600 transition"
-                      onClick={() => setDel(m)}
-                      aria-label={`Delete ${m.name}`}
-                      title="Delete Match"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-              </li>
-            ))}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
+
           <Pagination page={data.page} pages={data.pages} total={data.total} onPage={setPage} />
         </>
       )}
