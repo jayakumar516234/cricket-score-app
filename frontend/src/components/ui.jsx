@@ -51,10 +51,224 @@ export const CricketBallIcon = ({ className = "w-10 h-10" }) => (
   </svg>
 );
 
-export const Spinner = ({ label = 'Loading...', size = 'default' }) => {
-  const isSmall = size === 'sm';
+export const CricketShotLoader = ({ label = 'Loading match details...' }) => (
+  <div
+    className="flex min-h-[55vh] sm:min-h-[65vh] w-full flex-col items-center justify-center p-4 sm:p-8 select-none"
+    role="status"
+    aria-label={label}
+  >
+    {/* Stadium backdrop container */}
+    <div className="relative w-full max-w-xl rounded-3xl overflow-hidden bg-gradient-to-b from-slate-900 via-navy-950 to-slate-950 p-6 sm:p-10 shadow-2xl ring-1 ring-white/10 flex flex-col items-center justify-center">
+      {/* Stadium floodlights glow */}
+      <div className="pointer-events-none absolute -top-16 left-1/4 h-36 w-36 rounded-full bg-blue-500/20 blur-3xl" />
+      <div className="pointer-events-none absolute -top-16 right-1/4 h-36 w-36 rounded-full bg-emerald-500/20 blur-3xl" />
+      
+      {/* Stadium boundary light header */}
+      <div className="absolute top-3 inset-x-0 flex items-center justify-center gap-2 px-6">
+        <span className="h-1 w-12 rounded-full bg-blue-500/30" />
+        <span className="text-[10px] uppercase font-bold tracking-widest text-blue-300/70">
+          Match Center
+        </span>
+        <span className="h-1 w-12 rounded-full bg-blue-500/30" />
+      </div>
 
-  if (isSmall) {
+      {/* Main Cricket Scene SVG Animation */}
+      <div className="relative w-full max-w-[380px] h-[210px] sm:h-[240px] flex items-center justify-center mt-3">
+        <svg
+          viewBox="0 0 320 200"
+          className="w-full h-full overflow-visible drop-shadow-xl"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <defs>
+            {/* Pitch gradient */}
+            <linearGradient id="pitchGrass" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#15803d" />
+              <stop offset="60%" stopColor="#166534" />
+              <stop offset="100%" stopColor="#14532d" />
+            </linearGradient>
+            <linearGradient id="pitchCrease" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#d97706" />
+              <stop offset="50%" stopColor="#b45309" />
+              <stop offset="100%" stopColor="#92400e" />
+            </linearGradient>
+            {/* Red Cricket Ball Gradient */}
+            <radialGradient id="ballRed" cx="35%" cy="30%" r="65%">
+              <stop offset="0%" stopColor="#f87171" />
+              <stop offset="40%" stopColor="#dc2626" />
+              <stop offset="85%" stopColor="#991b1b" />
+              <stop offset="100%" stopColor="#450a0a" />
+            </radialGradient>
+            {/* Bat Wood Grain Gradient */}
+            <linearGradient id="batWood" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#fef3c7" />
+              <stop offset="35%" stopColor="#fde68a" />
+              <stop offset="80%" stopColor="#d97706" />
+              <stop offset="100%" stopColor="#92400e" />
+            </linearGradient>
+            {/* Hit Spark Flash */}
+            <radialGradient id="sparkGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#ffffff" />
+              <stop offset="40%" stopColor="#fef08a" />
+              <stop offset="80%" stopColor="#f97316" />
+              <stop offset="100%" stopColor="transparent" />
+            </radialGradient>
+          </defs>
+
+          {/* 1. Grass Turf & Crease Base */}
+          <ellipse cx="160" cy="178" rx="150" ry="20" fill="url(#pitchGrass)" opacity="0.8" />
+          {/* Pitch mat strip */}
+          <path d="M 40 178 L 280 178" stroke="url(#pitchCrease)" strokeWidth="12" strokeLinecap="round" opacity="0.75" />
+          {/* Popping Crease white line */}
+          <line x1="82" y1="172" x2="135" y2="172" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" opacity="0.9" />
+          <line x1="225" y1="172" x2="265" y2="172" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" opacity="0.6" />
+
+          {/* 2. Three Stumps and Bails at batsman's end */}
+          <g transform="translate(68, 118)">
+            {/* Stumps Shadow */}
+            <ellipse cx="12" cy="56" rx="14" ry="3" fill="#022c22" opacity="0.6" />
+            {/* Stump 1 (Off) */}
+            <rect x="2" y="4" width="4" height="52" rx="1.5" fill="#fef08a" stroke="#ca8a04" strokeWidth="0.8" />
+            {/* Stump 2 (Middle) */}
+            <rect x="10" y="2" width="4" height="54" rx="1.5" fill="#fef08a" stroke="#ca8a04" strokeWidth="0.8" />
+            {/* Stump 3 (Leg) */}
+            <rect x="18" y="4" width="4" height="52" rx="1.5" fill="#fef08a" stroke="#ca8a04" strokeWidth="0.8" />
+            {/* Bails */}
+            <rect x="0" y="1" width="11" height="2.5" rx="1" fill="#facc15" />
+            <rect x="13" y="1" width="11" height="2.5" rx="1" fill="#facc15" />
+          </g>
+
+          {/* 3. Pitch bounce dust cloud */}
+          <g transform="translate(165, 172)" className="anim-shot-dust">
+            <circle cx="0" cy="0" r="8" fill="#fde68a" opacity="0.6" />
+            <circle cx="8" cy="-2" r="5" fill="#fef3c7" opacity="0.5" />
+          </g>
+
+          {/* 4. Batsman Character (Body + Legs + Batting Swing) */}
+          <g transform="translate(90, 80)">
+            {/* Shadow beneath batsman feet */}
+            <ellipse cx="26" cy="94" rx="22" ry="5" fill="#022c22" opacity="0.7" />
+
+            {/* Batsman Body (Front foot drive movement) */}
+            <g className="anim-batsman-body">
+              {/* Back Leg with pads */}
+              <rect x="8" y="55" width="8" height="38" rx="4" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1" />
+              <rect x="7" y="60" width="10" height="26" rx="3" fill="#f8fafc" stroke="#94a3b8" strokeWidth="0.8" />
+              <rect x="6" y="88" width="12" height="6" rx="2" fill="#0284c7" />
+
+              {/* Front Leg (Stepping into the shot) */}
+              <rect x="22" y="52" width="9" height="42" rx="4.5" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1" />
+              <rect x="21" y="58" width="11" height="28" rx="3" fill="#f8fafc" stroke="#94a3b8" strokeWidth="0.8" />
+              <rect x="22" y="90" width="14" height="6" rx="2" fill="#0284c7" />
+
+              {/* Team Jersey / Torso */}
+              <path
+                d="M 12 28 C 12 28, 20 22, 32 24 C 40 25, 42 32, 40 54 L 14 54 Z"
+                fill="#2563eb"
+              />
+              {/* Jersey accent stripe */}
+              <path d="M 16 32 L 36 34 L 34 40 L 16 38 Z" fill="#38bdf8" />
+
+              {/* Cricket Helmet & Face */}
+              <circle cx="32" cy="14" r="11" fill="#1e3a8a" />
+              {/* Helmet Peak */}
+              <path d="M 33 16 L 46 17 L 43 20 Z" fill="#1d4ed8" />
+              {/* Steel Grill */}
+              <path d="M 36 17 L 44 21 L 36 24 Z" stroke="#e2e8f0" strokeWidth="1.2" fill="none" />
+              {/* Player face peek */}
+              <circle cx="37" cy="16" r="3.5" fill="#fed7aa" />
+
+              {/* Left Arm / Shoulder */}
+              <path d="M 22 28 Q 28 36, 32 38" stroke="#2563eb" strokeWidth="6" strokeLinecap="round" />
+            </g>
+
+            {/* Batting Arm & Cricket Bat (Swinging powerfully) */}
+            <g className="anim-bat-swing">
+              {/* Hands & Batting Gloves */}
+              <circle cx="33" cy="38" r="4.5" fill="#ffffff" stroke="#ef4444" strokeWidth="1" />
+              <circle cx="35" cy="42" r="4" fill="#ffffff" stroke="#ef4444" strokeWidth="1" />
+
+              {/* Bat Handle with rubber grip */}
+              <rect x="33" y="36" width="4" height="22" rx="1.5" fill="#ffffff" stroke="#1e293b" strokeWidth="0.6" />
+              <line x1="33" y1="41" x2="37" y2="41" stroke="#ef4444" strokeWidth="1" />
+              <line x1="33" y1="47" x2="37" y2="47" stroke="#ef4444" strokeWidth="1" />
+              <line x1="33" y1="53" x2="37" y2="53" stroke="#ef4444" strokeWidth="1" />
+
+              {/* Bat Blade (Willow Wood) */}
+              <path
+                d="M 31 56 L 40 56 L 39 104 C 39 107, 32 107, 32 104 Z"
+                fill="url(#batWood)"
+                stroke="#78350f"
+                strokeWidth="1"
+              />
+              {/* Bat Colored Stickers */}
+              <rect x="33" y="60" width="5" height="18" rx="1" fill="#dc2626" />
+              <rect x="33" y="63" width="5" height="4" fill="#facc15" />
+            </g>
+
+            {/* Impact Flash Effect right at the bat's sweet spot */}
+            <g transform="translate(36, 68)" className="anim-impact-spark">
+              {/* Bright glowing burst */}
+              <circle cx="0" cy="0" r="16" fill="url(#sparkGlow)" />
+              {/* Sharp impact star spikes */}
+              <path d="M -18 0 L 18 0 M 0 -18 L 0 18 M -12 -12 L 12 12 M -12 12 L 12 -12" stroke="#fef08a" strokeWidth="2" strokeLinecap="round" />
+            </g>
+          </g>
+
+          {/* 5. Animated Cricket Ball Delivery, Pitch Bounce & Shot Launch */}
+          <g transform="translate(100, 148)">
+            <g className="anim-ball-delivery">
+              {/* Red Leather Cricket Ball */}
+              <circle cx="0" cy="0" r="8" fill="url(#ballRed)" />
+              {/* Shiny reflection */}
+              <ellipse cx="-2.5" cy="-2.5" rx="3" ry="1.8" transform="rotate(-30 -2.5 -2.5)" fill="#ffffff" opacity="0.45" />
+              {/* White seam line */}
+              <path d="M -6 -2 Q 0 4, 6 2" stroke="#ffffff" strokeWidth="1.2" strokeLinecap="round" fill="none" />
+              <path d="M -3 0 L -3 3 M 0 1 L 0 4 M 3 0 L 3 3" stroke="#fef08a" strokeWidth="0.8" strokeLinecap="round" />
+              
+              {/* Speed / motion trail streak behind ball */}
+              <path d="M 6 0 L 22 -3" stroke="#f87171" strokeWidth="2.5" strokeLinecap="round" opacity="0.5" />
+            </g>
+          </g>
+
+          {/* Boundary Six Star Trails in sky */}
+          <g opacity="0.75">
+            <path d="M 170 30 Q 230 40, 290 20" stroke="#38bdf8" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.4" />
+          </g>
+        </svg>
+      </div>
+
+      {/* Loading Status Banner */}
+      <div className="mt-6 flex flex-col items-center text-center">
+        <div className="inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur-md px-4 py-1.5 ring-1 ring-white/15">
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+          </span>
+          <span className="text-xs font-semibold tracking-wider uppercase text-emerald-400">
+            Live Action
+          </span>
+        </div>
+
+        <h3 className="mt-3 text-base sm:text-lg font-bold text-white tracking-wide">
+          {label}
+        </h3>
+        
+        <p className="mt-1 text-xs sm:text-sm text-slate-300/80 flex items-center gap-1.5">
+          <span>Timing the shot</span>
+          <span className="inline-flex gap-1">
+            <span className="h-1 w-1 animate-bounce rounded-full bg-red-400 [animation-delay:-0.3s]" />
+            <span className="h-1 w-1 animate-bounce rounded-full bg-yellow-400 [animation-delay:-0.15s]" />
+            <span className="h-1 w-1 animate-bounce rounded-full bg-emerald-400" />
+          </span>
+        </p>
+      </div>
+    </div>
+  </div>
+);
+
+export const Spinner = ({ label = 'Loading...', size = 'default' }) => {
+  if (size === 'sm') {
     return (
       <div className="inline-flex items-center gap-2 text-slate-500" role="status">
         <div className="cricket-ball-spin shrink-0">
@@ -65,41 +279,9 @@ export const Spinner = ({ label = 'Loading...', size = 'default' }) => {
     );
   }
 
-  return (
-    <div className="flex flex-col items-center justify-center py-12 px-4 select-none" role="status">
-      <div className="relative flex flex-col items-center justify-center h-24 w-32">
-        {/* Animated Cricket Ball */}
-        <div className="cricket-ball-bounce z-10 flex items-center justify-center">
-          <div className="cricket-ball-spin">
-            <CricketBallIcon className="h-12 w-12 drop-shadow-md" />
-          </div>
-        </div>
-        
-        {/* Pitch ground line & ball shadow */}
-        <div className="absolute bottom-2 flex flex-col items-center">
-          {/* Dynamic shadow */}
-          <div className="cricket-ball-shadow h-2.5 w-10 rounded-full bg-slate-400/40 blur-[1.5px]" />
-          {/* Turf / crease accent line */}
-          <div className="mt-1 flex items-center gap-1">
-            <span className="h-1 w-2 rounded-full bg-pitch-500/60" />
-            <span className="h-1 w-12 rounded-full bg-pitch-600 shadow-sm" />
-            <span className="h-1 w-2 rounded-full bg-pitch-500/60" />
-          </div>
-        </div>
-      </div>
-
-      {/* Label with bouncing dots */}
-      <div className="mt-3 flex items-center gap-2">
-        <span className="text-sm font-semibold tracking-wide text-slate-700">{label}</span>
-        <span className="inline-flex gap-1">
-          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-red-500 [animation-delay:-0.3s]" />
-          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-pitch-600 [animation-delay:-0.15s]" />
-          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-blue-600" />
-        </span>
-      </div>
-    </div>
-  );
+  return <CricketShotLoader label={label} />;
 };
+
 
 export const ErrorBox = ({ message, onRetry }) =>
   message ? (

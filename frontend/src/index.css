@@ -18,63 +18,135 @@ body { @apply bg-slate-100 text-slate-800 antialiased; }
   .card { @apply rounded-xl bg-white shadow-sm ring-1 ring-slate-200; }
 }
 
-/* Cricket Loader Animations */
-@keyframes cricketBounce {
-  0%, 100% {
-    transform: translateY(0) scale(1, 1);
-    animation-timing-function: cubic-bezier(0.3, 0, 0.7, 0);
-  }
-  50% {
-    transform: translateY(-28px) scale(0.96, 1.04);
-    animation-timing-function: cubic-bezier(0, 0.7, 0.3, 1);
-  }
-  98% {
-    transform: translateY(0) scale(1.15, 0.85);
-  }
-}
 
-@keyframes cricketShadow {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 0.6;
-  }
-  50% {
-    transform: scale(0.55);
-    opacity: 0.2;
-  }
-}
-
-@keyframes cricketSpin {
+/* Cricket Shot & Batsman Animation */
+@keyframes ballDeliveryAndHit {
   0% {
-    transform: rotate(0deg);
+    /* Bowler delivers from far right/pitch */
+    transform: translate(160px, -40px) scale(0.55);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  /* Pitch bounce point */
+  45% {
+    transform: translate(65px, 20px) scale(0.85);
+  }
+  /* Rising towards batsman's bat sweet spot */
+  60% {
+    transform: translate(12px, -8px) scale(1);
+    opacity: 1;
+  }
+  /* Bat impact instant */
+  63% {
+    transform: translate(8px, -12px) scale(1.1);
+  }
+  /* Rocket shot towards boundary (top-right or cover drive) */
+  88% {
+    transform: translate(220px, -90px) scale(0.6);
+    opacity: 1;
   }
   100% {
-    transform: rotate(360deg);
+    transform: translate(260px, -120px) scale(0.3);
+    opacity: 0;
   }
 }
 
-@keyframes cricketBatSwing {
-  0%, 100% {
-    transform: rotate(-18deg);
+@keyframes batsmanSwing {
+  0%, 15% {
+    /* Ready stance / backlift */
+    transform: rotate(-35deg);
+  }
+  45% {
+    /* Downswing starting as ball bounces */
+    transform: rotate(-15deg);
+  }
+  62% {
+    /* Powerful contact at impact */
+    transform: rotate(38deg);
+  }
+  80% {
+    /* High follow-through */
+    transform: rotate(70deg);
+  }
+  95%, 100% {
+    /* Return to stance */
+    transform: rotate(-35deg);
+  }
+}
+
+@keyframes batsmanBodyShift {
+  0%, 20% {
+    transform: translateX(0) scale(1);
   }
   50% {
-    transform: rotate(14deg);
+    /* Front foot stride forward */
+    transform: translateX(6px) scale(1.02);
+  }
+  62% {
+    /* Leaning into the drive */
+    transform: translateX(10px) scale(1.03);
+  }
+  90%, 100% {
+    transform: translateX(0) scale(1);
   }
 }
 
-.cricket-ball-bounce {
-  animation: cricketBounce 0.85s infinite;
+@keyframes impactFlash {
+  0%, 58% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  61% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+  70% {
+    opacity: 0;
+    transform: scale(1.8);
+  }
+  100% {
+    opacity: 0;
+  }
 }
 
-.cricket-ball-spin {
-  animation: cricketSpin 1.4s linear infinite;
+@keyframes shotDust {
+  0%, 42% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  46% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  58% {
+    opacity: 0;
+    transform: scale(1.6) translateY(-4px);
+  }
+  100% {
+    opacity: 0;
+  }
 }
 
-.cricket-ball-shadow {
-  animation: cricketShadow 0.85s infinite;
+.anim-ball-delivery {
+  animation: ballDeliveryAndHit 2.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
 }
 
-.cricket-bat-swing {
-  transform-origin: top left;
-  animation: cricketBatSwing 0.85s ease-in-out infinite;
+.anim-bat-swing {
+  transform-origin: 32px 34px;
+  animation: batsmanSwing 2.2s ease-in-out infinite;
 }
+
+.anim-batsman-body {
+  animation: batsmanBodyShift 2.2s ease-in-out infinite;
+}
+
+.anim-impact-spark {
+  animation: impactFlash 2.2s ease-out infinite;
+}
+
+.anim-shot-dust {
+  animation: shotDust 2.2s ease-out infinite;
+}
+
