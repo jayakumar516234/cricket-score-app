@@ -49,8 +49,8 @@ export default function UsersPage() {
     if (form.name.trim().length < 2) return setFormError('Enter a name');
     if (!form.id && !/^[a-zA-Z0-9_.]{3,30}$/.test(form.username)) return setFormError('Username: 3-30 letters, numbers, dot or underscore');
     if (!/^(\+?91)?0?[6-9]\d{9}$/.test(form.phone.replace(/[\s-]/g, ''))) return setFormError('Enter a valid 10-digit mobile number');
-    if (!form.id && form.password.length < 6) return setFormError('Password must be at least 6 characters');
-    if (form.id && form.password && form.password.length < 6) return setFormError('Password must be at least 6 characters');
+    if (!form.id && form.password.length < 4) return setFormError('Password must be at least 4 characters');
+    if (form.id && form.password && form.password.length < 4) return setFormError('Password must be at least 4 characters');
     setBusy(true);
     try {
       if (form.id) {

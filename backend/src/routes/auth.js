@@ -30,7 +30,7 @@ export const signupFields = {
     .regex(USERNAME_RE, 'Username must be 3-30 characters: letters, numbers, dot or underscore')
     .regex(/[a-z]/, 'Username must contain at least one letter'),
   phone: z.string().trim().transform(normalizePhone).refine(isValidPhone, 'Enter a valid 10-digit mobile number'),
-  password: z.string().min(6, 'Password must be at least 6 characters').max(100),
+  password: z.string().min(4, 'Password must be at least 4 characters').max(100),
 };
 const registerSchema = z.object(signupFields);
 
