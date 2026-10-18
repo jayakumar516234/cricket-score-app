@@ -167,7 +167,7 @@ export default function CreateMatch() {
       <ErrorBox message={formError} />
       <p className="rounded-lg bg-blue-50 p-3 text-sm text-blue-800">You will choose the playing 11 of each team when you start the match.</p>
 
-      <section className="card space-y-4 p-4">
+      <section className="card space-y-4 p-4 border border-slate-200/80 shadow-xs">
         <Field label="Match Name (optional)" htmlFor="mname">
           <input
             id="mname"
@@ -178,11 +178,81 @@ export default function CreateMatch() {
             maxLength={100}
           />
         </Field>
+      </section>
 
-        <div>
-          <div className="mb-1 flex items-center justify-between">
-            <label className="label !mb-0" htmlFor="home">Select Teams <span className="text-red-500">*</span></label>
-            <span className="badge bg-green-100 text-green-700">Your Own Team</span>
+      {/* Team Selection Section - Modern Battle Arena Style */}
+      <section className="card p-4 sm:p-5 space-y-5 border border-slate-200/80 shadow-xs">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+
+          <div>
+            <h2 className="text-base font-bold text-slate-900">Select Match Teams</h2>
+            <p className="text-xs text-slate-500">Pick your own squad and opponent team</p>
+          </div>
+          <span className="badge bg-pitch-50 text-pitch-700 border border-pitch-200">
+            Playing 11
+          </span>
+        </div>
+
+        {/* VS Battle Matchup Preview Card */}
+        <div className="relative rounded-2xl bg-gradient-to-r from-slate-900 via-navy-950 to-slate-900 p-4 text-white shadow-md overflow-hidden">
+          <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-blue-500/20 blur-2xl pointer-events-none" />
+          <div className="absolute -left-8 -bottom-8 h-28 w-28 rounded-full bg-pitch-500/20 blur-2xl pointer-events-none" />
+          
+          <div className="relative flex items-center justify-between gap-3">
+            {/* Home / Own Team Box */}
+            <div className="flex-1 text-center min-w-0">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 ring-2 ring-pitch-400/50 backdrop-blur-sm">
+                {home ? <TeamLogo team={home} size={36} /> : <Shield className="h-6 w-6 text-pitch-400" />}
+              </div>
+              <div className="mt-2 text-xs font-bold truncate text-white">
+                {home ? home.name : 'Select Your Team'}
+              </div>
+              <span className="inline-block mt-0.5 text-[10px] font-semibold text-pitch-400 uppercase tracking-wider">
+                Home / Own Team
+              </span>
+            </div>
+
+            {/* VS Badge */}
+            <div className="flex flex-col items-center justify-center shrink-0">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-red-600 to-amber-500 text-xs font-black text-white shadow-md ring-2 ring-white/20">
+                VS
+              </span>
+              <span className="mt-1 text-[9px] font-semibold text-slate-400 uppercase tracking-widest">
+                Fixture
+              </span>
+            </div>
+
+            {/* Away / Opponent Team Box */}
+            <div className="flex-1 text-center min-w-0">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 ring-2 ring-blue-400/50 backdrop-blur-sm">
+                {effectiveAway ? (
+                  f.awayTeam === 'guest' ? (
+                    <Users className="h-6 w-6 text-amber-400" />
+                  ) : (
+                    <TeamLogo team={effectiveAway} size={36} />
+                  )
+                ) : (
+                  <Shield className="h-6 w-6 text-blue-400" />
+                )}
+              </div>
+              <div className="mt-2 text-xs font-bold truncate text-white">
+                {effectiveAway ? effectiveAway.name : 'Select Opponent'}
+              </div>
+              <span className="inline-block mt-0.5 text-[10px] font-semibold text-blue-400 uppercase tracking-wider">
+                {f.awayTeam === 'guest' ? 'Manual Opponent' : 'Opponent'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Home Team Input Card */}
+        <div className="rounded-xl border border-pitch-200/80 bg-pitch-50/30 p-3.5 space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-bold uppercase tracking-wider text-pitch-900 flex items-center gap-1.5" htmlFor="home">
+              <span className="h-2 w-2 rounded-full bg-pitch-600" />
+              1. Your Own Team <span className="text-red-500">*</span>
+            </label>
+            <span className="badge bg-pitch-100 text-pitch-800 text-[10px]">Verified Squad</span>
           </div>
           <DropdownSelect
             id="home"
@@ -192,11 +262,18 @@ export default function CreateMatch() {
             placeholder="Choose your team"
             error={!!errors.homeTeam}
           />
-          {errors.homeTeam && <p className="mt-1 text-xs text-red-600" role="alert">{errors.homeTeam}</p>}
+          {errors.homeTeam && <p className="text-xs text-red-600 font-medium" role="alert">{errors.homeTeam}</p>}
         </div>
 
-        <div>
-          <label className="label" htmlFor="away">Opponent Team <span className="text-red-500">*</span></label>
+        {/* Opponent Selection Card */}
+        <div className="rounded-xl border border-blue-200/80 bg-blue-50/20 p-3.5 space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-bold uppercase tracking-wider text-blue-900 flex items-center gap-1.5" htmlFor="away">
+              <span className="h-2 w-2 rounded-full bg-blue-600" />
+              2. Opponent Team <span className="text-red-500">*</span>
+            </label>
+            <span className="text-[11px] text-slate-500">Connected or Manual</span>
+          </div>
           <DropdownSelect
             id="away"
             value={f.awayTeam}
@@ -205,44 +282,62 @@ export default function CreateMatch() {
             placeholder={connLoading ? 'Loading opponents...' : 'Choose opponent'}
             error={!!errors.awayTeam}
           />
-          {errors.awayTeam && <p className="mt-1 text-xs text-red-600" role="alert">{errors.awayTeam}</p>}
+          {errors.awayTeam && <p className="text-xs text-red-600 font-medium" role="alert">{errors.awayTeam}</p>}
         </div>
 
         {/* If Guest Team is selected, show custom name & 11s configuration */}
         {f.awayTeam === 'guest' && (
-          <div className="rounded-xl border border-blue-200 bg-blue-50/40 p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="font-bold text-slate-900 flex items-center gap-2 text-sm">
-                <Users className="h-4 w-4 text-blue-600" />
-                <span>Manual Opponent Team (11 Players)</span>
+          <div className="rounded-2xl border-2 border-dashed border-amber-300 bg-gradient-to-b from-amber-50/80 to-white p-4 sm:p-5 space-y-4 shadow-xs">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white shadow-xs">
+                  <Users className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm sm:text-base">Manual Opponent Team (11 Players)</h3>
+                  <p className="text-xs text-slate-500">Name the team & customize the 11 players playing today</p>
+                </div>
               </div>
-              <span className="badge bg-blue-100 text-blue-700 text-xs">Guest 11</span>
-            </div>
-            <p className="text-xs text-slate-600">
-              Set the opponent team name and customize the 11 manual players for this match.
-            </p>
-
-            <div>
-              <label className="label" htmlFor="guest-name">Opponent Team Name</label>
-              <input
-                id="guest-name"
-                className="input bg-white"
-                value={f.guestTeamName}
-                onChange={(e) => set({ guestTeamName: e.target.value })}
-                placeholder="e.g. Guest Team or St. Paul's XI"
-                maxLength={60}
-              />
+              <span className="badge bg-amber-100 text-amber-800 border border-amber-300 font-bold text-[10px] shrink-0">
+                Manual 11s
+              </span>
             </div>
 
             <div>
-              <div className="text-xs font-semibold text-slate-700 mb-2">Manual 11s Squad:</div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto p-2 border border-slate-200 rounded-lg bg-white">
+              <label className="label text-xs font-bold uppercase text-slate-700" htmlFor="guest-name">
+                Opponent Team Name <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  id="guest-name"
+                  className="input font-semibold text-slate-800 pl-3 pr-10 border-amber-200 focus:border-amber-500 focus:ring-amber-400/20"
+                  value={f.guestTeamName}
+                  onChange={(e) => set({ guestTeamName: e.target.value })}
+                  placeholder="e.g. Chennai Super Warriors, Guest XI"
+                  maxLength={60}
+                />
+                <span className="absolute right-3 top-2.5 text-xs font-bold text-amber-600">XI</span>
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                  Playing 11 Squad List
+                </span>
+                <span className="text-[11px] font-semibold text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded-full">
+                  11 / 11 Players
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-72 overflow-y-auto p-2.5 border border-slate-200 rounded-xl bg-slate-50/60 shadow-inner">
                 {guestPlayers.map((player, idx) => (
-                  <div key={idx} className="flex items-center gap-1.5 p-1 rounded-md border border-slate-100 bg-slate-50 text-xs">
-                    <span className="w-5 text-center font-mono font-bold text-slate-400">{idx + 1}</span>
+                  <div key={idx} className="flex items-center gap-1.5 p-1.5 rounded-lg border border-slate-200 bg-white text-xs shadow-2xs hover:border-blue-300 transition">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-slate-100 font-mono text-[11px] font-black text-slate-600">
+                      {idx + 1}
+                    </span>
                     <input
                       type="text"
-                      className="input !py-1 !px-2 flex-1 text-xs bg-white"
+                      className="input !py-1 !px-2 flex-1 text-xs border-slate-200 font-medium"
                       value={player.name}
                       onChange={(e) => {
                         const updated = [...guestPlayers];
@@ -253,7 +348,7 @@ export default function CreateMatch() {
                       maxLength={40}
                     />
                     <select
-                      className="input !py-1 !px-1 text-xs w-20 bg-white"
+                      className="input !py-1 !px-1.5 text-xs w-24 border-slate-200 font-medium text-slate-700 bg-slate-50"
                       value={player.role}
                       onChange={(e) => {
                         const updated = [...guestPlayers];
@@ -261,10 +356,10 @@ export default function CreateMatch() {
                         setGuestPlayers(updated);
                       }}
                     >
-                      <option value="Batsman">Bat</option>
-                      <option value="Bowler">Bowl</option>
-                      <option value="All-rounder">All</option>
-                      <option value="Wicket Keeper">WK</option>
+                      <option value="Batsman">🏏 Batsman</option>
+                      <option value="Bowler">⚾ Bowler</option>
+                      <option value="All-rounder">⚡ All-rounder</option>
+                      <option value="Wicket Keeper">🧤 Keeper</option>
                     </select>
                   </div>
                 ))}
@@ -274,17 +369,20 @@ export default function CreateMatch() {
         )}
 
         {!isAdmin && f.homeTeam && !connLoading && opponents.length === 0 && f.awayTeam !== 'guest' && (
-          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-            <div className="font-semibold text-amber-900">No connected opponent teams found for {home?.name || 'your team'}.</div>
-            <p className="mt-1">You can select "Guest Team (Manual 11s)" above to play against a manual team, or connect with opponents using their Team Code.</p>
-            <div className="mt-2">
-              <Link to={`/teams/${f.homeTeam}`} className="inline-flex items-center gap-1 font-semibold text-blue-700 underline hover:no-underline">
+          <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3.5 text-xs text-amber-800 space-y-1.5">
+            <div className="font-bold text-amber-950 flex items-center gap-1.5">
+              <span>⚠️ No connected opponent teams found for {home?.name || 'your team'}</span>
+            </div>
+            <p>You can select <strong>"Guest Team (Manual 11s)"</strong> above to instantly play against a manual team, or connect with opponents using their Team Code.</p>
+            <div className="pt-1">
+              <Link to={`/teams/${f.homeTeam}`} className="inline-flex items-center gap-1 font-bold text-blue-700 underline hover:no-underline">
                 <Handshake className="h-3.5 w-3.5" /> Go to Team Page & Connect Opponent →
               </Link>
             </div>
           </div>
         )}
       </section>
+
 
       <section className="card space-y-4 p-4">
         <fieldset>
