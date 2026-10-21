@@ -15,6 +15,8 @@ import Scorecard from './pages/Scorecard.jsx';
 import UsersPage from './pages/Users.jsx';
 import Audit from './pages/Audit.jsx';
 import Suggestions from './pages/Suggestions.jsx';
+import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
+import TermsAndConditions from './pages/TermsAndConditions.jsx';
 
 function Protected({ children, superOnly, adminOnly, noViewer }) {
   const { user, loading, isSuper, isAdmin, isViewer } = useAuth();
@@ -35,6 +37,8 @@ export default function App() {
       <Route path="/super-login" element={user ? <Navigate to="/" replace /> : <SuperLogin />} />
       <Route path="/register" element={<Navigate to="/login" replace />} />
       <Route path="/signup" element={<Navigate to="/login" replace />} />
+      <Route path="/privacy" element={<PrivacyPolicy />} />
+      <Route path="/terms" element={<TermsAndConditions />} />
       <Route element={<Protected><Layout /></Protected>}>
         <Route index element={<Dashboard />} />
         <Route path="teams" element={<Teams />} />

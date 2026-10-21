@@ -66,6 +66,11 @@ export default function Login() {
         </div>
       </form>
       <p className="mt-4 text-center text-xs text-slate-400">Cricket Score {APP_VERSION}</p>
+      <p className="mt-2 text-center text-xs text-slate-500">
+        <Link to="/privacy" className="hover:underline">Privacy Policy</Link>
+        {' · '}
+        <Link to="/terms" className="hover:underline">Terms &amp; Conditions</Link>
+      </p>
     </div>
   );
 }

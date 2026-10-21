@@ -115,6 +115,11 @@ export default function Layout() {
           <span>Cricket Score</span>
           <span className="font-mono text-slate-400">v{APP_VERSION}</span>
         </div>
+        <div className="flex items-center justify-center gap-2 px-3.5 pb-2 text-[10px] text-slate-600">
+          <NavLink to="/privacy" className="hover:text-slate-300 transition">Privacy</NavLink>
+          <span className="text-slate-700">·</span>
+          <NavLink to="/terms" className="hover:text-slate-300 transition">Terms</NavLink>
+        </div>
       </div>
     </nav>
   );
