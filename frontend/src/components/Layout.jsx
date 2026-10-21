@@ -1,26 +1,36 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { LayoutDashboard, Shield, Trophy, Users, ScrollText, LogOut, Menu, X, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { CricketBallIcon } from './ui.jsx';
+import { LanguageSwitcher } from './LanguageSwitcher.jsx';
 import { APP_VERSION } from '../version.js';
 
 export default function Layout() {
   const { user, logout, isSuper, isAdmin } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
+  // Role-based home page label
+  const homeLabel = user?.role === 'superadmin' || user?.role === 'admin'
+    ? t('nav.overview')
+    : user?.role === 'viewer'
+    ? t('nav.matchCenter')
+    : t('nav.myScoreboard');
+
   const links = [
-    { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
-    { to: '/teams', label: 'Teams', icon: Shield },
-    { to: '/matches', label: 'Matches', icon: Trophy },
-    ...(isAdmin ? [{ to: '/users', label: 'Users', icon: Users }] : []),
-    ...(isSuper ? [{ to: '/audit', label: 'Audit Log', icon: ScrollText }] : []),
+    { to: '/', label: homeLabel, icon: LayoutDashboard, end: true },
+    { to: '/teams', label: t('nav.teams'), icon: Shield },
+    { to: '/matches', label: t('nav.matches'), icon: Trophy },
+    ...(isAdmin ? [{ to: '/users', label: t('nav.users'), icon: Users }] : []),
+    ...(isSuper ? [{ to: '/audit', label: t('nav.auditLog'), icon: ScrollText }] : []),
   ];
 
   const doLogout = () => { logout(); navigate('/login'); };
   const userInitials = (user?.name || '?').split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
-  const roleLabel = user?.role === 'superadmin' ? 'Super Admin' : user?.role === 'admin' ? 'Admin' : user?.role === 'viewer' ? 'Viewer' : 'Team Admin';
+  const roleLabel = t(`roles.${user?.role}`) || 'Team Admin';
   const roleBadgeStyle = user?.role === 'superadmin'
     ? 'bg-amber-400/15 text-amber-300 border-amber-400/30'
     : user?.role === 'admin'
@@ -99,7 +109,7 @@ export default function Layout() {
           className="group flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-rose-300 hover:bg-rose-500/15 hover:text-rose-200 transition-all duration-150"
         >
           <LogOut className="h-5 w-5 shrink-0 text-rose-400 group-hover:text-rose-300 group-hover:scale-105 transition-transform" aria-hidden />
-          <span>Sign Out</span>
+          <span>{t('nav.signOut')}</span>
         </button>
         <div className="flex items-center justify-between px-3.5 py-1.5 text-[11px] font-medium text-slate-500">
           <span>Cricket Score</span>
@@ -183,6 +193,7 @@ export default function Layout() {
           </div>
 
           <div className="ml-auto flex items-center gap-2">
+            <LanguageSwitcher className="text-slate-300 border-navy-700/60" />
             <div className="flex items-center gap-2 rounded-xl bg-navy-900/90 border border-navy-700/70 p-1 pr-3 text-xs shadow-xs">
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-tr from-pitch-600 to-emerald-400 font-black text-navy-950 text-xs shadow-glow-pitch">
                 {userInitials}

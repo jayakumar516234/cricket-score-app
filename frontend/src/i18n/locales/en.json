@@ -1,0 +1,96 @@
+{
+  "nav": {
+    "myScoreboard": "My Scoreboard",
+    "overview": "Overview",
+    "matchCenter": "Match Center",
+    "teams": "Teams",
+    "matches": "Matches",
+    "users": "Users",
+    "auditLog": "Audit Log",
+    "signOut": "Sign Out",
+    "more": "More"
+  },
+  "dashboard": {
+    "welcome": "Welcome, {{name}}",
+    "subtitleAdmin": "All teams, players and matches at a glance.",
+    "subtitleViewer": "Follow your team's live matches and results.",
+    "subtitleUser": "Manage your team, score matches and track results.",
+    "recentMatches": "Recent Matches",
+    "recentTeams": "Recent Teams",
+    "recentOpponents": "Recent Opponents",
+    "viewAll": "View all",
+    "addOpponent": "Add Opponent",
+    "createTeam": "Create Team",
+    "createMatch": "Create Match",
+    "updateTeam": "Update Team",
+    "noMatches": "No matches yet",
+    "noMatchesText": "Matches you create will show up here.",
+    "noTeams": "No teams yet",
+    "noTeamsText": "Create a team with 11 players to get started.",
+    "noOpponents": "No opponents yet",
+    "noOpponentsText": "Connect with opponent teams using their 6-character team code to play matches.",
+    "noOpponentsNoTeam": "Create your team first to connect with opponents.",
+    "getStarted": "Get started in 3 steps"
+  },
+  "stats": {
+    "totalTeams": "Total Teams",
+    "totalPlayers": "Total Players",
+    "totalMatches": "Total Matches",
+    "liveMatches": "Live Matches",
+    "completed": "Completed"
+  },
+  "login": {
+    "tagline": "Teams, matches and live scores",
+    "title": "Admin Login",
+    "subtitle": "Sign in to manage your team & matches",
+    "username": "Username or phone number",
+    "usernamePlaceholder": "username or 10-digit mobile",
+    "password": "Password",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "loginBtn": "Login",
+    "viewerHint": "Team view login? Use the username and password your team owner gave you.",
+    "errorEmpty": "Enter your username or phone number and your password"
+  },
+  "teams": {
+    "title": "Teams",
+    "createTeam": "Create Team",
+    "editTeam": "Edit Team",
+    "players": "Players",
+    "location": "Location",
+    "ballType": "Ball Type",
+    "search": "Search teams…",
+    "noTeams": "No teams found",
+    "yourTeam": "Your Team",
+    "opponent": "Opponent"
+  },
+  "matches": {
+    "title": "Matches",
+    "createMatch": "Create Match",
+    "live": "Live",
+    "completed": "Completed",
+    "upcoming": "Upcoming",
+    "noMatches": "No matches found",
+    "viewScorecard": "View Scorecard"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "loading": "Loading…",
+    "error": "Something went wrong",
+    "retry": "Retry",
+    "search": "Search",
+    "yes": "Yes",
+    "no": "No",
+    "language": "Language"
+  },
+  "roles": {
+    "superadmin": "Super Admin",
+    "admin": "Admin",
+    "viewer": "Viewer",
+    "user": "Team Admin"
+  }
+}

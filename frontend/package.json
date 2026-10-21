@@ -10,9 +10,11 @@
     "preview": "vite preview --host"
   },
   "dependencies": {
+    "i18next": "^26.5.3",
     "lucide-react": "^0.453.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-i18next": "^17.1.0",
     "react-router-dom": "^6.26.2"
   },
   "devDependencies": {
