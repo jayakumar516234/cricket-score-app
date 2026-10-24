@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Lightbulb, Plus, Pencil, Trash2, Loader2, MessageSquare } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Lightbulb, Plus, Pencil, Trash2, Loader2, MessageSquare, ArrowLeft } from 'lucide-react';
 import { api, qs } from '../api.js';
 import { useFetch } from '../useFetch.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -75,7 +76,15 @@ export default function Suggestions() {
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-slate-900">Suggestions</h1>
+        <div className="flex items-center gap-2">
+          <Link to="/settings" className="btn btn-ghost !p-2" aria-label="Back to settings">
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+          <div>
+            <h1 className="text-xl font-bold text-slate-900">Help &amp; Feedback Desk</h1>
+            <p className="text-xs text-slate-500">Submit requests, feature ideas, and track admin responses</p>
+          </div>
+        </div>
         <div className="flex items-center gap-2">
           {isSuper && (
             <select className="input w-36" aria-label="Filter by status" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}>
@@ -86,7 +95,7 @@ export default function Suggestions() {
               <option value="rejected">Rejected</option>
             </select>
           )}
-          <button className="btn btn-primary" onClick={openCreate}><Plus className="h-4 w-4" /> New suggestion</button>
+          <button className="btn btn-primary" onClick={openCreate}><Plus className="h-4 w-4" /> New Ticket / Feedback</button>
         </div>
       </div>
 

@@ -26,6 +26,7 @@ import { api } from '../api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useFetch } from '../useFetch.js';
 import { ConfirmDialog, ErrorBox, Field, Modal, Spinner, TeamLogo } from '../components/ui.jsx';
+import { PlayerCardModal } from '../components/PlayerCardModal.jsx';
 
 const slug = (name) => name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 20);
 
@@ -170,7 +171,7 @@ export default function TeamDetail() {
           </div>
         </section>
       ) : tab === 'stats' ? (
-        <PlayerStats teamId={team.id} />
+        <PlayerStats teamId={team.id} teamName={team.name} teamLogo={team.logo} />
       ) : (
         <OpponentsSection team={team} />
       )}
@@ -179,9 +180,10 @@ export default function TeamDetail() {
 }
 
 // ---- Player Career Stats ----
-function PlayerStats({ teamId }) {
+function PlayerStats({ teamId, teamName, teamLogo }) {
   const { data, error, loading, reload } = useFetch(`/teams/${teamId}/player-stats`);
   const [view, setView] = useState('batting');
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
 
   if (loading) return <Spinner label="Calculating stats..." />;
   if (error) return <ErrorBox message={error} onRetry={reload} />;
@@ -203,11 +205,16 @@ function PlayerStats({ teamId }) {
 
   return (
     <div className="space-y-3">
-      {/* Sub-tabs: Batting / Bowling / Fielding */}
-      <div className="flex gap-2">
-        {['batting', 'bowling', 'fielding'].map((v) => (
-          <button key={v} onClick={() => setView(v)} className={`rounded-full px-4 py-1.5 text-xs font-semibold capitalize transition ${view === v ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>{v}</button>
-        ))}
+      {/* Sub-tabs: Batting / Bowling / Fielding & Career Card Hint */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex gap-2">
+          {['batting', 'bowling', 'fielding'].map((v) => (
+            <button key={v} onClick={() => setView(v)} className={`rounded-full px-4 py-1.5 text-xs font-semibold capitalize transition ${view === v ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>{v}</button>
+          ))}
+        </div>
+        <div className="text-[11px] text-slate-500 font-medium hidden sm:flex items-center gap-1">
+          <span>💡 Click any player row to view career card & share</span>
+        </div>
       </div>
 
       <section className="card overflow-x-auto">
@@ -230,8 +237,13 @@ function PlayerStats({ teamId }) {
             </thead>
             <tbody>
               {stats.filter((s) => s.matches > 0).sort((a, b) => b.runs - a.runs).map((s) => (
-                <tr key={s.id} className="border-t border-slate-100">
-                  <td className="p-3"><span className="font-medium text-slate-900">{s.name}</span></td>
+                <tr key={s.id} onClick={() => setSelectedPlayer(s)} className="border-t border-slate-100 hover:bg-blue-50/60 cursor-pointer transition group">
+                  <td className="p-3">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-slate-900 group-hover:text-blue-600 transition">{s.name}</span>
+                      <span className="text-[10px] text-blue-600 bg-blue-50 border border-blue-200/60 px-1.5 py-0.2 rounded font-medium opacity-80 group-hover:opacity-100">Card</span>
+                    </div>
+                  </td>
                   <td className="p-3 text-center">{s.matches}</td>
                   <td className="p-3 text-center">{s.innings}</td>
                   <td className="p-3 text-center font-semibold text-slate-900">{s.runs}</td>
@@ -264,8 +276,13 @@ function PlayerStats({ teamId }) {
             </thead>
             <tbody>
               {stats.filter((s) => s.bowlingInnings > 0).sort((a, b) => b.wickets - a.wickets).map((s) => (
-                <tr key={s.id} className="border-t border-slate-100">
-                  <td className="p-3"><span className="font-medium text-slate-900">{s.name}</span></td>
+                <tr key={s.id} onClick={() => setSelectedPlayer(s)} className="border-t border-slate-100 hover:bg-blue-50/60 cursor-pointer transition group">
+                  <td className="p-3">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-slate-900 group-hover:text-blue-600 transition">{s.name}</span>
+                      <span className="text-[10px] text-blue-600 bg-blue-50 border border-blue-200/60 px-1.5 py-0.2 rounded font-medium opacity-80 group-hover:opacity-100">Card</span>
+                    </div>
+                  </td>
                   <td className="p-3 text-center">{s.matches}</td>
                   <td className="p-3 text-center">{s.bowlingInnings}</td>
                   <td className="p-3 text-center">{s.oversDisplay}</td>
@@ -293,8 +310,13 @@ function PlayerStats({ teamId }) {
             </thead>
             <tbody>
               {stats.filter((s) => s.catches + s.runOuts + s.stumpings > 0).sort((a, b) => (b.catches + b.runOuts + b.stumpings) - (a.catches + a.runOuts + a.stumpings)).map((s) => (
-                <tr key={s.id} className="border-t border-slate-100">
-                  <td className="p-3"><span className="font-medium text-slate-900">{s.name}</span></td>
+                <tr key={s.id} onClick={() => setSelectedPlayer(s)} className="border-t border-slate-100 hover:bg-blue-50/60 cursor-pointer transition group">
+                  <td className="p-3">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-slate-900 group-hover:text-blue-600 transition">{s.name}</span>
+                      <span className="text-[10px] text-blue-600 bg-blue-50 border border-blue-200/60 px-1.5 py-0.2 rounded font-medium opacity-80 group-hover:opacity-100">Card</span>
+                    </div>
+                  </td>
                   <td className="p-3 text-center">{s.matches}</td>
                   <td className="p-3 text-center">{s.catches}</td>
                   <td className="p-3 text-center">{s.runOuts}</td>
@@ -306,6 +328,15 @@ function PlayerStats({ teamId }) {
           </table>
         )}
       </section>
+
+      {/* Career Player Card Modal */}
+      <PlayerCardModal
+        player={selectedPlayer}
+        teamName={teamName}
+        teamLogo={teamLogo}
+        open={!!selectedPlayer}
+        onClose={() => setSelectedPlayer(null)}
+      />
     </div>
   );
 }

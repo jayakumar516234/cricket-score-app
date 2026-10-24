@@ -11,6 +11,7 @@
     "matches": "Matches",
     "users": "Users",
     "auditLog": "Audit Log",
+    "settings": "Settings",
     "signOut": "Sign Out",
     "more": "More"
   },
@@ -96,5 +97,35 @@
     "admin": "Admin",
     "viewer": "Viewer",
     "user": "Team Admin"
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Manage your profile, password, preferences, and account.",
+    "profile": "Profile Information",
+    "profileDesc": "Update your display name, username, and mobile number.",
+    "name": "Full Name",
+    "username": "Username",
+    "phone": "Mobile Number",
+    "saveProfile": "Save Profile",
+    "security": "Security & Password",
+    "securityDesc": "Change your login password.",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm New Password",
+    "changePassword": "Update Password",
+    "preferences": "Preferences",
+    "preferencesDesc": "Customize your language and match scoring sound preferences.",
+    "language": "App Language",
+    "soundEffects": "Scoring Sound Effects",
+    "soundEffectsDesc": "Play audio cheers and sound alerts on boundaries (4s, 6s) and wickets.",
+    "dangerZone": "Danger Zone",
+    "deleteAccount": "Delete Account",
+    "deleteAccountDesc": "Permanently delete your account. This action cannot be undone.",
+    "deleteAccountConfirm": "Enter your password to confirm deletion:",
+    "confirmDeleteBtn": "Yes, Delete My Account",
+    "about": "About & Legal",
+    "version": "App Version",
+    "privacyPolicy": "Privacy Policy",
+    "terms": "Terms & Conditions"
   }
 }

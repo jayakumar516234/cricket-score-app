@@ -1,7 +1,7 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate, Link } from 'react-router-dom';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LayoutDashboard, Shield, Trophy, Users, ScrollText, LogOut, Menu, X, Sparkles } from 'lucide-react';
+import { LayoutDashboard, Shield, Trophy, Users, ScrollText, LogOut, Menu, X, Sparkles, Settings as SettingsIcon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { CricketBallIcon } from './ui.jsx';
 import { LanguageSwitcher } from './LanguageSwitcher.jsx';
@@ -21,11 +21,13 @@ export default function Layout() {
         { to: '/matches', label: t('nav.matches'), icon: Trophy },
         { to: '/users', label: t('nav.users'), icon: Users },
         ...(isSuper ? [{ to: '/audit', label: t('nav.auditLog'), icon: ScrollText }] : []),
+        { to: '/settings', label: t('nav.settings'), icon: SettingsIcon },
       ]
     : [
         { to: '/', label: t('nav.home'), icon: LayoutDashboard, end: true },
         { to: '/teams', label: t('nav.team'), icon: Shield },
         { to: '/matches', label: t('nav.matches'), icon: Trophy },
+        { to: '/settings', label: t('nav.settings'), icon: SettingsIcon },
       ];
 
   const doLogout = () => { logout(); navigate('/login'); };
@@ -40,15 +42,20 @@ export default function Layout() {
     : 'bg-pitch-400/15 text-pitch-300 border-pitch-400/30';
 
   const userProfileCard = (
-    <div className="relative mx-3 my-2.5 overflow-hidden rounded-2xl border border-navy-700/60 bg-gradient-to-br from-navy-900/90 via-navy-850/90 to-navy-900/90 p-3.5 shadow-md backdrop-blur-xs">
+    <Link
+      to="/settings"
+      onClick={() => setOpen(false)}
+      className="group relative mx-3 my-2.5 block overflow-hidden rounded-2xl border border-navy-700/60 bg-gradient-to-br from-navy-900/90 via-navy-850/90 to-navy-900/90 p-3.5 shadow-md backdrop-blur-xs hover:border-pitch-500/50 hover:bg-navy-850 transition"
+      title={t('nav.settings')}
+    >
       {/* Decorative ambient accent */}
-      <div className="pointer-events-none absolute -right-4 -bottom-4 h-14 w-14 rounded-full bg-pitch-500/15 blur-xl" />
+      <div className="pointer-events-none absolute -right-4 -bottom-4 h-14 w-14 rounded-full bg-pitch-500/15 blur-xl group-hover:bg-pitch-500/25 transition" />
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-pitch-600 via-pitch-500 to-emerald-400 font-black text-navy-950 text-sm shadow-glow-pitch">
           {userInitials}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="truncate text-sm font-bold text-white tracking-tight">{user?.name}</div>
+          <div className="truncate text-sm font-bold text-white tracking-tight group-hover:text-pitch-300 transition">{user?.name}</div>
           <div className="flex items-center gap-1.5 mt-1">
             <span className="relative flex h-2 w-2 shrink-0">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pitch-400 opacity-75"></span>
@@ -60,7 +67,7 @@ export default function Layout() {
           </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 
   const nav = (
@@ -199,7 +206,11 @@ export default function Layout() {
 
           <div className="ml-auto flex items-center gap-2">
             <LanguageSwitcher className="text-slate-300 border-navy-700/60" />
-            <div className="flex items-center gap-2 rounded-xl bg-navy-900/90 border border-navy-700/70 p-1 pr-3 text-xs shadow-xs">
+            <Link
+              to="/settings"
+              className="flex items-center gap-2 rounded-xl bg-navy-900/90 border border-navy-700/70 p-1 pr-3 text-xs shadow-xs hover:border-pitch-500/50 hover:bg-navy-800 transition"
+              title={t('nav.settings')}
+            >
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-tr from-pitch-600 to-emerald-400 font-black text-navy-950 text-xs shadow-glow-pitch">
                 {userInitials}
               </span>
@@ -207,7 +218,7 @@ export default function Layout() {
               <span className={`badge border text-[10px] font-bold uppercase tracking-wider py-0.5 px-2 rounded-md ${roleBadgeStyle}`}>
                 {roleLabel}
               </span>
-            </div>
+            </Link>
           </div>
         </header>
 

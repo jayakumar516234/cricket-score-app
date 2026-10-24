@@ -150,3 +150,19 @@ body { @apply bg-slate-100 text-slate-800 antialiased; }
   animation: shotDust 2.2s ease-out infinite;
 }
 
+/* Official Print & PDF Styles */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  header, nav, footer, aside, .no-print {
+    display: none !important;
+  }
+  .print-avoid-break {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+}
+
+

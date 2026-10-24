@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Crosshair, Loader2, Play, Trophy, Undo2, Crown, UserPlus, X } from 'lucide-react';
+import { ArrowLeft, Crosshair, Loader2, Play, Trophy, Undo2, Crown, UserPlus, X, Volume2, VolumeX } from 'lucide-react';
 import { api } from '../api.js';
 import { useFetch } from '../useFetch.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { ConfirmDialog, ErrorBox, Modal, Spinner, StatusBadge, TeamLogo, DropdownSelect, fmtDate } from '../components/ui.jsx';
 import { BatTable, BowlTable, ExtrasLine, OverByOver, ScorecardTabs, teamOf } from '../components/ScoreParts.jsx';
 import { useBallQueue } from '../useBallQueue.js';
+import { playBallSound, playUndoSound, isSoundEnabled, setSoundEnabled } from '../utils/audio.js';
+import { WhatsAppShareButton } from '../components/WhatsAppShare.jsx';
 
 const WICKET_LABELS = { bowled: 'Bowled', caught: 'Caught', lbw: 'LBW', runout: 'Run out', stumped: 'Stumped', hitwicket: 'Hit wicket' };
 const ALLOWED = {
@@ -299,6 +301,13 @@ function LiveView({ view, act, busy, id, queueProps }) {
   const [tieWinner, setTieWinner] = useState('');
   const [tieDecision, setTieDecision] = useState('draw');
   const [showCard, setShowCard] = useState(false);
+  const [soundOn, setSoundOn] = useState(() => isSoundEnabled());
+
+  const toggleSound = () => {
+    const next = !soundOn;
+    setSoundOn(next);
+    setSoundEnabled(next);
+  };
 
   const striker = st.striker || sel.striker;
   const nonStriker = st.nonStriker || sel.nonStriker;
@@ -315,6 +324,7 @@ function LiveView({ view, act, busy, id, queueProps }) {
 
   const send = (runs, wicket, ex = extra) => {
     const candidate = { striker, nonStriker, bowler, runs, extra: ex, wicket: wicket || null };
+    playBallSound(candidate);
     sendBall(candidate);
     setExtra(null);
     setExtraRuns(0);
@@ -324,6 +334,7 @@ function LiveView({ view, act, busy, id, queueProps }) {
 
   const handleUndo = async () => {
     setUndoOpen(false);
+    playUndoSound();
     await undoBall();
   };
 
@@ -356,6 +367,15 @@ function LiveView({ view, act, busy, id, queueProps }) {
                 ✓ Saved
               </span>
             )}
+            <button
+              type="button"
+              onClick={toggleSound}
+              className={`p-1 rounded-md transition ${soundOn ? 'text-pitch-400 hover:bg-white/10' : 'text-slate-500 hover:bg-white/10'}`}
+              title={soundOn ? 'Mute sounds' : 'Enable sounds'}
+              aria-label={soundOn ? 'Mute sounds' : 'Enable sounds'}
+            >
+              {soundOn ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+            </button>
             <span className="badge bg-red-600 text-white"><span className="mr-1.5 h-1.5 w-1.5 animate-pulse rounded-full bg-white" />LIVE</span>
           </div>
         </div>
@@ -614,6 +634,8 @@ function LiveView({ view, act, busy, id, queueProps }) {
 
       {!manage && <Banner>Live scores refresh automatically every few seconds.</Banner>}
 
+      <WhatsAppShareButton view={view} label="Share Live Score on WhatsApp" />
+
       <button className="btn btn-outline w-full" onClick={() => setShowCard(!showCard)}>{showCard ? 'Hide' : 'Show'} full scorecard and commentary</button>
       {showCard && <ScorecardTabs view={view} />}
 
@@ -790,7 +812,8 @@ function ResultView({ view }) {
           </div>
         )}
       </section>
-      <div className="grid gap-2">
+      <div className="grid gap-2.5">
+        <WhatsAppShareButton view={view} label="Share Result on WhatsApp" />
         <Link to={`/matches/${match.id}/scorecard`} className="btn btn-green">View Scorecard</Link>
         <Link to="/" className="btn btn-outline">Back to Home</Link>
       </div>

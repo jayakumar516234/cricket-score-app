@@ -8,6 +8,7 @@ import { requireAuth, signToken, publicUser } from '../middleware/auth.js';
 import { HttpError, parse, wrap } from '../utils/http.js';
 import { normalizePhone, isValidPhone, USERNAME_RE } from '../utils/identity.js';
 import { config } from '../config.js';
+import { audit } from '../utils/audit.js';
 
 const router = Router();
 const limiter = rateLimit({
@@ -80,5 +81,78 @@ router.post('/register', limiter, wrap(async (req, res) => {
 }));
 
 router.get('/me', requireAuth, (req, res) => res.json({ user: publicUser(req.user) }));
+
+// Update logged in user profile (name, username, phone)
+const updateProfileSchema = z.object({
+  name: z.string().trim().min(2, 'Name must be at least 2 characters').max(80).optional(),
+  username: z.string().trim().toLowerCase()
+    .regex(USERNAME_RE, 'Username must be 3-30 characters: letters, numbers, dot or underscore')
+    .regex(/[a-z]/, 'Username must contain at least one letter').optional(),
+  phone: z.string().trim().transform(normalizePhone).refine(isValidPhone, 'Enter a valid 10-digit mobile number').optional(),
+});
+
+router.put('/profile', requireAuth, wrap(async (req, res) => {
+  const data = parse(updateProfileSchema, req.body);
+  const user = await User.findById(req.user._id);
+  if (!user) throw new HttpError(404, 'User not found');
+
+  if (data.username || data.phone) {
+    await assertUnique({ username: data.username, phone: data.phone }, user._id);
+  }
+
+  if (data.name) user.name = data.name;
+  if (data.username) user.username = data.username;
+  if (data.phone) user.phone = data.phone;
+
+  await user.save();
+  await audit(req.user, 'user.profile.update', 'User', user._id, { name: user.name, username: user.username });
+  res.json({ user: publicUser(user) });
+}));
+
+// Change password for logged in user
+const updatePasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newPassword: z.string().min(4, 'New password must be at least 4 characters').max(100),
+});
+
+router.put('/password', requireAuth, wrap(async (req, res) => {
+  const data = parse(updatePasswordSchema, req.body);
+  const user = await User.findById(req.user._id).select('+passwordHash');
+  if (!user) throw new HttpError(404, 'User not found');
+
+  const valid = await bcrypt.compare(data.currentPassword, user.passwordHash);
+  if (!valid) throw new HttpError(400, 'Current password is incorrect');
+
+  user.passwordHash = await bcrypt.hash(data.newPassword, 10);
+  const sessionToken = crypto.randomBytes(16).toString('hex');
+  user.sessionToken = sessionToken;
+  await user.save();
+
+  await audit(req.user, 'user.password.change', 'User', user._id);
+  res.json({ ok: true, token: signToken(user, sessionToken), message: 'Password updated successfully' });
+}));
+
+// Delete own account
+const deleteAccountSchema = z.object({
+  password: z.string().min(1, 'Password is required to confirm account deletion'),
+});
+
+router.delete('/account', requireAuth, wrap(async (req, res) => {
+  const data = parse(deleteAccountSchema, req.body);
+  if (req.user.role === 'superadmin') {
+    throw new HttpError(403, 'The Super Admin account cannot be deleted');
+  }
+
+  const user = await User.findById(req.user._id).select('+passwordHash');
+  if (!user) throw new HttpError(404, 'User not found');
+
+  const valid = await bcrypt.compare(data.password, user.passwordHash);
+  if (!valid) throw new HttpError(400, 'Incorrect password');
+
+  await audit(req.user, 'user.account.delete', 'User', user._id, { username: user.username });
+  await user.deleteOne();
+
+  res.json({ ok: true, message: 'Account deleted successfully' });
+}));
 
 export default router;

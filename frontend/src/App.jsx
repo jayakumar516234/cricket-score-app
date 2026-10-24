@@ -17,6 +17,7 @@ import Audit from './pages/Audit.jsx';
 import Suggestions from './pages/Suggestions.jsx';
 import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
 import TermsAndConditions from './pages/TermsAndConditions.jsx';
+import Settings from './pages/Settings.jsx';
 
 function Protected({ children, superOnly, adminOnly, noViewer }) {
   const { user, loading, isSuper, isAdmin, isViewer } = useAuth();
@@ -49,9 +50,11 @@ export default function App() {
         <Route path="matches/new" element={<Protected noViewer><CreateMatch /></Protected>} />
         <Route path="matches/:id" element={<MatchPage />} />
         <Route path="matches/:id/scorecard" element={<Scorecard />} />
-        {/* <Route path="suggestions" element={<Suggestions />} /> */}
+        <Route path="support" element={<Suggestions />} />
+        <Route path="suggestions" element={<Suggestions />} />
         <Route path="users" element={<Protected adminOnly><UsersPage /></Protected>} />
         <Route path="audit" element={<Protected superOnly><Audit /></Protected>} />
+        <Route path="settings" element={<Settings />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
