@@ -20,8 +20,13 @@ export const isViewer = (user) => user?.role === 'viewer';
 export const viewerMayViewTeam = (user, teamId) => !isViewer(user) || String(user.viewTeam) === String(teamId?._id ?? teamId);
 export const viewerMayViewMatch = (user, match) => !isViewer(user) || viewerMayViewTeam(user, match.homeTeam) || viewerMayViewTeam(user, match.awayTeam);
 
-/** Super Admin and Admin score any match. Team Admins score only the matches they created. */
+/** Super Admin and Admin score any match. Team Admins score only the matches they created. Tournament scorers score tournament matches. */
 export function canManageMatch(user, match) {
   if (!user) return false;
-  return user.role === 'superadmin' || user.role === 'admin' || owns(user, match);
+  if (user.role === 'superadmin' || user.role === 'admin') return true;
+  if (owns(user, match)) return true;
+  if (user.role === 'scorer' && match?.tournament && String(user.tournamentId) === String(match.tournament)) {
+    return true;
+  }
+  return false;
 }

@@ -22,9 +22,9 @@ export const requireAuth = wrap(async (req, _res, next) => {
   const user = await User.findById(payload.sub);
   if (!user || !user.active) throw new HttpError(401, 'Account not found or disabled');
 
-  // Single-session check: non-viewer users must have a matching session token.
-  // Viewers are allowed unlimited concurrent sessions.
-  if (user.role !== 'viewer' && user.sessionToken && payload.sid !== user.sessionToken) {
+  // Single-session check: non-viewer and non-scorer users must have a matching session token.
+  // Viewers and tournament scorers are allowed unlimited concurrent sessions.
+  if (user.role !== 'viewer' && user.role !== 'scorer' && user.sessionToken && payload.sid !== user.sessionToken) {
     throw new HttpError(401, 'You have been logged in on another device. Please sign in again');
   }
 
@@ -57,6 +57,7 @@ export const publicUser = (u) => {
     role: u.role,
     active: u.active,
     viewTeam: u.viewTeam ? String(u.viewTeam) : null,
+    tournamentId: u.tournamentId ? String(u.tournamentId) : null,
     lastActiveAt: u.lastActiveAt || null,
     lastLoginAt: u.lastLoginAt || null,
     isOnline,
