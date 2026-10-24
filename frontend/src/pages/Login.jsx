@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { CircleDot, Eye, EyeOff, Lock, User, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
