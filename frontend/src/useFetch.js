@@ -1,29 +1,33 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from './api.js';
 
+// In-memory response cache for instant UI rendering across navigation
+const memoryCache = new Map();
+
 /** Loads `path` and reloads when it changes. `poll` (ms) refreshes quietly in the background. */
-export function useFetch(path, { poll } = {}) {
-  const [data, setData] = useState(null);
+export function useFetch(path, { poll, useCache = true } = {}) {
+  const cached = useCache && path ? memoryCache.get(path) : null;
+  const [data, setData] = useState(cached || null);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
-  const first = useRef(true);
+  const [loading, setLoading] = useState(!cached);
 
   const load = useCallback(async (quiet = false) => {
     if (!path) return;
-    if (!quiet) setLoading(true);
+    if (!quiet && !memoryCache.has(path)) setLoading(true);
     try {
-      setData(await api(path));
+      const res = await api(path);
+      if (useCache) memoryCache.set(path, res);
+      setData(res);
       setError('');
     } catch (e) {
       if (!quiet) setError(e.message);
     } finally {
       if (!quiet) setLoading(false);
     }
-  }, [path]);
+  }, [path, useCache]);
 
   useEffect(() => {
-    first.current = true;
-    load();
+    load(!!cached);
   }, [load]);
 
   useEffect(() => {

@@ -1,10 +1,31 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Eye, Loader2, Pencil, UserRound, BarChart3, Check, Copy, Handshake, Clock, Trophy, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
+import {
+  ArrowLeft,
+  Eye,
+  EyeOff,
+  Loader2,
+  Pencil,
+  UserRound,
+  BarChart3,
+  Check,
+  Copy,
+  Handshake,
+  Clock,
+  Trophy,
+  ChevronDown,
+  ChevronUp,
+  Trash2,
+  KeyRound,
+  ShieldCheck,
+  Phone,
+  UserCheck,
+  Shield,
+} from 'lucide-react';
 import { api } from '../api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useFetch } from '../useFetch.js';
-import { ConfirmDialog, ErrorBox, Field, Spinner, TeamLogo } from '../components/ui.jsx';
+import { ConfirmDialog, ErrorBox, Field, Modal, Spinner, TeamLogo } from '../components/ui.jsx';
 
 const slug = (name) => name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 20);
 
@@ -75,7 +96,7 @@ export default function TeamDetail() {
         ))}
       </section>
 
-      {team.canManage && <ViewerLogin team={team} />}
+      {team.canManage && <TeamCredentialsManager team={team} />}
 
       {/* Tab switcher */}
       <div className="flex gap-1.5 rounded-xl bg-slate-200/70 p-1.5 shadow-2xs">
@@ -289,72 +310,434 @@ function PlayerStats({ teamId }) {
   );
 }
 
-// Owner / Super Admin: one view-only login per team, to share with players and fans.
-function ViewerLogin({ team }) {
+// Team Credentials Manager (Manages both View-only login and Team Admin login)
+function TeamCredentialsManager({ team }) {
+  const { user } = useAuth();
+  const [credTab, setCredTab] = useState('viewer'); // 'viewer' or 'admin'
   const { data, loading, error, reload } = useFetch(`/teams/${team.id}/viewer`);
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState('');
-  const [err, setErr] = useState('');
+
+  // Viewer login form states
+  const [vUsername, setVUsername] = useState('');
+  const [vPassword, setVPassword] = useState('');
+  const [vPhone, setVPhone] = useState('');
+  const [showVPassword, setShowVPassword] = useState(false);
+  const [vBusy, setVBusy] = useState(false);
+  const [vMsg, setVMsg] = useState('');
+  const [vErr, setVErr] = useState('');
   const [removeOpen, setRemoveOpen] = useState(false);
+  const [vCopied, setVCopied] = useState(false);
+
+  // Team Admin login form states
+  const [adminModal, setAdminModal] = useState(false);
+  const [aName, setAName] = useState('');
+  const [aUsername, setAUsername] = useState('');
+  const [aPhone, setAPhone] = useState('');
+  const [aPassword, setAPassword] = useState('');
+  const [showAPassword, setShowAPassword] = useState(false);
+  const [aBusy, setABusy] = useState(false);
+  const [aMsg, setAMsg] = useState('');
+  const [aErr, setAErr] = useState('');
+
   const viewer = data?.viewer;
+  const teamAdmin = data?.teamAdmin;
 
-  useState(() => { if (data && !data.viewer) setUsername(`${slug(team.name)}_view`); }, [data, team.name]);
+  const isSuperOrAdmin = user?.role === 'superadmin' || user?.role === 'admin';
+  const isTeamOwner = String(user?._id) === String(team.createdBy);
+  const canEditTeamAdmin = isSuperOrAdmin || isTeamOwner;
 
-  const save = async (e, extra = {}) => {
+  // Initialize viewer fields when data arrives
+  useState(() => {
+    if (data?.viewer) {
+      setVUsername(data.viewer.username);
+      setVPhone(data.viewer.phone || '');
+    } else if (data && !data.viewer) {
+      setVUsername(`${slug(team.name)}_view`);
+    }
+  }, [data, team.name]);
+
+  const saveViewer = async (e, extra = {}) => {
     e?.preventDefault();
-    setErr(''); setMsg('');
-    if (!viewer && (username.trim().length < 3 || password.length < 4)) return setErr('Enter a username (3+ characters) and a password (4+ characters)');
-    if (viewer && !password && extra.active === undefined) return setErr('Enter a new password');
-    setBusy(true);
+    setVErr('');
+    setVMsg('');
+    if (!vUsername.trim() || vUsername.trim().length < 3) {
+      return setVErr('Enter a valid username (3+ letters or numbers)');
+    }
+    if (!viewer && (!vPassword || vPassword.length < 4)) {
+      return setVErr('Enter a password (at least 4 characters)');
+    }
+    if (viewer && vPassword && vPassword.length < 4) {
+      return setVErr('New password must be at least 4 characters');
+    }
+
+    setVBusy(true);
     try {
-      await api(`/teams/${team.id}/viewer`, { method: 'PUT', body: { ...(viewer ? {} : { username: username.trim() }), ...(password ? { password } : {}), ...extra } });
-      setMsg(viewer ? (password ? 'Password changed.' : 'Saved.') : `View login created. Share this with your players: username ${username.trim().toLowerCase()}, password ${password}`);
-      setPassword('');
+      await api(`/teams/${team.id}/viewer`, {
+        method: 'PUT',
+        body: {
+          username: vUsername.trim().toLowerCase(),
+          phone: vPhone.trim() || undefined,
+          ...(vPassword ? { password: vPassword } : {}),
+          ...extra,
+        },
+      });
+      setVMsg(
+        viewer
+          ? vPassword
+            ? 'Viewer credentials and password updated successfully.'
+            : 'Viewer credentials updated.'
+          : `View login created! Username: ${vUsername.trim().toLowerCase()}, Password: ${vPassword}`
+      );
+      setVPassword('');
       reload();
-    } catch (x) { setErr(x.message); } finally { setBusy(false); }
+    } catch (x) {
+      setVErr(x.message);
+    } finally {
+      setVBusy(false);
+    }
   };
 
-  const remove = async () => {
-    setBusy(true);
-    try { await api(`/teams/${team.id}/viewer`, { method: 'DELETE' }); setRemoveOpen(false); setMsg(''); reload(); }
-    catch (x) { setErr(x.message); setRemoveOpen(false); } finally { setBusy(false); }
+  const removeViewer = async () => {
+    setVBusy(true);
+    try {
+      await api(`/teams/${team.id}/viewer`, { method: 'DELETE' });
+      setRemoveOpen(false);
+      setVMsg('');
+      reload();
+    } catch (x) {
+      setVErr(x.message);
+      setRemoveOpen(false);
+    } finally {
+      setVBusy(false);
+    }
+  };
+
+  const openAdminEdit = () => {
+    setAErr('');
+    setAMsg('');
+    setShowAPassword(false);
+    setAName(teamAdmin?.name || '');
+    setAUsername(teamAdmin?.username || '');
+    setAPhone(teamAdmin?.phone || '');
+    setAPassword('');
+    setAdminModal(true);
+  };
+
+  const saveAdminCredentials = async (e) => {
+    e.preventDefault();
+    setAErr('');
+    if (!aUsername.trim() || aUsername.trim().length < 3) {
+      return setAErr('Username must be at least 3 characters');
+    }
+    if (aPassword && aPassword.length < 4) {
+      return setAErr('Password must be at least 4 characters');
+    }
+    setABusy(true);
+    try {
+      await api(`/teams/${team.id}/admin-login`, {
+        method: 'PUT',
+        body: {
+          name: aName.trim() || undefined,
+          username: aUsername.trim().toLowerCase(),
+          phone: aPhone.trim() || undefined,
+          ...(aPassword ? { password: aPassword } : {}),
+        },
+      });
+      setAdminModal(false);
+      setAMsg('Team Admin login credentials updated successfully!');
+      reload();
+    } catch (err) {
+      setAErr(err.message);
+    } finally {
+      setABusy(false);
+    }
+  };
+
+  const copyViewerCreds = () => {
+    const credText = `Team: ${team.name}\nViewer Login Username: ${viewer?.username || vUsername}\nPassword: ${vPassword || '(Use your configured password)'}`;
+    navigator.clipboard?.writeText(credText);
+    setVCopied(true);
+    setTimeout(() => setVCopied(false), 2000);
   };
 
   return (
-    <section className="card space-y-3 p-4">
-      <div className="flex items-center gap-2">
-        <Eye className="h-5 w-5 text-blue-600" aria-hidden />
-        <h2 className="font-bold text-slate-900">View-only login for {team.name}</h2>
-      </div>
-      <p className="text-sm text-slate-500">Give this username and a simple password to your players or fans. They can log in and see this team, its players and its matches with live scores, but they cannot change anything.</p>
-      {loading ? <Spinner /> : error ? <ErrorBox message={error} onRetry={reload} /> : (
-        <form onSubmit={save} className="space-y-3" noValidate>
-          <ErrorBox message={err} />
-          {msg && <p className="rounded-lg bg-green-50 p-3 text-sm text-green-800" role="status">{msg}</p>}
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Username" htmlFor="v-user">
-              <input id="v-user" autoCapitalize="none" className="input" value={viewer ? viewer.username : username} disabled={!!viewer} onChange={(e) => setUsername(e.target.value)} />
-            </Field>
-            <Field label={viewer ? 'New password' : 'Password'} htmlFor="v-pass" hint="Simple, 4 or more characters">
-              <input id="v-pass" type="text" autoComplete="off" className="input" value={password} onChange={(e) => setPassword(e.target.value)} />
-            </Field>
+    <section className="card p-4 sm:p-5 border border-slate-200/80 shadow-xs space-y-4">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 border border-blue-200">
+            <KeyRound className="h-5 w-5" />
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <button className="btn btn-primary" disabled={busy}>{busy && <Loader2 className="h-4 w-4 animate-spin" />} {viewer ? 'Change password' : 'Create view login'}</button>
+          <div>
+            <h2 className="font-bold text-slate-900 text-base">Team Logins & Access Credentials</h2>
+            <p className="text-xs text-slate-500">Manage usernames and passwords for this team's admin and view-only accounts.</p>
+          </div>
+        </div>
+
+        {/* Tab switch between Viewer and Team Admin */}
+        <div className="flex rounded-lg bg-slate-100 p-1 self-start sm:self-auto text-xs font-semibold">
+          <button
+            type="button"
+            onClick={() => setCredTab('viewer')}
+            className={`rounded-md px-3 py-1.5 transition ${credTab === 'viewer' ? 'bg-white text-slate-900 shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900'}`}
+          >
+            👁️ Viewer Login
+          </button>
+          <button
+            type="button"
+            onClick={() => setCredTab('admin')}
+            className={`rounded-md px-3 py-1.5 transition ${credTab === 'admin' ? 'bg-white text-slate-900 shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900'}`}
+          >
+            🛡️ Team Admin Login
+          </button>
+        </div>
+      </div>
+
+      {loading ? (
+        <Spinner />
+      ) : error ? (
+        <ErrorBox message={error} onRetry={reload} />
+      ) : credTab === 'viewer' ? (
+        /* Viewer Login Section */
+        <div className="space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">View-Only Account</span>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Share this login with your players or fans. They can view live scores, squad and match stats, but cannot change anything.
+              </p>
+            </div>
             {viewer && (
-              <>
-                <button type="button" className="btn btn-outline" disabled={busy} onClick={() => save(null, { active: !viewer.active })}>{viewer.active ? 'Switch off' : 'Switch on'}</button>
-                <button type="button" className="btn btn-ghost text-red-600" disabled={busy} onClick={() => setRemoveOpen(true)}>Remove</button>
-                <span className={`badge ${viewer.active ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-600'}`}>{viewer.active ? 'Active' : 'Switched off'}</span>
-              </>
+              <span className={`badge shrink-0 self-start sm:self-auto ${viewer.active ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-600'}`}>
+                {viewer.active ? 'Active' : 'Switched off'}
+              </span>
             )}
           </div>
-        </form>
+
+          <form onSubmit={saveViewer} className="space-y-3" noValidate>
+            <ErrorBox message={vErr} />
+            {vMsg && <p className="rounded-lg bg-green-50 p-3 text-xs sm:text-sm text-green-800 font-medium" role="status">{vMsg}</p>}
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Viewer Username" htmlFor="v-user" hint="Can be edited anytime">
+                <input
+                  id="v-user"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  className="input font-mono"
+                  value={vUsername}
+                  onChange={(e) => setVUsername(e.target.value)}
+                />
+              </Field>
+
+              <Field
+                label={viewer ? 'New Password (or leave blank)' : 'Password'}
+                htmlFor="v-pass"
+                hint="Minimum 4 characters"
+              >
+                <div className="relative">
+                  <input
+                    id="v-pass"
+                    type={showVPassword ? 'text' : 'password'}
+                    autoComplete="off"
+                    className="input pr-10"
+                    placeholder={viewer ? '•••••••• (leave blank to keep)' : 'Enter password'}
+                    value={vPassword}
+                    onChange={(e) => setVPassword(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowVPassword(!showVPassword)}
+                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
+                    title={showVPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showVPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </Field>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <button className="btn btn-primary font-bold" disabled={vBusy}>
+                {vBusy && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+                {viewer ? 'Save Viewer Changes' : 'Create Viewer Login'}
+              </button>
+
+              {viewer && (
+                <>
+                  <button
+                    type="button"
+                    className="btn btn-outline"
+                    disabled={vBusy}
+                    onClick={() => saveViewer(null, { active: !viewer.active })}
+                  >
+                    {viewer.active ? 'Switch Off' : 'Switch On'}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-outline"
+                    onClick={copyViewerCreds}
+                    title="Copy viewer credentials"
+                  >
+                    {vCopied ? <Check className="h-4 w-4 text-emerald-600 mr-1" /> : <Copy className="h-4 w-4 mr-1" />}
+                    {vCopied ? 'Copied!' : 'Copy Login'}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-ghost text-red-600 hover:bg-red-50"
+                    disabled={vBusy}
+                    onClick={() => setRemoveOpen(true)}
+                  >
+                    Remove Login
+                  </button>
+                </>
+              )}
+            </div>
+          </form>
+
+          <ConfirmDialog
+            open={removeOpen}
+            danger
+            title="Remove Viewer Login?"
+            confirmLabel="Remove Login"
+            busy={vBusy}
+            onCancel={() => setRemoveOpen(false)}
+            onConfirm={removeViewer}
+            message="Anyone using this username and password will lose access. You can create a new view login later."
+          />
+        </div>
+      ) : (
+        /* Team Admin Login Section */
+        <div className="space-y-3">
+          <div>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Team Admin / Scorer Account</span>
+            <p className="text-xs text-slate-500 mt-0.5">
+              The manager/owner of this team. Can add players, schedule matches, update ball-by-ball score, and manage opponents.
+            </p>
+          </div>
+
+          {aMsg && <p className="rounded-lg bg-green-50 p-3 text-xs sm:text-sm text-green-800 font-medium" role="status">{aMsg}</p>}
+
+          {teamAdmin ? (
+            <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100 font-black text-blue-700 text-sm">
+                    {(teamAdmin.name || '?').slice(0, 2).toUpperCase()}
+                  </div>
+                  <div>
+                    <div className="font-bold text-slate-900 text-sm">{teamAdmin.name}</div>
+                    <div className="text-xs font-mono text-slate-500">@{teamAdmin.username}</div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className={`badge text-[11px] font-bold ${teamAdmin.active ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-600'}`}>
+                    {teamAdmin.active ? 'Active' : 'Disabled'}
+                  </span>
+                  {canEditTeamAdmin && (
+                    <button
+                      type="button"
+                      onClick={openAdminEdit}
+                      className="btn btn-outline text-xs !py-1.5 !px-3 font-bold"
+                    >
+                      <Pencil className="h-3.5 w-3.5 mr-1" /> Edit Credentials / Password
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-slate-200/60 text-slate-600">
+                <div>
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold">Phone Number</span>
+                  <span className="font-medium text-slate-900">{teamAdmin.phone || 'Not provided'}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold">Last Activity</span>
+                  <span className="font-medium text-slate-900">{teamAdmin.lastActiveAt ? timeAgo(teamAdmin.lastActiveAt) : 'Never'}</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed border-slate-300 p-4 text-center text-xs text-slate-500">
+              No Team Admin assigned directly. This team is managed by the system administrator.
+            </div>
+          )}
+
+          {/* Edit Team Admin Modal */}
+          <Modal open={adminModal} onClose={() => setAdminModal(false)} title={`Edit Team Admin for ${team.name}`}>
+            <form onSubmit={saveAdminCredentials} className="space-y-4" noValidate>
+              <ErrorBox message={aErr} />
+
+              <Field label="Full Name" required htmlFor="ta-name">
+                <input
+                  id="ta-name"
+                  className="input"
+                  value={aName}
+                  onChange={(e) => setAName(e.target.value)}
+                />
+              </Field>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field label="Username" required htmlFor="ta-user" hint="For login">
+                  <input
+                    id="ta-user"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    className="input font-mono"
+                    value={aUsername}
+                    onChange={(e) => setAUsername(e.target.value)}
+                  />
+                </Field>
+
+                <Field label="Mobile Phone" htmlFor="ta-phone" hint="10-digit number">
+                  <input
+                    id="ta-phone"
+                    type="tel"
+                    className="input"
+                    value={aPhone}
+                    onChange={(e) => setAPhone(e.target.value)}
+                  />
+                </Field>
+              </div>
+
+              <Field
+                label="New Password (leave blank to keep current)"
+                htmlFor="ta-pass"
+                hint="Minimum 4 characters"
+              >
+                <div className="relative">
+                  <input
+                    id="ta-pass"
+                    type={showAPassword ? 'text' : 'password'}
+                    autoComplete="new-password"
+                    className="input pr-10"
+                    placeholder="•••••••• (leave blank to keep)"
+                    value={aPassword}
+                    onChange={(e) => setAPassword(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowAPassword(!showAPassword)}
+                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
+                    title={showAPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showAPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </Field>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                <button type="button" className="btn btn-outline" onClick={() => setAdminModal(false)}>
+                  Cancel
+                </button>
+                <button className="btn btn-primary font-bold" disabled={aBusy}>
+                  {aBusy ? 'Saving...' : 'Save Admin Credentials'}
+                </button>
+              </div>
+            </form>
+          </Modal>
+        </div>
       )}
-      <ConfirmDialog open={removeOpen} danger title="Remove view login?" confirmLabel="Remove" busy={busy} onCancel={() => setRemoveOpen(false)} onConfirm={remove}
-        message="Anyone using this username and password will lose access. You can create a new one later." />
     </section>
   );
 }

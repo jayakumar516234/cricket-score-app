@@ -300,35 +300,56 @@ router.post('/:id/players', wrap(async (req, res) => {
   res.status(201).json({ player: playerOut(player), playerCount: existing.length + 1 });
 }));
 
-// ---- view-only login for this team (owner / Super Admin manage it) ----
+// ---- view-only login & admin login for this team (owner / Super Admin manage it) ----
 const viewerSchema = z.object({
   username: signupFields.username.optional(),
   password: z.string().min(4, 'Password must be at least 4 characters').max(100).optional(),
+  phone: z.string().trim().optional(),
+  name: z.string().trim().optional(),
   active: z.boolean().optional(),
+});
+
+const adminLoginSchema = z.object({
+  name: signupFields.name.optional(),
+  username: signupFields.username.optional(),
+  phone: signupFields.phone.optional(),
+  password: z.string().min(4, 'Password must be at least 4 characters').max(100).optional(),
 });
 
 async function ownedTeam(req) {
   const team = await Team.findById(req.params.id);
   if (!team) throw new HttpError(404, 'Team not found');
-  if (!canManageTeam(req.user, team)) throw new HttpError(403, 'Only the team owner can manage the view login');
+  if (!canManageTeam(req.user, team)) throw new HttpError(403, 'Only the team owner or admin can manage team credentials');
   return team;
 }
-const viewerOut = (v) => (v ? { username: v.username, active: v.active, createdAt: v.createdAt } : null);
+const viewerOut = (v) => (v ? { id: String(v._id), name: v.name, username: v.username, phone: v.phone || '', active: v.active, createdAt: v.createdAt } : null);
 
 router.get('/:id/viewer', wrap(async (req, res) => {
   const team = await ownedTeam(req);
-  res.json({ viewer: viewerOut(await User.findOne({ viewTeam: team._id, role: 'viewer' })) });
+  const viewer = await User.findOne({ viewTeam: team._id, role: 'viewer' });
+  const teamAdmin = team.createdBy ? await User.findById(team.createdBy).select('name username phone role active lastActiveAt') : null;
+  res.json({
+    viewer: viewerOut(viewer),
+    teamAdmin: teamAdmin ? { id: String(teamAdmin._id), name: teamAdmin.name, username: teamAdmin.username, phone: teamAdmin.phone || '', active: teamAdmin.active, lastActiveAt: teamAdmin.lastActiveAt } : null,
+  });
 }));
 
-// Create the view login, or change its password / switch it off.
+// Create the view login, or change its username / password / phone / switch it off.
 router.put('/:id/viewer', wrap(async (req, res) => {
   const team = await ownedTeam(req);
   const data = parse(viewerSchema, req.body);
   let viewer = await User.findOne({ viewTeam: team._id, role: 'viewer' });
   if (!viewer) {
     if (!data.username || !data.password) throw new HttpError(400, 'Enter a username and a password for the view login');
-    await assertUnique({ username: data.username });
-    viewer = await User.create({ name: `${team.name} viewer`, username: data.username, passwordHash: await bcrypt.hash(data.password, 10), role: 'viewer', viewTeam: team._id });
+    await assertUnique({ username: data.username, ...(data.phone ? { phone: data.phone } : {}) });
+    viewer = await User.create({
+      name: data.name || `${team.name} Viewer`,
+      username: data.username,
+      phone: data.phone || undefined,
+      passwordHash: await bcrypt.hash(data.password, 10),
+      role: 'viewer',
+      viewTeam: team._id,
+    });
     await audit(req.user, 'team.viewer.create', 'Team', team._id, { username: viewer.username });
     return res.status(201).json({ viewer: viewerOut(viewer) });
   }
@@ -336,6 +357,15 @@ router.put('/:id/viewer', wrap(async (req, res) => {
     await assertUnique({ username: data.username }, viewer._id);
     viewer.username = data.username;
   }
+  if (data.phone !== undefined) {
+    if (data.phone) {
+      await assertUnique({ phone: data.phone }, viewer._id);
+      viewer.phone = data.phone;
+    } else {
+      viewer.phone = undefined;
+    }
+  }
+  if (data.name) viewer.name = data.name;
   if (data.password) viewer.passwordHash = await bcrypt.hash(data.password, 10);
   if (data.active !== undefined) viewer.active = data.active;
   await viewer.save();
@@ -351,6 +381,41 @@ router.delete('/:id/viewer', wrap(async (req, res) => {
     await audit(req.user, 'team.viewer.delete', 'Team', team._id, { username: viewer.username });
   }
   res.json({ ok: true });
+}));
+
+// Update team admin credentials (username, phone, password)
+router.put('/:id/admin-login', wrap(async (req, res) => {
+  const team = await ownedTeam(req);
+  if (!team.createdBy) throw new HttpError(404, 'No Team Admin is assigned to this team');
+  const canEdit = req.user.role === 'superadmin' || req.user.role === 'admin' || String(req.user._id) === String(team.createdBy);
+  if (!canEdit) throw new HttpError(403, 'You do not have permission to edit this login');
+
+  const adminUser = await User.findById(team.createdBy);
+  if (!adminUser) throw new HttpError(404, 'Team Admin account not found');
+
+  const data = parse(adminLoginSchema, req.body);
+  if (data.username && data.username !== adminUser.username) {
+    await assertUnique({ username: data.username }, adminUser._id);
+    adminUser.username = data.username;
+  }
+  if (data.phone && data.phone !== adminUser.phone) {
+    await assertUnique({ phone: data.phone }, adminUser._id);
+    adminUser.phone = data.phone;
+  }
+  if (data.name) adminUser.name = data.name;
+  if (data.password) adminUser.passwordHash = await bcrypt.hash(data.password, 10);
+  await adminUser.save();
+
+  await audit(req.user, 'team.admin.update', 'Team', team._id, { username: adminUser.username, passwordChanged: !!data.password });
+  res.json({
+    teamAdmin: {
+      id: String(adminUser._id),
+      name: adminUser.name,
+      username: adminUser.username,
+      phone: adminUser.phone || '',
+      active: adminUser.active,
+    },
+  });
 }));
 
 // ---- Opponent team connections & requests ----

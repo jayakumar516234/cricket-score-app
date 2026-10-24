@@ -1,6 +1,10 @@
 {
   "nav": {
-    "myScoreboard": "My Scoreboard",
+    "home": "Home",
+    "team": "Team",
+    "dashboard": "Dashboard",
+    "updateScore": "Update Score",
+    "myScoreboard": "Home",
     "overview": "Overview",
     "matchCenter": "Match Center",
     "teams": "Teams",

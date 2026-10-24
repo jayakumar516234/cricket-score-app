@@ -1,7 +1,11 @@
 {
   "nav": {
-    "myScoreboard": "என் ஸ்கோர்போர்டு",
-    "overview": "அவலோகனம்",
+    "home": "ஹோம்",
+    "team": "அணி",
+    "dashboard": "டேஷ்போர்டு",
+    "updateScore": "ஸ்கோர் அப்டேட்",
+    "myScoreboard": "ஹோம்",
+    "overview": "டேஷ்போர்டு",
     "matchCenter": "மேட்ச் சென்டர்",
     "teams": "அணிகள்",
     "matches": "போட்டிகள்",

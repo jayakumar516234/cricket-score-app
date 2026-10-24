@@ -13,20 +13,20 @@ export default function Layout() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
-  // Role-based home page label
-  const homeLabel = user?.role === 'superadmin' || user?.role === 'admin'
-    ? t('nav.overview')
-    : user?.role === 'viewer'
-    ? t('nav.matchCenter')
-    : t('nav.myScoreboard');
-
-  const links = [
-    { to: '/', label: homeLabel, icon: LayoutDashboard, end: true },
-    { to: '/teams', label: t('nav.teams'), icon: Shield },
-    { to: '/matches', label: t('nav.matches'), icon: Trophy },
-    ...(isAdmin ? [{ to: '/users', label: t('nav.users'), icon: Users }] : []),
-    ...(isSuper ? [{ to: '/audit', label: t('nav.auditLog'), icon: ScrollText }] : []),
-  ];
+  // Role-based navigation distinction
+  const links = isAdmin
+    ? [
+        { to: '/', label: t('nav.overview'), icon: LayoutDashboard, end: true },
+        { to: '/teams', label: t('nav.teams'), icon: Shield },
+        { to: '/matches', label: t('nav.matches'), icon: Trophy },
+        { to: '/users', label: t('nav.users'), icon: Users },
+        ...(isSuper ? [{ to: '/audit', label: t('nav.auditLog'), icon: ScrollText }] : []),
+      ]
+    : [
+        { to: '/', label: t('nav.home'), icon: LayoutDashboard, end: true },
+        { to: '/teams', label: t('nav.team'), icon: Shield },
+        { to: '/matches', label: t('nav.matches'), icon: Trophy },
+      ];
 
   const doLogout = () => { logout(); navigate('/login'); };
   const userInitials = (user?.name || '?').split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();

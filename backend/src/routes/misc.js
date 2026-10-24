@@ -13,108 +13,240 @@ const router = Router();
 const sid = (v) => String(v?._id ?? v);
 
 router.get('/stats', requireAuth, wrap(async (req, res) => {
-  const vt = req.user.role === 'viewer' ? req.user.viewTeam : null; // viewers only see their own team's numbers
-  const mf = vt ? { $or: [{ homeTeam: vt }, { awayTeam: vt }] } : {};
-  const [teams, players, matches, live, completed] = await Promise.all([
-    vt ? 1 : Team.countDocuments(),
-    Player.countDocuments(vt ? { team: vt } : {}),
-    Match.countDocuments(mf),
-    Match.countDocuments({ ...mf, status: 'live' }),
-    Match.countDocuments({ ...mf, status: 'completed' }),
-  ]);
-  const recent = await Match.find(mf).sort({ createdAt: -1 }).limit(5);
-  const teamDocs = await Team.find({ _id: { $in: recent.flatMap((m) => [m.homeTeam, m.awayTeam]) } }).select('name logo');
-  const tm = Object.fromEntries(teamDocs.map((t) => [sid(t._id), { id: sid(t._id), name: t.name, logo: t.logo }]));
-  const innings = await Innings.find({ match: { $in: recent.map((m) => m._id) } }).sort({ number: 1 });
-  const recentTeams = await Team.find(vt ? { _id: vt } : {}).sort({ createdAt: -1 }).limit(3).select('name logo');
-  const recentCounts = await Player.aggregate([{ $match: { team: { $in: recentTeams.map((t) => t._id) } } }, { $group: { _id: '$team', n: { $sum: 1 } } }]);
-  const cm = Object.fromEntries(recentCounts.map((c) => [String(c._id), c.n]));
-  const ownedCount = (req.user.role === 'superadmin' || req.user.role === 'admin') ? 0 : await Team.countDocuments({ createdBy: req.user._id, isGuest: { $ne: true } });
-  const myTeamDoc = await Team.findOne({ createdBy: req.user._id, isGuest: { $ne: true } }).select('_id name code logo location ballType');
-  const myTeam = myTeamDoc ? { id: sid(myTeamDoc._id), name: myTeamDoc.name, code: myTeamDoc.code } : null;
+  const isAdmin = req.user.role === 'superadmin' || req.user.role === 'admin';
+  const isView = req.user.role === 'viewer';
+  const vt = isView ? req.user.viewTeam : null;
 
-  let recentOpponents = [];
-  if (myTeamDoc) {
-    const conns = await TeamConnection.find({
-      $or: [{ fromTeam: myTeamDoc._id }, { toTeam: myTeamDoc._id }],
-      status: 'accepted',
-    }).populate('fromTeam toTeam').sort({ updatedAt: -1 }).limit(10);
+  // Lightweight caching header to assist mobile performance
+  res.set('Cache-Control', 'private, max-age=5');
 
-    const oppIdSet = new Set();
-    const oppTeamDocs = [];
+  // ==========================================
+  // ADMIN PATH (Optimized parallel queries)
+  // ==========================================
+  if (isAdmin) {
+    const [
+      teamsCount,
+      playersCount,
+      matchesCount,
+      liveCount,
+      completedCount,
+      recentMatchDocs,
+      recentTeamDocs,
+    ] = await Promise.all([
+      Team.countDocuments().lean(),
+      Player.countDocuments().lean(),
+      Match.countDocuments().lean(),
+      Match.countDocuments({ status: 'live' }).lean(),
+      Match.countDocuments({ status: 'completed' }).lean(),
+      Match.find().sort({ createdAt: -1 }).limit(5).lean(),
+      Team.find().sort({ createdAt: -1 }).limit(4).select('name logo').lean(),
+    ]);
 
-    for (const c of conns) {
-      const opp = sid(c.fromTeam?._id) === sid(myTeamDoc._id) ? c.toTeam : c.fromTeam;
-      if (opp && !oppIdSet.has(sid(opp._id))) {
-        oppIdSet.add(sid(opp._id));
-        oppTeamDocs.push(opp);
-      }
-    }
+    // Fetch team details and innings for the 5 matches in parallel
+    const teamIds = [...new Set(recentMatchDocs.flatMap((m) => [m.homeTeam, m.awayTeam]).map(sid))];
+    const matchIds = recentMatchDocs.map((m) => m._id);
 
-    const myMatches = await Match.find({
-      $or: [{ homeTeam: myTeamDoc._id }, { awayTeam: myTeamDoc._id }],
-    }).sort({ createdAt: -1 }).limit(10);
+    const [teamDocs, inningsDocs, recentCounts] = await Promise.all([
+      teamIds.length ? Team.find({ _id: { $in: teamIds } }).select('name logo').lean() : [],
+      matchIds.length ? Innings.find({ match: { $in: matchIds } }).sort({ number: 1 }).lean() : [],
+      recentTeamDocs.length
+        ? Player.aggregate([
+            { $match: { team: { $in: recentTeamDocs.map((t) => t._id) } } },
+            { $group: { _id: '$team', n: { $sum: 1 } } },
+          ])
+        : [],
+    ]);
 
-    const matchOppIds = [];
-    for (const m of myMatches) {
-      const oppId = sid(m.homeTeam) === sid(myTeamDoc._id) ? sid(m.awayTeam) : sid(m.homeTeam);
-      if (oppId && !oppIdSet.has(oppId)) {
-        oppIdSet.add(oppId);
-        matchOppIds.push(oppId);
-      }
-    }
+    const tm = Object.fromEntries(teamDocs.map((t) => [sid(t._id), { id: sid(t._id), name: t.name, logo: t.logo }]));
+    const cm = Object.fromEntries(recentCounts.map((c) => [sid(c._id), c.n]));
 
-    if (matchOppIds.length > 0) {
-      const moreOpps = await Team.find({ _id: { $in: matchOppIds } }).select('name logo location ballType code');
-      oppTeamDocs.push(...moreOpps);
-    }
-
-    if (oppTeamDocs.length > 0) {
-      const oppCounts = await Player.aggregate([
-        { $match: { team: { $in: oppTeamDocs.map((t) => t._id) } } },
-        { $group: { _id: '$team', n: { $sum: 1 } } },
-      ]);
-      const ocm = Object.fromEntries(oppCounts.map((c) => [String(c._id), c.n]));
-      recentOpponents = oppTeamDocs.slice(0, 5).map((t) => ({
-        id: sid(t._id),
-        name: t.name,
-        logo: t.logo,
-        code: t.code,
-        location: t.location,
-        ballType: t.ballType,
-        playerCount: ocm[String(t._id)] || 0,
-        isOpponent: true,
-      }));
-    }
-  }
-
-  res.json({
-    totals: { teams, players, matches, live, completed },
-    recentMatches: recent.map((m) => ({
+    const recentMatches = recentMatchDocs.map((m) => ({
       id: sid(m._id),
       name: m.name,
       status: m.status,
       format: m.format,
       homeTeam: tm[sid(m.homeTeam)] || { name: 'Deleted team' },
       awayTeam: tm[sid(m.awayTeam)] || { name: 'Deleted team' },
-      scores: innings.filter((i) => sid(i.match) === sid(m._id)).map((i) => ({ team: sid(i.battingTeam), runs: i.summary.runs, wickets: i.summary.wickets })),
+      scores: inningsDocs
+        .filter((i) => sid(i.match) === sid(m._id))
+        .map((i) => ({ team: sid(i.battingTeam), runs: i.summary.runs, wickets: i.summary.wickets })),
       resultSummary: m.status === 'completed' ? m.result?.summary : null,
-    })),
-    recentTeams: recentTeams.map((t) => ({ id: sid(t._id), name: t.name, logo: t.logo, playerCount: cm[String(t._id)] || 0 })),
+    }));
+
+    return res.json({
+      isAdmin: true,
+      totals: {
+        teams: teamsCount,
+        players: playersCount,
+        matches: matchesCount,
+        live: liveCount,
+        completed: completedCount,
+      },
+      recentMatches,
+      recentTeams: recentTeamDocs.map((t) => ({
+        id: sid(t._id),
+        name: t.name,
+        logo: t.logo,
+        playerCount: cm[sid(t._id)] || 0,
+      })),
+      can: {
+        createTeam: true,
+        createMatch: true,
+      },
+      myTeam: null,
+      mine: null,
+    });
+  }
+
+  // ==========================================
+  // NON-ADMIN / TEAM USER PATH
+  // Scoped strictly to their own team with parallel execution
+  // ==========================================
+  const myTeamDoc = vt
+    ? await Team.findById(vt).select('_id name code logo location ballType').lean()
+    : await Team.findOne({ createdBy: req.user._id, isGuest: { $ne: true } })
+        .select('_id name code logo location ballType')
+        .lean();
+
+  const targetTeamId = myTeamDoc ? myTeamDoc._id : null;
+  const myTeam = myTeamDoc
+    ? {
+        id: sid(myTeamDoc._id),
+        name: myTeamDoc.name,
+        code: myTeamDoc.code,
+        logo: myTeamDoc.logo,
+        location: myTeamDoc.location,
+        ballType: myTeamDoc.ballType,
+      }
+    : null;
+
+  if (!targetTeamId) {
+    return res.json({
+      isAdmin: false,
+      totals: { teams: 0, players: 0, matches: 0, live: 0, completed: 0 },
+      recentMatches: [],
+      activeLiveMatch: null,
+      myTeamRecord: null,
+      recentOpponents: [],
+      can: {
+        createTeam: canCreateTeams(req.user, 0),
+        createMatch: false,
+      },
+      myTeam: null,
+      mine: { teams: 0, matches: 0, myTeam: null },
+    });
+  }
+
+  const teamMatchFilter = { $or: [{ homeTeam: targetTeamId }, { awayTeam: targetTeamId }] };
+
+  // Run team-specific queries in parallel with .lean()
+  const [
+    playerCount,
+    recentMatchDocs,
+    completedUserMatches,
+    liveMatches,
+    conns,
+  ] = await Promise.all([
+    Player.countDocuments({ team: targetTeamId }).lean(),
+    Match.find(teamMatchFilter).sort({ createdAt: -1 }).limit(5).lean(),
+    Match.find({ ...teamMatchFilter, status: 'completed' }).select('result').lean(),
+    Match.find({ ...teamMatchFilter, status: 'live' }).sort({ updatedAt: -1 }).limit(1).lean(),
+    TeamConnection.find({
+      $or: [{ fromTeam: targetTeamId }, { toTeam: targetTeamId }],
+      status: 'accepted',
+    })
+      .populate('fromTeam toTeam', 'name logo code location ballType')
+      .sort({ updatedAt: -1 })
+      .limit(6)
+      .lean(),
+  ]);
+
+  // Compute team record
+  const won = completedUserMatches.filter((m) => m.result?.winner && sid(m.result.winner) === sid(targetTeamId)).length;
+  const tied = completedUserMatches.filter((m) => !m.result?.winner).length;
+  const lost = completedUserMatches.length - won - tied;
+  const userTeamRecord = {
+    played: completedUserMatches.length,
+    won,
+    lost,
+    tied,
+    winRate: completedUserMatches.length > 0 ? Math.round((won / completedUserMatches.length) * 100) : 0,
+    playerCount,
+    liveCount: liveMatches.length,
+  };
+
+  // Resolve team names and innings for recent matches + active live match
+  const liveMatchDoc = liveMatches[0] || null;
+  const matchSet = [...recentMatchDocs];
+  if (liveMatchDoc && !matchSet.some((m) => sid(m._id) === sid(liveMatchDoc._id))) {
+    matchSet.push(liveMatchDoc);
+  }
+
+  const allTeamIds = [...new Set(matchSet.flatMap((m) => [m.homeTeam, m.awayTeam]).map(sid))];
+  const allMatchIds = matchSet.map((m) => m._id);
+
+  const [teamDocs, inningsDocs] = await Promise.all([
+    allTeamIds.length ? Team.find({ _id: { $in: allTeamIds } }).select('name logo').lean() : [],
+    allMatchIds.length ? Innings.find({ match: { $in: allMatchIds } }).sort({ number: 1 }).lean() : [],
+  ]);
+
+  const tm = Object.fromEntries(teamDocs.map((t) => [sid(t._id), { id: sid(t._id), name: t.name, logo: t.logo }]));
+
+  const formatMatch = (m) => ({
+    id: sid(m._id),
+    name: m.name,
+    status: m.status,
+    format: m.format,
+    homeTeam: tm[sid(m.homeTeam)] || { name: 'Deleted team' },
+    awayTeam: tm[sid(m.awayTeam)] || { name: 'Deleted team' },
+    scores: inningsDocs
+      .filter((i) => sid(i.match) === sid(m._id))
+      .map((i) => ({ team: sid(i.battingTeam), runs: i.summary.runs, wickets: i.summary.wickets })),
+    resultSummary: m.status === 'completed' ? m.result?.summary : null,
+  });
+
+  const recentMatches = recentMatchDocs.map(formatMatch);
+  const formattedLiveMatch = liveMatchDoc ? formatMatch(liveMatchDoc) : null;
+
+  // Opponents list from connections
+  const recentOpponents = conns
+    .map((c) => {
+      const opp = sid(c.fromTeam?._id) === sid(targetTeamId) ? c.toTeam : c.fromTeam;
+      return opp ? {
+        id: sid(opp._id),
+        name: opp.name,
+        logo: opp.logo,
+        code: opp.code,
+        location: opp.location,
+        ballType: opp.ballType,
+        isOpponent: true,
+      } : null;
+    })
+    .filter(Boolean);
+
+  res.json({
+    isAdmin: false,
+    totals: {
+      teams: 1,
+      players: playerCount,
+      matches: recentMatchDocs.length,
+      live: liveMatches.length,
+      completed: completedUserMatches.length,
+    },
+    recentMatches,
+    activeLiveMatch: formattedLiveMatch,
+    myTeamRecord: userTeamRecord,
     recentOpponents,
     can: {
-      createTeam: canCreateTeams(req.user, ownedCount),
+      createTeam: false,
       createMatch: canCreateMatches(req.user),
     },
     myTeam,
-    // progress of a normal user (used for the "get started" guide on the dashboard)
-    mine: (req.user.role === 'user' || req.user.role === 'teamadmin')
-      ? {
-          teams: ownedCount,
-          matches: await Match.countDocuments({ createdBy: req.user._id }),
-          myTeam,
-        }
-      : null,
+    mine: {
+      teams: 1,
+      matches: completedUserMatches.length + liveMatches.length,
+      myTeam,
+    },
   });
 }));
 
