@@ -20,11 +20,19 @@ export const isViewer = (user) => user?.role === 'viewer';
 export const viewerMayViewTeam = (user, teamId) => !isViewer(user) || String(user.viewTeam) === String(teamId?._id ?? teamId);
 export const viewerMayViewMatch = (user, match) => !isViewer(user) || viewerMayViewTeam(user, match.homeTeam) || viewerMayViewTeam(user, match.awayTeam);
 
-/** Super Admin and Admin score any match. Team Admins score only the matches they created. Tournament scorers score tournament matches. */
-export function canManageMatch(user, match) {
+/** Super Admin and Admin score any match. Team Admins score matches they created OR matches where their team is playing. Tournament scorers score tournament matches. */
+export function canManageMatch(user, match, homeTeamDoc = null, awayTeamDoc = null) {
   if (!user) return false;
   if (user.role === 'superadmin' || user.role === 'admin') return true;
   if (owns(user, match)) return true;
+  
+  // Team admins who own homeTeam or awayTeam have full right to score their matches
+  if (homeTeamDoc && canManageTeam(user, homeTeamDoc)) return true;
+  if (awayTeamDoc && canManageTeam(user, awayTeamDoc)) return true;
+
+  if (match?.homeTeam && typeof match.homeTeam === 'object' && canManageTeam(user, match.homeTeam)) return true;
+  if (match?.awayTeam && typeof match.awayTeam === 'object' && canManageTeam(user, match.awayTeam)) return true;
+
   if (user.role === 'scorer' && match?.tournament && String(user.tournamentId) === String(match.tournament)) {
     return true;
   }

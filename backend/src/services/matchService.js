@@ -142,7 +142,7 @@ export async function buildView(match, user) {
     },
     innings: views,
     scorecard: scorecard ? { innings: scorecard.innings, result: scorecard.result, playerOfMatch: scorecard.playerOfMatch } : null,
-    canManage: canManageMatch(user, match),
+    canManage: canManageMatch(user, match, teamDoc(match.homeTeam), teamDoc(match.awayTeam)),
     // true when the signed-in user owns that team, so new players can be saved into it
     canEditTeams: { home: !!teamDoc(match.homeTeam) && canManageTeam(user, teamDoc(match.homeTeam)), away: !!teamDoc(match.awayTeam) && canManageTeam(user, teamDoc(match.awayTeam)) },
   };

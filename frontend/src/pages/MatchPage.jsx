@@ -142,10 +142,10 @@ function XISide({ team, editable, value, onChange }) {
   const count = value.ids.length + value.guests.length;
 
   useEffect(() => {
-    // a squad of exactly 11 plays everyone by default
+    // a squad of 11 or more plays the first 11 by default
     if (data && !inited.current) {
       inited.current = true;
-      if (data.players.length <= XI) onChange({ ...value, ids: data.players.map((p) => p.id) });
+      if (data.players.length > 0) onChange({ ...value, ids: data.players.slice(0, XI).map((p) => p.id) });
     }
   }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -266,8 +266,8 @@ function TargetView({ view, act, busy, id }) {
         <p className="mt-3 text-slate-600"><span className="font-semibold">{chasing.name}</span> need {target} runs in {match.overs} overs</p>
         {view.canManage ? (
           <>
-            <button className="btn btn-green mt-5 w-full" disabled={busy} onClick={() => act(() => api(`/matches/${id}/continue`, { method: 'POST' }))}>
-              {busy && <Loader2 className="h-4 w-4 animate-spin" />} Continue
+            <button className="btn btn-green mt-5 w-full text-base font-bold shadow-md" disabled={busy} onClick={() => act(() => api(`/matches/${id}/continue`, { method: 'POST' }))}>
+              {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Play className="h-5 w-5" />} Start 2nd Innings / Continue Scoring
             </button>
             <button className="btn btn-ghost mt-2 w-full" onClick={() => setUndoOpen(true)}><Undo2 className="h-4 w-4" /> Undo last ball</button>
           </>
@@ -414,8 +414,16 @@ function LiveView({ view, act, busy, id, queueProps }) {
       {manage && !st.completed && (
         <>
           {(!ready) && (
-            <section className="card space-y-3 p-4" aria-label="Choose players">
-              <h3 className="font-bold text-slate-900">{!hasBalls ? 'Select openers and the first bowler' : 'Choose the next players'}</h3>
+            <section className="card space-y-3 p-4 border-2 border-amber-300 bg-amber-50/40 shadow-xs" aria-label="Choose players">
+              <div className="flex items-center gap-2">
+                <Crosshair className="h-4 w-4 text-amber-600 shrink-0" />
+                <h3 className="font-bold text-amber-950 text-sm">
+                  {!hasBalls ? 'Select openers and the first bowler to start scoring' : '⚡ Action required: Select next bowler / batter'}
+                </h3>
+              </div>
+              <p className="text-xs text-amber-800">
+                {!st.bowler && hasBalls ? 'Previous over complete. Select the next bowler below to unlock scoring buttons.' : 'Choose the player below to continue live scoring.'}
+              </p>
               {!st.striker && (
                 <div>
                   <label className="label" htmlFor="sel-striker">{hasBalls ? 'New batter' : 'Striker'}</label>

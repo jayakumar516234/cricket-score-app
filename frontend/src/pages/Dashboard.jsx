@@ -237,7 +237,7 @@ function UserHomeView({ data, user, myTeam, t, isViewer }) {
               className="btn bg-white text-red-700 hover:bg-red-50 font-black text-sm !py-2.5 !px-5 rounded-xl shadow-md flex items-center justify-center gap-2 shrink-0 self-stretch sm:self-auto"
             >
               <Radio className="h-4 w-4 text-red-600" />
-              <span>{isViewer ? 'Watch Live Score' : 'Update Score / தொடர் ஸ்கோரிங்'}</span>
+              <span>{isViewer ? t('matches.viewScorecard', 'Watch Live Score') : t('nav.updateScore', 'Update Score')}</span>
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>

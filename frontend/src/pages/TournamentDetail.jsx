@@ -497,7 +497,7 @@ export default function TournamentDetail() {
           {tournament.byes && tournament.byes.length > 0 && (
             <div className="card p-3 border-amber-200 bg-amber-50/60">
               <span className="text-xs font-bold text-amber-900 block mb-1">
-                ⭐ Teams Advancing with Byes (பை):
+                ⭐ Teams Advancing with Byes:
               </span>
               <div className="flex flex-wrap gap-2">
                 {tournament.byes.map((b, i) => (
@@ -636,7 +636,7 @@ export default function TournamentDetail() {
                   className="btn btn-outline text-xs !py-1.5 border-amber-300 text-amber-800 bg-amber-50/60"
                 >
                   <Award className="h-3.5 w-3.5 text-amber-600" />
-                  <span>Award Bye (பை)</span>
+                  <span>Award Bye</span>
                 </button>
               </div>
             )}
@@ -812,7 +812,7 @@ export default function TournamentDetail() {
       </Modal>
 
       {/* Award Bye Modal */}
-      <Modal open={awardByeOpen} onClose={() => setAwardByeOpen(false)} title="Award Bye to Team (பை)">
+      <Modal open={awardByeOpen} onClose={() => setAwardByeOpen(false)} title="Award Bye to Team">
         <form onSubmit={handleAwardBye} className="space-y-4">
           <div>
             <label className="label">Select Team to Receive Bye</label>

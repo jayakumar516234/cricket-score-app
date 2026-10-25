@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import { LayoutDashboard, Shield, Trophy, Users, ScrollText, LogOut, Menu, X, Sparkles, Settings as SettingsIcon, Medal } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { CricketBallIcon } from './ui.jsx';
-import { LanguageSwitcher } from './LanguageSwitcher.jsx';
 import { APP_VERSION } from '../version.js';
 
 export default function Layout() {
@@ -207,7 +206,6 @@ export default function Layout() {
           </div>
 
           <div className="ml-auto flex items-center gap-2">
-            <LanguageSwitcher className="text-slate-300 border-navy-700/60" />
             <Link
               to="/settings"
               className="flex items-center gap-2 rounded-xl bg-navy-900/90 border border-navy-700/70 p-1 pr-3 text-xs shadow-xs hover:border-pitch-500/50 hover:bg-navy-800 transition"

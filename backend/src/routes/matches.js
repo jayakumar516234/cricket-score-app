@@ -79,8 +79,14 @@ async function getMatch(id) {
   return match;
 }
 
-function requireManage(user, match) {
-  if (!canManageMatch(user, match)) throw new HttpError(403, 'You do not have permission to manage this match');
+async function requireManage(user, match) {
+  if (canManageMatch(user, match)) return;
+  const canManageATeam = await Team.exists({
+    _id: { $in: [match.homeTeam, match.awayTeam] },
+    createdBy: user._id,
+  });
+  if (canManageATeam) return;
+  throw new HttpError(403, 'You do not have permission to manage this match');
 }
 
 async function syncSummary(innings, state) {
@@ -263,7 +269,7 @@ router.post('/', wrap(async (req, res) => {
 
 router.put('/:id', wrap(async (req, res) => {
   const match = await getMatch(req.params.id);
-  requireManage(req.user, match);
+  await requireManage(req.user, match);
   if (match.status === 'completed' && req.user.role !== 'superadmin') {
     throw new HttpError(403, 'Completed matches can only be changed by the Super Admin');
   }
@@ -298,7 +304,7 @@ router.put('/:id', wrap(async (req, res) => {
 
 router.delete('/:id', wrap(async (req, res) => {
   const match = await getMatch(req.params.id);
-  requireManage(req.user, match);
+  await requireManage(req.user, match);
   if (match.status === 'completed' && req.user.role !== 'superadmin') {
     throw new HttpError(403, 'Completed matches can only be deleted by the Super Admin');
   }
@@ -347,7 +353,7 @@ async function buildXI(team, side) {
 
 router.post('/:id/start', wrap(async (req, res) => {
   const match = await getMatch(req.params.id);
-  requireManage(req.user, match);
+  await requireManage(req.user, match);
   if (match.status !== 'scheduled') throw new HttpError(409, 'This match has already started or finished');
   const body = parse(startSchema, req.body || {});
   const [home, away] = await Promise.all([Team.findById(match.homeTeam), Team.findById(match.awayTeam)]);
@@ -374,7 +380,7 @@ router.post('/:id/start', wrap(async (req, res) => {
 
 router.post('/:id/balls', wrap(async (req, res) => {
   const match = await getMatch(req.params.id);
-  requireManage(req.user, match);
+  await requireManage(req.user, match);
   if (match.status !== 'live') throw new HttpError(409, 'Scoring is only available while the match is live');
   const input = parse(ballSchema, req.body);
   const innings = await currentInnings(match);
@@ -411,7 +417,7 @@ router.post('/:id/balls', wrap(async (req, res) => {
 
 router.delete('/:id/balls/last', wrap(async (req, res) => {
   const match = await getMatch(req.params.id);
-  requireManage(req.user, match);
+  await requireManage(req.user, match);
   if (match.status !== 'live') throw new HttpError(409, 'Undo is only available while the match is live');
   const innings = await currentInnings(match);
   const last = await Delivery.findOne({ innings: innings._id }).sort({ seq: -1 });
@@ -430,7 +436,7 @@ router.delete('/:id/balls/last', wrap(async (req, res) => {
 
 router.post('/:id/continue', wrap(async (req, res) => {
   const match = await getMatch(req.params.id);
-  requireManage(req.user, match);
+  await requireManage(req.user, match);
   if (match.status !== 'live' || match.currentInnings !== 1) throw new HttpError(409, 'The second innings cannot be started now');
   const first = await Innings.findOne({ match: match._id, number: 1 });
   const { state } = await loadState(match, first);
@@ -452,7 +458,7 @@ const finishSchema = z.object({ force: z.boolean().optional(), tieBreakWinner: o
 
 router.post('/:id/finish', wrap(async (req, res) => {
   const match = await getMatch(req.params.id);
-  requireManage(req.user, match);
+  await requireManage(req.user, match);
   const body = parse(finishSchema, req.body || {});
   if (match.status !== 'live' || match.currentInnings !== 2) throw new HttpError(409, 'The match can only be ended during the second innings');
 
