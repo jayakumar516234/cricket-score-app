@@ -122,9 +122,10 @@ router.get('/', wrap(async (req, res) => {
   ]);
   const teamIds = [...new Set(matches.flatMap((m) => [sid(m.homeTeam), sid(m.awayTeam)]))];
   const [teams, innings] = await Promise.all([
-    Team.find({ _id: { $in: teamIds } }).select('name logo'),
+    Team.find({ _id: { $in: teamIds } }).select('name logo createdBy'),
     Innings.find({ match: { $in: matches.map((m) => m._id) } }).sort({ number: 1 }),
   ]);
+  const tmDoc = Object.fromEntries(teams.map((t) => [sid(t._id), t]));
   const tm = Object.fromEntries(teams.map((t) => [sid(t._id), { id: sid(t._id), name: t.name, logo: t.logo }]));
   res.json({
     items: matches.map((m) => ({
@@ -140,7 +141,7 @@ router.get('/', wrap(async (req, res) => {
       awayTeam: tm[sid(m.awayTeam)] || { id: sid(m.awayTeam), name: 'Deleted team' },
       scores: innings.filter((i) => sid(i.match) === sid(m._id)).map((i) => ({ team: sid(i.battingTeam), runs: i.summary.runs, wickets: i.summary.wickets, overs: `${Math.floor(i.summary.legalBalls / 6)}.${i.summary.legalBalls % 6}` })),
       resultSummary: m.status === 'completed' ? m.result?.summary : null,
-      canManage: canManageMatch(req.user, m),
+      canManage: canManageMatch(req.user, m, tmDoc[sid(m.homeTeam)], tmDoc[sid(m.awayTeam)]),
     })),
     total,
     page,
