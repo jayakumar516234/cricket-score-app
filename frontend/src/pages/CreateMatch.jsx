@@ -150,7 +150,7 @@ export default function CreateMatch() {
         <div className="card p-6 text-center">
           <h1 className="font-bold text-slate-900">Create your team first</h1>
           <p className="mt-1 text-sm text-slate-500">A match is played between your own team and an opponent. Add your team with at least 11 players to continue.</p>
-          <Link to="/teams/new" className="btn btn-green mt-4">Create Team</Link>
+          <Link to="/teams/new" className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white font-bold mt-4 shadow-md">Create Team</Link>
         </div>
       </div>
     );

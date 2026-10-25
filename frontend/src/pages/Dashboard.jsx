@@ -204,7 +204,7 @@ function UserHomeView({ data, user, myTeam, t, isViewer }) {
               Create your team, add your 11 players, connect with opponent teams and start live scoring matches.
             </p>
             {data.can?.createTeam && (
-              <Link to="/teams/new" className="btn btn-green mt-2 !py-2.5 !px-5 font-bold shadow-md">
+              <Link to="/teams/new" className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white mt-2 !py-2.5 !px-5 font-bold shadow-md">
                 <Plus className="h-4 w-4" /> Create Your Team
               </Link>
             )}
@@ -391,7 +391,7 @@ function AdminDashboardView({ data, user, t, myTeam }) {
           </div>
           <div className="flex flex-wrap items-center gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/10">
             {data.can?.createTeam && (
-              <Link to="/teams/new" className="btn btn-green flex-1 sm:flex-none text-xs sm:text-sm !py-2 !px-3.5">
+              <Link to="/teams/new" className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white flex-1 sm:flex-none text-xs sm:text-sm !py-2 !px-3.5 font-bold shadow-xs">
                 <Plus className="h-4 w-4" /> {t('dashboard.createTeam')}
               </Link>
             )}
@@ -453,7 +453,7 @@ function AdminDashboardView({ data, user, t, myTeam }) {
             <h2 className="font-bold text-slate-900">{t('dashboard.recentTeams')}</h2>
             <div className="flex items-center gap-2">
               {data.can?.createTeam && (
-                <Link to="/teams/new" className="btn btn-green text-xs !py-1 !px-2.5">
+                <Link to="/teams/new" className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white text-xs !py-1 !px-2.5 font-bold shadow-xs">
                   <Plus className="h-3.5 w-3.5" /> {t('dashboard.createTeam')}
                 </Link>
               )}

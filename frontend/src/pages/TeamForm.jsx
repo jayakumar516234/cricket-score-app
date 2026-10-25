@@ -180,7 +180,7 @@ export default function TeamForm() {
         </ul>
       </section>
 
-      <button className="btn btn-primary w-full sm:w-auto sm:min-w-48" disabled={busy}>
+      <button className="btn btn-primary bg-blue-600 hover:bg-blue-700 text-white font-bold w-full sm:w-auto sm:min-w-48 shadow-md" disabled={busy}>
         {busy && <Loader2 className="h-4 w-4 animate-spin" />} {editing ? 'Update Team' : 'Create Team'}
       </button>
     </form>

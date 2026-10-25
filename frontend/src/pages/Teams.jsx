@@ -168,7 +168,7 @@ export default function Teams() {
               </Link>
             </>
           ) : data?.canCreate ? (
-            <Link to="/teams/new" className="btn btn-green">
+            <Link to="/teams/new" className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md">
               <Plus className="h-4 w-4" /> Create Team
             </Link>
           ) : null}
@@ -305,7 +305,7 @@ export default function Teams() {
           icon={Shield}
           title={q || ball ? 'No teams match your search' : 'No teams yet'}
           text={q || ball ? 'Try a different name or filter.' : 'Create a team with 11 players to get started.'}
-          action={!q && !ball && data.canCreate && <Link to="/teams/new" className="btn btn-green">Create Team</Link>}
+          action={!q && !ball && data.canCreate && <Link to="/teams/new" className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md">Create Team</Link>}
         />
       ) : (
         <>
