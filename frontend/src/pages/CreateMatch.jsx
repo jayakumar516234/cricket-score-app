@@ -104,8 +104,24 @@ export default function CreateMatch() {
     if (f.homeTeam && f.awayTeam !== 'guest' && f.homeTeam === f.awayTeam) er.awayTeam = 'Opponent must be a different team';
     if (f.format === 'Custom' && !(Number.isInteger(Number(f.overs)) && Number(f.overs) >= 1 && Number(f.overs) <= 50)) er.overs = 'Enter overs between 1 and 50';
     if (!f.tossWinner) er.tossWinner = 'Select who won the toss';
+    if (f.awayTeam === 'guest') {
+      const seenNames = new Set();
+      for (let i = 0; i < guestPlayers.length; i++) {
+        const pName = (guestPlayers[i].name || '').trim();
+        if (!pName) {
+          er.guestTeam = `Player ${i + 1} name cannot be empty`;
+          break;
+        }
+        const key = pName.toLowerCase();
+        if (seenNames.has(key)) {
+          er.guestTeam = `Two players have the same name: "${pName}". Player names must be unique.`;
+          break;
+        }
+        seenNames.add(key);
+      }
+    }
     setErrors(er);
-    setFormError('');
+    setFormError(er.guestTeam || '');
     if (Object.keys(er).length) return;
     setBusy(true);
 

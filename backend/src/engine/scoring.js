@@ -202,9 +202,15 @@ export function computeInnings(deliveries, cfg) {
   const availableBatters = completed
     ? []
     : battingXI.filter((id) => !(batters.get(id)?.out) && id !== striker && id !== nonStriker);
-  const eligibleBowlers = completed || bowler !== null
+  let eligibleBowlers = completed || bowler !== null
     ? []
     : bowlingXI.filter((id) => id !== lastOverBowler && (bowlers.get(id)?.legalBalls || 0) < limit * BALLS_PER_OVER);
+
+  // If all bowlers have reached their limit, fallback to allow any bowler except consecutive overs
+  if (!completed && bowler === null && eligibleBowlers.length === 0 && bowlingXI.length > 0) {
+    eligibleBowlers = bowlingXI.filter((id) => id !== lastOverBowler);
+    if (eligibleBowlers.length === 0) eligibleBowlers = [...bowlingXI];
+  }
 
   const battingCard = [...batters.values()].map((b) => ({
     ...b,
@@ -292,7 +298,7 @@ export function computeResult({ first, second, firstTeam, secondTeam, names = {}
   const r2 = second.runs;
   const nm = (id) => names[id] || 'Team';
   if (r2 > r1) {
-    const value = second.maxWickets - second.wickets;
+    const value = Math.max(1, second.maxWickets - second.wickets);
     return { winner: secondTeam, tie: false, byTieBreak: false, margin: { type: 'wickets', value }, summary: `${nm(secondTeam)} won by ${value} wicket${value === 1 ? '' : 's'}` };
   }
   if (r2 < r1) {

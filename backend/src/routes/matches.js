@@ -359,6 +359,12 @@ router.post('/:id/start', wrap(async (req, res) => {
   const body = parse(startSchema, req.body || {});
   const [home, away] = await Promise.all([Team.findById(match.homeTeam), Team.findById(match.awayTeam)]);
   if (!home || !away) throw new HttpError(404, 'One of the teams no longer exists');
+  if (body.home.playerIds.length === 0 && body.home.guests.length === 0) {
+    const homePlayers = await Player.find({ team: home._id });
+    if (homePlayers.length === XI_SIZE) {
+      body.home.playerIds = homePlayers.map((p) => String(p._id));
+    }
+  }
   if (body.away.playerIds.length === 0 && body.away.guests.length === 0) {
     const awayPlayers = await Player.find({ team: away._id });
     if (awayPlayers.length === XI_SIZE) {

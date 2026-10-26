@@ -193,9 +193,15 @@ export function computeInnings(deliveries, cfg) {
   const availableBatters = completed
     ? []
     : battingXI.filter((id) => !(batters.get(id)?.out) && id !== striker && id !== nonStriker);
-  const eligibleBowlers = completed || bowler !== null
+  let eligibleBowlers = completed || bowler !== null
     ? []
     : bowlingXI.filter((id) => id !== lastOverBowler && (bowlers.get(id)?.legalBalls || 0) < limit * BALLS_PER_OVER);
+
+  // If all bowlers have reached their limit, fallback to allow any bowler except consecutive overs
+  if (!completed && bowler === null && eligibleBowlers.length === 0 && bowlingXI.length > 0) {
+    eligibleBowlers = bowlingXI.filter((id) => id !== lastOverBowler);
+    if (eligibleBowlers.length === 0) eligibleBowlers = [...bowlingXI];
+  }
 
   const battingCard = [...batters.values()].map((b) => ({
     ...b,
