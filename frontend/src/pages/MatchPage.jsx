@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Crosshair, Loader2, Play, Trophy, Undo2, Crown, UserPlus, X, Volume2, VolumeX, Download, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Crosshair, Loader2, Play, Trophy, Undo2, Crown, UserPlus, X, Volume2, VolumeX, Download, Image as ImageIcon, QrCode, Sparkles } from 'lucide-react';
 import { api } from '../api.js';
 import { useFetch } from '../useFetch.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -10,6 +10,8 @@ import { useBallQueue } from '../useBallQueue.js';
 import { playBallSound, playUndoSound, isSoundEnabled, setSoundEnabled } from '../utils/audio.js';
 import { WhatsAppShareButton } from '../components/WhatsAppShare.jsx';
 import { downloadScorecardImage } from '../utils/scorecardImage.js';
+import { downloadMatchPoster } from '../utils/matchPoster.js';
+import { QRCodeModal } from '../components/QRCodeModal.jsx';
 
 const WICKET_LABELS = { bowled: 'Bowled', caught: 'Caught', lbw: 'LBW', runout: 'Run out', stumped: 'Stumped', hitwicket: 'Hit wicket' };
 const ALLOWED = {
@@ -303,6 +305,7 @@ function LiveView({ view, act, busy, id, queueProps }) {
   const [tieDecision, setTieDecision] = useState('draw');
   const [showCard, setShowCard] = useState(false);
   const [soundOn, setSoundOn] = useState(() => isSoundEnabled());
+  const [qrOpen, setQrOpen] = useState(false);
 
   const toggleSound = () => {
     const next = !soundOn;
@@ -643,7 +646,19 @@ function LiveView({ view, act, busy, id, queueProps }) {
 
       {!manage && <Banner>Live scores refresh automatically every few seconds.</Banner>}
 
-      <WhatsAppShareButton view={view} label="Share Live Score on WhatsApp" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <WhatsAppShareButton view={view} label="Share Live Score on WhatsApp" />
+        <button
+          type="button"
+          onClick={() => setQrOpen(true)}
+          className="btn btn-outline flex items-center justify-center gap-1.5 border-blue-300 bg-blue-50/60 text-blue-900 hover:bg-blue-100/70 font-bold text-xs sm:text-sm !py-2"
+        >
+          <QrCode className="h-4 w-4 text-blue-600" />
+          <span>Fan Live QR Code & Link</span>
+        </button>
+      </div>
+
+      <QRCodeModal open={qrOpen} onClose={() => setQrOpen(false)} match={match} matchId={id} />
 
       <button className="btn btn-outline w-full" onClick={() => setShowCard(!showCard)}>{showCard ? 'Hide' : 'Show'} full scorecard and commentary</button>
       {showCard && <ScorecardTabs view={view} />}
@@ -776,6 +791,7 @@ function WicketModal({ open, onClose, initialExtra, initialRuns = 0, initialType
 function ResultView({ view }) {
   const { match } = view;
   const [downloading, setDownloading] = useState(false);
+  const [posterLoading, setPosterLoading] = useState(false);
   const r = match.result;
   const home = match.homeTeam;
   const away = match.awayTeam;
@@ -795,6 +811,15 @@ function ResultView({ view }) {
       downloadScorecardImage(view);
     } finally {
       setTimeout(() => setDownloading(false), 800);
+    }
+  };
+
+  const handleDownloadPoster = () => {
+    setPosterLoading(true);
+    try {
+      downloadMatchPoster(view);
+    } finally {
+      setTimeout(() => setPosterLoading(false), 800);
     }
   };
 
@@ -833,6 +858,15 @@ function ResultView({ view }) {
       </section>
       <div className="grid gap-2.5">
         <WhatsAppShareButton view={view} label="Share Result on WhatsApp" />
+        <button
+          type="button"
+          onClick={handleDownloadPoster}
+          disabled={posterLoading}
+          className="btn btn-outline flex items-center justify-center gap-2 border-amber-400 bg-amber-50/70 text-amber-900 hover:bg-amber-100/80 font-bold shadow-xs"
+        >
+          {posterLoading ? <Loader2 className="h-4 w-4 animate-spin text-amber-600" /> : <Sparkles className="h-4 w-4 text-amber-600" />}
+          <span>🎨 Download Match Winner Poster (WhatsApp Status)</span>
+        </button>
         <button
           type="button"
           onClick={handleDownload}

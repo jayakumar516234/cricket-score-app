@@ -17,6 +17,14 @@ import { buildView, loadState, decorate, playerNames } from '../services/matchSe
 import { MIN_SQUAD, XI_SIZE } from './teams.js';
 
 const router = Router();
+
+// Public endpoint for spectators & QR code fans (no login required)
+router.get('/public/:id', wrap(async (req, res) => {
+  const match = await Match.findById(req.params.id);
+  if (!match) throw new HttpError(404, 'Match not found');
+  res.json(await buildView(match, null));
+}));
+
 router.use(requireAuth);
 
 const FORMAT_OVERS = { T10: 10, T20: 20, ODI: 50 };

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Crown, Printer, Download, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { ArrowLeft, Crown, Printer, Download, Image as ImageIcon, Loader2, QrCode, Sparkles } from 'lucide-react';
 import { useFetch } from '../useFetch.js';
 import { ErrorBox, Spinner, StatusBadge } from '../components/ui.jsx';
 import { ScorecardTabs, teamOf } from '../components/ScoreParts.jsx';
@@ -8,11 +8,15 @@ import { WhatsAppShareButton } from '../components/WhatsAppShare.jsx';
 import { OverBarChart } from '../components/OverBarChart.jsx';
 import { PrintScorecardSheet } from '../components/PrintScorecardSheet.jsx';
 import { downloadScorecardImage } from '../utils/scorecardImage.js';
+import { downloadMatchPoster } from '../utils/matchPoster.js';
+import { QRCodeModal } from '../components/QRCodeModal.jsx';
 
 export default function Scorecard() {
   const { id } = useParams();
   const { data: view, error, loading, reload } = useFetch(`/matches/${id}`);
   const [downloading, setDownloading] = useState(false);
+  const [posterLoading, setPosterLoading] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
 
   if (loading) return <Spinner />;
   if (error) return <ErrorBox message={error} onRetry={reload} />;
@@ -28,6 +32,15 @@ export default function Scorecard() {
       downloadScorecardImage(view);
     } finally {
       setTimeout(() => setDownloading(false), 800);
+    }
+  };
+
+  const handleDownloadPoster = () => {
+    setPosterLoading(true);
+    try {
+      downloadMatchPoster(view);
+    } finally {
+      setTimeout(() => setPosterLoading(false), 800);
     }
   };
 
@@ -68,27 +81,50 @@ export default function Scorecard() {
           )}
         </section>
 
-        {/* Action Buttons: WhatsApp Share, Download Image & Print / Save PDF */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-          <WhatsAppShareButton view={view} label="Share on WhatsApp" />
+        {/* Action Buttons: WhatsApp Share, Download Image, Winner Poster, QR Code & Print / Save PDF */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <WhatsAppShareButton view={view} label="Share Score" />
           <button
             type="button"
             onClick={handleDownloadImage}
             disabled={downloading}
-            className="btn btn-outline flex items-center justify-center gap-1.5 border-emerald-300 bg-emerald-50/50 text-emerald-800 hover:bg-emerald-100/60 shadow-2xs font-bold text-xs sm:text-sm !py-2.5"
+            className="btn btn-outline flex items-center justify-center gap-1.5 border-emerald-300 bg-emerald-50/50 text-emerald-800 hover:bg-emerald-100/60 shadow-2xs font-bold text-xs !py-2.5"
           >
             {downloading ? <Loader2 className="h-4 w-4 animate-spin text-emerald-600" /> : <ImageIcon className="h-4 w-4 text-emerald-600" />}
-            <span>Download Image (PNG)</span>
+            <span>Scorecard Image</span>
           </button>
+          {match.status === 'completed' ? (
+            <button
+              type="button"
+              onClick={handleDownloadPoster}
+              disabled={posterLoading}
+              className="btn btn-outline flex items-center justify-center gap-1.5 border-amber-300 bg-amber-50/60 text-amber-900 hover:bg-amber-100/70 shadow-2xs font-bold text-xs !py-2.5"
+            >
+              {posterLoading ? <Loader2 className="h-4 w-4 animate-spin text-amber-600" /> : <Sparkles className="h-4 w-4 text-amber-600" />}
+              <span>Winner Poster</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setQrOpen(true)}
+              className="btn btn-outline flex items-center justify-center gap-1.5 border-blue-300 bg-blue-50/60 text-blue-900 hover:bg-blue-100/70 shadow-2xs font-bold text-xs !py-2.5"
+            >
+              <QrCode className="h-4 w-4 text-blue-600" />
+              <span>Fan QR Code</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={handlePrint}
-            className="btn btn-outline flex items-center justify-center gap-1.5 border-slate-300 text-slate-800 hover:bg-slate-50 shadow-2xs font-bold text-xs sm:text-sm !py-2.5"
+            className="btn btn-outline flex items-center justify-center gap-1.5 border-slate-300 text-slate-800 hover:bg-slate-50 shadow-2xs font-bold text-xs !py-2.5"
           >
             <Printer className="h-4 w-4 text-slate-600" />
-            <span>Print / Save PDF</span>
+            <span>Print / PDF</span>
           </button>
         </div>
+
+        {/* QR Code Modal */}
+        <QRCodeModal open={qrOpen} onClose={() => setQrOpen(false)} match={match} matchId={id} />
 
         {/* Over-by-Over Bar Chart & Worm Chart */}
         <OverBarChart view={view} />

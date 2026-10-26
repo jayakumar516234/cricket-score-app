@@ -21,6 +21,7 @@ import TermsAndConditions from './pages/TermsAndConditions.jsx';
 import Settings from './pages/Settings.jsx';
 import TournamentsList from './pages/TournamentsList.jsx';
 import TournamentDetail from './pages/TournamentDetail.jsx';
+import PublicLiveMatch from './pages/PublicLiveMatch.jsx';
 
 function Protected({ children, superOnly, adminOnly, noViewer }) {
   const { user, loading, isSuper, isAdmin, isViewer } = useAuth();
@@ -43,6 +44,7 @@ export default function App() {
       <Route path="/signup" element={<Navigate to="/login" replace />} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/terms" element={<TermsAndConditions />} />
+      <Route path="/live/:id" element={<PublicLiveMatch />} />
       <Route element={<Protected><Layout /></Protected>}>
         <Route index element={<Dashboard />} />
         <Route path="teams" element={<Teams />} />
