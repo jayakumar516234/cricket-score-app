@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './context/AuthContext.jsx';
 import Layout from './components/Layout.jsx';
 import { Spinner } from './components/ui.jsx';
+import CricketAppLoader from './components/CricketAppLoader.jsx';
 import Login from './pages/Login.jsx';
 import SuperLogin from './pages/SuperLogin.jsx';
 import Dashboard from './pages/Dashboard.jsx';
@@ -23,7 +24,7 @@ import TournamentDetail from './pages/TournamentDetail.jsx';
 
 function Protected({ children, superOnly, adminOnly, noViewer }) {
   const { user, loading, isSuper, isAdmin, isViewer } = useAuth();
-  if (loading) return <Spinner />;
+  if (loading) return <CricketAppLoader text="Verifying Access..." />;
   if (!user) return <Navigate to="/login" replace />;
   if (superOnly && !isSuper) return <Navigate to="/" replace />;
   if (adminOnly && !isAdmin) return <Navigate to="/" replace />;
@@ -33,7 +34,7 @@ function Protected({ children, superOnly, adminOnly, noViewer }) {
 
 export default function App() {
   const { user, loading } = useAuth();
-  if (loading) return <Spinner />;
+  if (loading) return <CricketAppLoader text="Loading Cricket Arena..." />;
   return (
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
