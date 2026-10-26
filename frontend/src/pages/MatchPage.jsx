@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Crosshair, Loader2, Play, Trophy, Undo2, Crown, UserPlus, X, Volume2, VolumeX } from 'lucide-react';
+import { ArrowLeft, Crosshair, Loader2, Play, Trophy, Undo2, Crown, UserPlus, X, Volume2, VolumeX, Download, Image as ImageIcon } from 'lucide-react';
 import { api } from '../api.js';
 import { useFetch } from '../useFetch.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -9,6 +9,7 @@ import { BatTable, BowlTable, ExtrasLine, OverByOver, ScorecardTabs, teamOf } fr
 import { useBallQueue } from '../useBallQueue.js';
 import { playBallSound, playUndoSound, isSoundEnabled, setSoundEnabled } from '../utils/audio.js';
 import { WhatsAppShareButton } from '../components/WhatsAppShare.jsx';
+import { downloadScorecardImage } from '../utils/scorecardImage.js';
 
 const WICKET_LABELS = { bowled: 'Bowled', caught: 'Caught', lbw: 'LBW', runout: 'Run out', stumped: 'Stumped', hitwicket: 'Hit wicket' };
 const ALLOWED = {
@@ -774,6 +775,7 @@ function WicketModal({ open, onClose, initialExtra, initialRuns = 0, initialType
 // ---------------------------------------------------------------- result
 function ResultView({ view }) {
   const { match } = view;
+  const [downloading, setDownloading] = useState(false);
   const r = match.result;
   const home = match.homeTeam;
   const away = match.awayTeam;
@@ -786,6 +788,15 @@ function ResultView({ view }) {
     ? (won ? 'Congratulations! You Won the Match!' : 'Better Luck Next Time!')
     : '🤝 Match Tied / Drawn!';
   const pom = match.playerOfMatch;
+
+  const handleDownload = () => {
+    setDownloading(true);
+    try {
+      downloadScorecardImage(view);
+    } finally {
+      setTimeout(() => setDownloading(false), 800);
+    }
+  };
 
   return (
     <div className="mx-auto max-w-md space-y-4">
@@ -822,7 +833,16 @@ function ResultView({ view }) {
       </section>
       <div className="grid gap-2.5">
         <WhatsAppShareButton view={view} label="Share Result on WhatsApp" />
-        <Link to={`/matches/${match.id}/scorecard`} className="btn btn-green">View Scorecard</Link>
+        <button
+          type="button"
+          onClick={handleDownload}
+          disabled={downloading}
+          className="btn btn-outline flex items-center justify-center gap-2 border-emerald-300 bg-emerald-50/60 text-emerald-800 hover:bg-emerald-100/70 font-bold"
+        >
+          {downloading ? <Loader2 className="h-4 w-4 animate-spin text-emerald-600" /> : <ImageIcon className="h-4 w-4 text-emerald-600" />}
+          <span>Download Scorecard Image (PNG)</span>
+        </button>
+        <Link to={`/matches/${match.id}/scorecard`} className="btn btn-green">View Full Scorecard & PDF</Link>
         <Link to="/" className="btn btn-outline">Back to Home</Link>
       </div>
     </div>

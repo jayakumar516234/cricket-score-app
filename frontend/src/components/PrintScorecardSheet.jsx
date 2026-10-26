@@ -51,6 +51,7 @@ export function PrintScorecardSheet({ view }) {
           const bowlingCard = state.bowlingCard || [];
           const extras = state.extras || { total: 0, wide: 0, noball: 0, bye: 0, legbye: 0 };
           const fow = state.fow || [];
+          const overSummary = state.overSummary || [];
 
           return (
             <div key={inn.id || idx} className="border border-slate-300 rounded-lg p-3 print-avoid-break">
@@ -147,6 +148,42 @@ export function PrintScorecardSheet({ view }) {
                   </tbody>
                 </table>
               </div>
+
+              {/* Overs Card (Over-by-Over Breakdown) */}
+              {overSummary.length > 0 && (
+                <div className="mt-3">
+                  <div className="text-[11px] font-bold uppercase text-slate-700 mb-1 flex items-center justify-between">
+                    <span>Overs Card (Over-by-Over Breakdown)</span>
+                    <span className="text-[10px] text-slate-500 font-normal">Total {overSummary.length} Over{overSummary.length > 1 ? 's' : ''} Bowled</span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 border border-slate-300 p-2 bg-slate-50 rounded">
+                    {overSummary.map((o) => (
+                      <div key={o.number} className="border border-slate-200 bg-white p-1.5 rounded text-[11px]">
+                        <div className="flex justify-between items-center font-bold text-slate-900 border-b border-slate-100 pb-0.5 mb-1 text-[10px]">
+                          <span className="truncate max-w-[95px]">Ov {o.number}: {o.bowlerName || 'Bowler'}</span>
+                          <span className="shrink-0">{o.runs}R{o.wickets ? `, ${o.wickets}W` : ''}</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {(o.balls || []).map((b, bi) => (
+                            <span
+                              key={bi}
+                              className={`inline-block px-1 py-0.2 rounded font-mono text-[9px] font-bold border ${
+                                b.includes('W') ? 'bg-red-600 text-white border-red-700' :
+                                b.includes('4') ? 'bg-blue-600 text-white border-blue-700' :
+                                b.includes('6') ? 'bg-emerald-600 text-white border-emerald-700' :
+                                b.includes('Wd') || b.includes('Nb') ? 'bg-amber-100 text-amber-900 border-amber-300' :
+                                'bg-slate-100 text-slate-800 border-slate-200'
+                              }`}
+                            >
+                              {b}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}

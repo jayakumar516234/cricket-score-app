@@ -1,21 +1,34 @@
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Crown, Printer } from 'lucide-react';
+import { ArrowLeft, Crown, Printer, Download, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { useFetch } from '../useFetch.js';
 import { ErrorBox, Spinner, StatusBadge } from '../components/ui.jsx';
 import { ScorecardTabs, teamOf } from '../components/ScoreParts.jsx';
 import { WhatsAppShareButton } from '../components/WhatsAppShare.jsx';
 import { OverBarChart } from '../components/OverBarChart.jsx';
 import { PrintScorecardSheet } from '../components/PrintScorecardSheet.jsx';
+import { downloadScorecardImage } from '../utils/scorecardImage.js';
 
 export default function Scorecard() {
   const { id } = useParams();
   const { data: view, error, loading, reload } = useFetch(`/matches/${id}`);
+  const [downloading, setDownloading] = useState(false);
+
   if (loading) return <Spinner />;
   if (error) return <ErrorBox message={error} onRetry={reload} />;
   const { match } = view;
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleDownloadImage = () => {
+    setDownloading(true);
+    try {
+      downloadScorecardImage(view);
+    } finally {
+      setTimeout(() => setDownloading(false), 800);
+    }
   };
 
   return (
@@ -55,16 +68,25 @@ export default function Scorecard() {
           )}
         </section>
 
-        {/* Action Buttons: WhatsApp Share & Print / Save PDF */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        {/* Action Buttons: WhatsApp Share, Download Image & Print / Save PDF */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
           <WhatsAppShareButton view={view} label="Share on WhatsApp" />
           <button
             type="button"
+            onClick={handleDownloadImage}
+            disabled={downloading}
+            className="btn btn-outline flex items-center justify-center gap-1.5 border-emerald-300 bg-emerald-50/50 text-emerald-800 hover:bg-emerald-100/60 shadow-2xs font-bold text-xs sm:text-sm !py-2.5"
+          >
+            {downloading ? <Loader2 className="h-4 w-4 animate-spin text-emerald-600" /> : <ImageIcon className="h-4 w-4 text-emerald-600" />}
+            <span>Download Image (PNG)</span>
+          </button>
+          <button
+            type="button"
             onClick={handlePrint}
-            className="btn btn-outline flex items-center justify-center gap-2 border-slate-300 text-slate-800 hover:bg-slate-50 shadow-2xs font-bold"
+            className="btn btn-outline flex items-center justify-center gap-1.5 border-slate-300 text-slate-800 hover:bg-slate-50 shadow-2xs font-bold text-xs sm:text-sm !py-2.5"
           >
             <Printer className="h-4 w-4 text-slate-600" />
-            <span>Print / Save PDF Scorecard</span>
+            <span>Print / Save PDF</span>
           </button>
         </div>
 
