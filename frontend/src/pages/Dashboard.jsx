@@ -185,8 +185,12 @@ function UserHomeView({ data, user, myTeam, t, isViewer }) {
 
             {/* Quick Action buttons */}
             <div className="flex flex-wrap items-center gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/10">
-              <Link to={`/teams/${myTeam.id}`} className="btn btn-outline text-xs sm:text-sm !py-2 !px-3.5 !text-white !border-navy-600 hover:!bg-navy-800">
-                <Users className="h-4 w-4 mr-1 text-pitch-400" /> Manage Squad
+              <Link
+                to={`/teams/${myTeam.id}`}
+                className="btn text-xs sm:text-sm !py-2 !px-3.5 font-bold shadow-xs transition"
+                style={{ backgroundColor: '#059669', color: '#ffffff' }}
+              >
+                <Users className="h-4 w-4 mr-1 text-emerald-200" /> Manage Squad
               </Link>
               {!isViewer && data.can?.createMatch && (
                 <Link to="/matches/new" className="btn text-xs sm:text-sm !py-2 !px-3.5 font-bold shadow-xs" style={{ backgroundColor: '#f59e0b', color: '#ffffff' }}>
