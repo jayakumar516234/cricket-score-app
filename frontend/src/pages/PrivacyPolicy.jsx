@@ -70,10 +70,10 @@ export default function PrivacyPolicy() {
             <h2 className="text-base font-bold text-slate-900">App Information</h2>
             <div className="space-y-2">
               <InfoCard label="App Name" value="Cricket Score App" />
-              <InfoCard label="Purpose" value="Live ball-by-ball cricket scoring, team & tournament management for grassroots cricket" />
-              <InfoCard label="Developer" value="Jayakumar (jayakumar516234)" />
-              <InfoCard label="Country" value="India" />
-              <InfoCard label="Contact" value="Available via in-app Support / Feedback" />
+              <InfoCard label="Organization / Dev" value="JK Sports (Jayakumar)" />
+              <InfoCard label="Location" value="Kanchipuram, Tamil Nadu, India" />
+              <InfoCard label="Official Email" value="xxxx@gmail.com" />
+              <InfoCard label="Support" value="Available via in-app Support & Feedback desk" />
             </div>
           </div>
 
@@ -224,11 +224,13 @@ export default function PrivacyPolicy() {
               personal data, please reach out through:
             </p>
             <ul className="list-disc pl-4 space-y-1">
-              <li><strong>In-app</strong>: Go to <em>Support / Feedback</em> in the app menu</li>
+              <li><strong>Official Support Email</strong>: <a href="mailto:xxxx@gmail.com" className="text-pitch-600 underline font-medium">xxxx@gmail.com</a></li>
+              <li><strong>Organization</strong>: JK Sports, Kanchipuram, Tamil Nadu, India</li>
+              <li><strong>In-app Desk</strong>: Go to <em>Support / Feedback</em> in the app menu</li>
               <li><strong>GitHub</strong>: <a href="https://github.com/jayakumar516234" className="text-pitch-600 underline" target="_blank" rel="noopener noreferrer">github.com/jayakumar516234</a></li>
             </ul>
             <p className="text-xs text-slate-500 bg-slate-50 border border-slate-100 rounded-lg px-3 py-2">
-              For data deletion requests, please use the subject: <strong>"Data Deletion Request – Cricket Score App"</strong>
+              For data deletion requests, email us at <strong>xxxx@gmail.com</strong> with the subject: <strong>"Data Deletion Request – Cricket Score App"</strong>
             </p>
           </Section>
 

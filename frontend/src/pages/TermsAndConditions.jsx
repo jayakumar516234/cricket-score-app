@@ -57,7 +57,9 @@ export default function TermsAndConditions() {
               tournaments for grassroots, village, and amateur cricket leagues across India.
             </p>
             <ul className="list-disc pl-4 space-y-1">
-              <li><strong>Developer:</strong> Jayakumar (jayakumar516234)</li>
+              <li><strong>Organization / Developer:</strong> JK Sports (Jayakumar)</li>
+              <li><strong>Headquarters / Location:</strong> Kanchipuram, Tamil Nadu, India</li>
+              <li><strong>Support Email:</strong> xxxx@gmail.com</li>
               <li><strong>Platform:</strong> Progressive Web App (PWA) + Android (Play Store)</li>
               <li><strong>Purpose:</strong> Non-commercial cricket scoring and team management</li>
               <li><strong>Target Users:</strong> Cricket club admins, tournament organizers, scorers, players, and viewers</li>
@@ -246,6 +248,8 @@ export default function TermsAndConditions() {
               If you have any questions about these Terms, or need to report a violation, please contact us:
             </p>
             <ul className="list-disc pl-4 space-y-1">
+              <li><strong>Email:</strong> <a href="mailto:xxxx@gmail.com" className="text-pitch-600 underline font-medium">xxxx@gmail.com</a></li>
+              <li><strong>Organization:</strong> JK Sports, Kanchipuram, Tamil Nadu, India</li>
               <li><strong>In-app:</strong> Go to <em>Support / Feedback</em> in the app menu</li>
               <li><strong>GitHub:</strong> <a href="https://github.com/jayakumar516234" className="text-pitch-600 underline" target="_blank" rel="noopener noreferrer">github.com/jayakumar516234</a></li>
             </ul>
