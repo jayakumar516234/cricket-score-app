@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Loader2, Handshake, Users } from 'lucide-react';
+import { ArrowLeft, Loader2, Handshake, Users, Shield } from 'lucide-react';
 import { api } from '../api.js';
 import { useFetch } from '../useFetch.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -457,7 +457,7 @@ export default function CreateMatch() {
         </fieldset>
       </section>
 
-      <button className="btn btn-primary w-full" disabled={busy}>{busy && <Loader2 className="h-4 w-4 animate-spin" />} Create Match</button>
+      <button className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md w-full py-3 text-base" disabled={busy}>{busy && <Loader2 className="h-4 w-4 animate-spin" />} Create Match</button>
     </form>
   );
 }

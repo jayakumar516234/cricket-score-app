@@ -77,7 +77,7 @@ export default function Matches() {
     <div>
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-xl font-bold text-slate-900">Matches</h1>
-        {data?.canCreate && <Link to="/matches/new" className="btn font-bold shadow-xs" style={{ backgroundColor: '#f59e0b', color: '#ffffff' }}><Plus className="h-4 w-4" /> Create Match</Link>}
+        {data?.canCreate && <Link to="/matches/new" className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md"><Plus className="h-4 w-4" /> Create Match</Link>}
       </div>
       <div className="mb-4 flex flex-col gap-2 sm:flex-row">
         <div className="relative flex-1">
@@ -102,7 +102,7 @@ export default function Matches() {
       <div className="mb-3"><ErrorBox message={actionError} /></div>
       {loading && !data ? <SkeletonMatchCard count={4} /> : error ? <ErrorBox message={error} onRetry={reload} /> : data.items.length === 0 ? (
         <Empty icon={Trophy} title={q || status ? 'No matches found' : 'No matches yet'} text={q || status ? 'Try a different search or filter.' : 'Create a match between two teams to start scoring.'}
-          action={!q && !status && data.canCreate && <Link to="/matches/new" className="btn font-bold" style={{ backgroundColor: '#f59e0b', color: '#ffffff' }}>Create Match</Link>} />
+          action={!q && !status && data.canCreate && <Link to="/matches/new" className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md">Create Match</Link>} />
       ) : (
         <>
           <ul className="space-y-3">

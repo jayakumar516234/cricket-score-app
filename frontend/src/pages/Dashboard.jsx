@@ -193,7 +193,7 @@ function UserHomeView({ data, user, myTeam, t, isViewer }) {
                 <Users className="h-4 w-4 mr-1 text-emerald-200" /> Manage Squad
               </Link>
               {!isViewer && data.can?.createMatch && (
-                <Link to="/matches/new" className="btn text-xs sm:text-sm !py-2 !px-3.5 font-bold shadow-xs" style={{ backgroundColor: '#f59e0b', color: '#ffffff' }}>
+                <Link to="/matches/new" className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm !py-2 !px-3.5 font-bold shadow-md">
                   <Plus className="h-4 w-4 mr-1" /> New Match
                 </Link>
               )}
@@ -279,7 +279,7 @@ function UserHomeView({ data, user, myTeam, t, isViewer }) {
               text={t('dashboard.noMatchesText')}
               action={
                 !isViewer && data.can?.createMatch ? (
-                  <Link to="/matches/new" className="btn text-xs font-bold" style={{ backgroundColor: '#f59e0b', color: '#ffffff' }}>
+                  <Link to="/matches/new" className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md">
                     <Plus className="h-3.5 w-3.5 mr-1" /> {t('dashboard.createMatch')}
                   </Link>
                 ) : null
@@ -400,7 +400,7 @@ function AdminDashboardView({ data, user, t, myTeam }) {
               </Link>
             )}
             {data.can?.createMatch && (
-              <Link to="/matches/new" className="btn flex-1 sm:flex-none text-xs sm:text-sm !py-2 !px-3.5 font-bold shadow-xs" style={{ backgroundColor: '#f59e0b', color: '#ffffff' }}>
+              <Link to="/matches/new" className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white flex-1 sm:flex-none text-xs sm:text-sm !py-2 !px-3.5 font-bold shadow-md">
                 <Trophy className="h-4 w-4" /> {t('dashboard.createMatch')}
               </Link>
             )}
