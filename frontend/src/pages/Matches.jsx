@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Search, Trash2, Trophy } from 'lucide-react';
+import { Plus, Search, Trash2, Trophy, FileText } from 'lucide-react';
 import { api, qs } from '../api.js';
 import { useFetch } from '../useFetch.js';
 import { ConfirmDialog, Empty, ErrorBox, Pagination, Spinner, SkeletonMatchCard, StatusBadge, TeamLogo, DropdownSelect, fmtDate } from '../components/ui.jsx';
@@ -133,6 +133,21 @@ export default function Matches() {
                         </div>
                       )}
                       <MatchScoreLine match={m} />
+                      {m.status === 'completed' && (
+                        <div className="mt-2 pt-2 border-t border-slate-100 flex items-center gap-2">
+                          <span
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              nav(`/matches/${m.id}/scorecard`);
+                            }}
+                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 px-2.5 py-1 rounded-md transition cursor-pointer"
+                          >
+                            <FileText className="h-3.5 w-3.5 text-rose-600" />
+                            <span>Official Scorecard & PDF</span>
+                          </span>
+                        </div>
+                      )}
                     </Link>
                     {m.canManage && (
                       <button

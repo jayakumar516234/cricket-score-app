@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Crown, Printer, Download, Image as ImageIcon, Loader2, QrCode, Sparkles } from 'lucide-react';
+import { ArrowLeft, Crown, Printer, Download, Image as ImageIcon, Loader2, QrCode, Sparkles, FileText } from 'lucide-react';
 import { useFetch } from '../useFetch.js';
 import { ErrorBox, Spinner, SkeletonScorecard, StatusBadge } from '../components/ui.jsx';
 import { ScorecardTabs, teamOf } from '../components/ScoreParts.jsx';
@@ -8,6 +8,7 @@ import { WhatsAppShareButton } from '../components/WhatsAppShare.jsx';
 import { OverBarChart } from '../components/OverBarChart.jsx';
 import { PrintScorecardSheet } from '../components/PrintScorecardSheet.jsx';
 import { downloadScorecardImage } from '../utils/scorecardImage.js';
+import { downloadScorecardPDF } from '../utils/scorecardPDF.js';
 import { downloadMatchPoster } from '../utils/matchPoster.js';
 import { QRCodeModal } from '../components/QRCodeModal.jsx';
 
@@ -15,6 +16,7 @@ export default function Scorecard() {
   const { id } = useParams();
   const { data: view, error, loading, reload } = useFetch(`/matches/${id}`);
   const [downloading, setDownloading] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
   const [posterLoading, setPosterLoading] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
 
@@ -24,6 +26,17 @@ export default function Scorecard() {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleDownloadPDF = async () => {
+    setPdfLoading(true);
+    try {
+      await downloadScorecardPDF(view);
+    } catch (err) {
+      console.error('PDF export failed:', err);
+    } finally {
+      setTimeout(() => setPdfLoading(false), 800);
+    }
   };
 
   const handleDownloadImage = () => {
@@ -81,8 +94,18 @@ export default function Scorecard() {
           )}
         </section>
 
-        {/* Action Buttons: WhatsApp Share, Download Image, Winner Poster, QR Code & Print / Save PDF */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        {/* Action Buttons: Download PDF, WhatsApp Share, Download Image, Winner Poster, QR Code & Print */}
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+          <button
+            type="button"
+            onClick={handleDownloadPDF}
+            disabled={pdfLoading}
+            className="btn btn-outline flex items-center justify-center gap-1.5 border-rose-300 bg-rose-50/70 text-rose-900 hover:bg-rose-100/80 shadow-2xs font-bold text-xs !py-2.5"
+            title="Download Official A4 PDF Scoresheet"
+          >
+            {pdfLoading ? <Loader2 className="h-4 w-4 animate-spin text-rose-600" /> : <FileText className="h-4 w-4 text-rose-600" />}
+            <span>Download PDF</span>
+          </button>
           <WhatsAppShareButton view={view} label="Share Score" />
           <button
             type="button"
@@ -119,7 +142,7 @@ export default function Scorecard() {
             className="btn btn-outline flex items-center justify-center gap-1.5 border-slate-300 text-slate-800 hover:bg-slate-50 shadow-2xs font-bold text-xs !py-2.5"
           >
             <Printer className="h-4 w-4 text-slate-600" />
-            <span>Print / PDF</span>
+            <span>Print Sheet</span>
           </button>
         </div>
 

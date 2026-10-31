@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Crosshair, Loader2, Play, Trophy, Undo2, Crown, UserPlus, X, Volume2, VolumeX, Download, Image as ImageIcon, QrCode, Sparkles } from 'lucide-react';
+import { ArrowLeft, Crosshair, Loader2, Play, Trophy, Undo2, Crown, UserPlus, X, Volume2, VolumeX, Download, Image as ImageIcon, QrCode, Sparkles, FileText } from 'lucide-react';
 import { api } from '../api.js';
 import { useFetch } from '../useFetch.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -10,6 +10,7 @@ import { useBallQueue } from '../useBallQueue.js';
 import { playBallSound, playUndoSound, isSoundEnabled, setSoundEnabled } from '../utils/audio.js';
 import { WhatsAppShareButton } from '../components/WhatsAppShare.jsx';
 import { downloadScorecardImage } from '../utils/scorecardImage.js';
+import { downloadScorecardPDF } from '../utils/scorecardPDF.js';
 import { downloadMatchPoster } from '../utils/matchPoster.js';
 import { QRCodeModal } from '../components/QRCodeModal.jsx';
 
@@ -791,6 +792,7 @@ function WicketModal({ open, onClose, initialExtra, initialRuns = 0, initialType
 function ResultView({ view }) {
   const { match } = view;
   const [downloading, setDownloading] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
   const [posterLoading, setPosterLoading] = useState(false);
   const r = match.result;
   const home = match.homeTeam;
@@ -811,6 +813,17 @@ function ResultView({ view }) {
       downloadScorecardImage(view);
     } finally {
       setTimeout(() => setDownloading(false), 800);
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    setPdfLoading(true);
+    try {
+      await downloadScorecardPDF(view);
+    } catch (err) {
+      console.error('PDF export failed:', err);
+    } finally {
+      setTimeout(() => setPdfLoading(false), 800);
     }
   };
 
@@ -866,6 +879,15 @@ function ResultView({ view }) {
         >
           {posterLoading ? <Loader2 className="h-4 w-4 animate-spin text-amber-600" /> : <Sparkles className="h-4 w-4 text-amber-600" />}
           <span>🎨 Download Match Winner Poster (WhatsApp Status)</span>
+        </button>
+        <button
+          type="button"
+          onClick={handleDownloadPDF}
+          disabled={pdfLoading}
+          className="btn btn-outline flex items-center justify-center gap-2 border-rose-400 bg-rose-50/70 text-rose-900 hover:bg-rose-100/80 font-bold shadow-xs"
+        >
+          {pdfLoading ? <Loader2 className="h-4 w-4 animate-spin text-rose-600" /> : <FileText className="h-4 w-4 text-rose-600" />}
+          <span>📄 Download Official Scorecard (PDF)</span>
         </button>
         <button
           type="button"
