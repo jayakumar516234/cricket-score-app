@@ -65,6 +65,11 @@ export async function api(path, { method = 'GET', body } = {}) {
   return data;
 }
 
+api.get = (path) => api(path, { method: 'GET' });
+api.post = (path, body) => api(path, { method: 'POST', body });
+api.put = (path, body) => api(path, { method: 'PUT', body });
+api.delete = (path, body) => api(path, { method: 'DELETE', body });
+
 export const qs = (params) => {
   const p = new URLSearchParams();
   Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== null && v !== '') p.set(k, v); });

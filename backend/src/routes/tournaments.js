@@ -24,8 +24,8 @@ const createTournamentSchema = z.object({
   format: z.enum(['knockout', 'league', 'flexible']).optional().default('knockout'),
   maxTeams: z.coerce.number().int().min(2).max(64).optional().default(16),
   defaultOvers: z.coerce.number().int().min(1).max(50).optional().default(8),
-  startDate: z.string().optional().refine((v) => !v || !Number.isNaN(Date.parse(v)), 'Invalid start date'),
-  endDate: z.string().optional().refine((v) => !v || !Number.isNaN(Date.parse(v)), 'Invalid end date'),
+  startDate: z.string().nullable().optional().refine((v) => !v || !Number.isNaN(Date.parse(v)), 'Invalid start date'),
+  endDate: z.string().nullable().optional().refine((v) => !v || !Number.isNaN(Date.parse(v)), 'Invalid end date'),
   rules: z.string().trim().max(1000).optional().default(''),
 });
 
@@ -108,6 +108,7 @@ router.get('/', optionalAuth, wrap(async (req, res) => {
 // 2. Create Tournament
 // ========================
 router.post('/', requireAuth, wrap(async (req, res) => {
+  if (req.user?.role === 'viewer') throw new HttpError(403, 'Viewers cannot create tournaments');
   const d = parse(createTournamentSchema, req.body);
   const code = await Tournament.generateCode();
 
@@ -120,8 +121,8 @@ router.post('/', requireAuth, wrap(async (req, res) => {
     format: d.format,
     maxTeams: d.maxTeams,
     defaultOvers: d.defaultOvers,
-    startDate: d.startDate ? new Date(d.startDate) : undefined,
-    endDate: d.endDate ? new Date(d.endDate) : undefined,
+    startDate: d.startDate && !Number.isNaN(Date.parse(d.startDate)) ? new Date(d.startDate) : undefined,
+    endDate: d.endDate && !Number.isNaN(Date.parse(d.endDate)) ? new Date(d.endDate) : undefined,
     rules: d.rules,
     organizer: req.user._id,
     scorers: [

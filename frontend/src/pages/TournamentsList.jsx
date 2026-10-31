@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Medal, Plus, Search, Trophy, KeyRound, MapPin, Users, Clock, Check, Copy, Flame } from 'lucide-react';
 import { useFetch } from '../useFetch.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -8,6 +8,7 @@ import { TournamentCreateModal } from '../components/TournamentCreateModal.jsx';
 import { ScorerLoginModal } from '../components/ScorerLoginModal.jsx';
 
 export default function TournamentsList() {
+  const nav = useNavigate();
   const { user } = useAuth();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all'); // 'all' | 'live' | 'upcoming' | 'completed'
@@ -230,7 +231,10 @@ export default function TournamentsList() {
       <TournamentCreateModal
         open={createOpen}
         onClose={() => setCreateOpen(false)}
-        onCreated={() => reload()}
+        onCreated={(newTrn) => {
+          reload();
+          if (newTrn?.id) nav(`/tournaments/${newTrn.id}`);
+        }}
       />
       <ScorerLoginModal
         open={scorerOpen}
