@@ -15,6 +15,34 @@ export class ApiError extends Error {
 let onUnauthorized = () => {};
 export const setUnauthorizedHandler = (fn) => { onUnauthorized = fn; };
 
+let isRedirectingToLogin = false;
+
+export function handleUnauthorized(errorMessage) {
+  const hadToken = !!getToken();
+  setToken(null);
+  try {
+    localStorage.removeItem('cricket_user');
+    if (errorMessage) {
+      sessionStorage.setItem('auth_notice', errorMessage);
+    }
+  } catch {}
+
+  try {
+    if (typeof onUnauthorized === 'function') {
+      onUnauthorized(errorMessage);
+    }
+  } catch {}
+
+  // If user had an active session and hits 401 on an authenticated screen, force clean redirect to /login
+  if (hadToken && typeof window !== 'undefined' && !isRedirectingToLogin) {
+    const pathname = window.location.pathname || '';
+    if (!pathname.startsWith('/login') && !pathname.startsWith('/super-login') && !pathname.startsWith('/live/')) {
+      isRedirectingToLogin = true;
+      window.location.href = '/login';
+    }
+  }
+}
+
 export async function api(path, { method = 'GET', body } = {}) {
   let res;
   try {
@@ -29,7 +57,9 @@ export async function api(path, { method = 'GET', body } = {}) {
   let data = null;
   try { data = await res.json(); } catch { /* empty body */ }
   if (!res.ok) {
-    if (res.status === 401 && getToken() && !path.startsWith('/auth/login')) onUnauthorized();
+    if (res.status === 401 && !path.startsWith('/auth/login')) {
+      handleUnauthorized(data?.error || 'You have been logged in on another device. Please sign in again');
+    }
     throw new ApiError(data?.error || `Request failed (${res.status})`, res.status, data);
   }
   return data;

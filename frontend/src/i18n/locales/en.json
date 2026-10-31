@@ -56,7 +56,9 @@
     "hidePassword": "Hide password",
     "loginBtn": "Login",
     "viewerHint": "Team view login? Use the username and password your team owner gave you.",
-    "errorEmpty": "Enter your username or phone number and your password"
+    "errorEmpty": "Enter your username or phone number and your password",
+    "sessionExpiredAnotherDevice": "You have been logged in on another device. Please sign in again.",
+    "sessionExpired": "Your session has expired. Please sign in again."
   },
   "teams": {
     "title": "Teams",

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, Eye, EyeOff, Lock, User, Loader2 } from 'lucide-react';
+import { ShieldCheck, Eye, EyeOff, Lock, User, Loader2, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { ErrorBox } from '../components/ui.jsx';
 import { APP_VERSION } from '../version.js';
@@ -12,6 +12,16 @@ export default function SuperLogin() {
   const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+
+  const [sessionNotice] = useState(() => {
+    try {
+      const msg = sessionStorage.getItem('auth_notice');
+      sessionStorage.removeItem('auth_notice');
+      return msg || '';
+    } catch {
+      return '';
+    }
+  });
 
   const submit = async (e) => {
     e.preventDefault();
@@ -46,6 +56,13 @@ export default function SuperLogin() {
           <h2 className="text-2xl font-bold text-slate-900">Super Login</h2>
           <p className="text-sm text-slate-500">Sign in with master credentials</p>
         </div>
+
+        {sessionNotice && (
+          <div className="flex items-start gap-2.5 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs font-semibold text-amber-900 shadow-xs">
+            <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+            <div className="flex-1 leading-relaxed">{sessionNotice}</div>
+          </div>
+        )}
 
         <ErrorBox message={error} />
 

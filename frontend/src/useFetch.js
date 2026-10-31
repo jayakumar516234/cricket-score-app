@@ -4,6 +4,8 @@ import { api } from './api.js';
 // In-memory response cache for instant UI rendering across navigation
 const memoryCache = new Map();
 
+export const clearMemoryCache = () => memoryCache.clear();
+
 /** Loads `path` and reloads when it changes. `poll` (ms) refreshes quietly in the background. */
 export function useFetch(path, { poll, useCache = true } = {}) {
   const cached = useCache && path ? memoryCache.get(path) : null;
