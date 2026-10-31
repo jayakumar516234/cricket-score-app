@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ChevronDown, Loader2, Plus, Trash2 } from 'lucide-react';
 import { api } from '../api.js';
-import { ErrorBox, Field, ImagePicker, Spinner, SkeletonForm } from '../components/ui.jsx';
+import { ErrorBox, Field, ImagePicker, Spinner, SkeletonForm, DropdownSelect } from '../components/ui.jsx';
 
 const ROLES = ['Batsman', 'Bowler', 'All-rounder', 'Wicket Keeper'];
 const BALLS = ['Leather Ball', 'Tennis Ball', 'Rubber Ball', 'Other'];
@@ -153,7 +153,7 @@ export default function TeamForm() {
                       <input id={`pn${i}`} className={`input ${errors[`p${i}.name`] ? 'input-error' : ''}`} value={p.name} onChange={(e) => setP(i, { name: e.target.value })} maxLength={60} />
                     </Field>
                     <Field label="Role" htmlFor={`pr${i}`}>
-                      <select id={`pr${i}`} className="input" value={p.role} onChange={(e) => setP(i, { role: e.target.value })}>{ROLES.map((r) => <option key={r}>{r}</option>)}</select>
+                      <DropdownSelect id={`pr${i}`} value={p.role} onChange={(val) => setP(i, { role: val })} options={ROLES} />
                     </Field>
                     <Field label="Jersey No (optional)" error={errors[`p${i}.jersey`]} htmlFor={`pj${i}`}>
                       <input id={`pj${i}`} inputMode="numeric" className={`input ${errors[`p${i}.jersey`] ? 'input-error' : ''}`} value={p.jerseyNumber} onChange={(e) => setP(i, { jerseyNumber: e.target.value.replace(/\D/g, '') })} />

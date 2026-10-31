@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Medal, X, Loader2, Plus, Calendar, MapPin, Shield } from 'lucide-react';
 import { api } from '../api.js';
+import { DropdownSelect } from './ui.jsx';
 
 export function TournamentCreateModal({ open, onClose, onCreated }) {
   const [name, setName] = useState('');
@@ -95,18 +96,19 @@ export function TournamentCreateModal({ open, onClose, onCreated }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="label">Total Teams (Bracket Size)</label>
-              <select
+              <DropdownSelect
                 value={maxTeams}
-                onChange={(e) => setMaxTeams(Number(e.target.value))}
-                className="input font-semibold"
-              >
-                <option value={8}>8 Teams</option>
-                <option value={12}>12 Teams</option>
-                <option value={14}>14 Teams</option>
-                <option value={16}>16 Teams (Standard Village Cup)</option>
-                <option value={24}>24 Teams</option>
-                <option value={32}>32 Teams</option>
-              </select>
+                onChange={(val) => setMaxTeams(Number(val))}
+                options={[
+                  { value: 8, label: '8 Teams' },
+                  { value: 12, label: '12 Teams' },
+                  { value: 14, label: '14 Teams' },
+                  { value: 16, label: '16 Teams (Standard Village Cup)' },
+                  { value: 24, label: '24 Teams' },
+                  { value: 32, label: '32 Teams' },
+                ]}
+                buttonClassName="font-semibold"
+              />
             </div>
 
             <div>

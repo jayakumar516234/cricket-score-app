@@ -4,7 +4,7 @@ import { api, qs } from '../api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useFetch } from '../useFetch.js';
 import { Link } from 'react-router-dom';
-import { ConfirmDialog, Empty, ErrorBox, Field, Modal, Pagination, Spinner, SkeletonList, fmtDate } from '../components/ui.jsx';
+import { ConfirmDialog, DropdownSelect, Empty, ErrorBox, Field, Modal, Pagination, Spinner, SkeletonList, fmtDate } from '../components/ui.jsx';
 
 const blank = { name: '', username: '', phone: '', password: '', role: 'user', viewTeam: '', assignTeam: '', active: true };
 
@@ -512,53 +512,53 @@ export default function UsersPage() {
 
             {form.role !== 'superadmin' && (
               <Field label="Role" required htmlFor="u-role">
-                <select
+                <DropdownSelect
                   id="u-role"
-                  className="input"
                   value={form.role || 'user'}
-                  onChange={(e) => setForm({ ...form, role: e.target.value })}
-                >
-                  <option value="user">Team Admin (Own team & score update)</option>
-                  <option value="viewer">Viewer (Read-only for one team)</option>
-                  {isSuper && <option value="admin">Admin (All teams, players & matches)</option>}
-                </select>
+                  onChange={(val) => setForm({ ...form, role: val })}
+                  options={[
+                    { value: 'user', label: 'Team Admin (Own team & score update)' },
+                    { value: 'viewer', label: 'Viewer (Read-only for one team)' },
+                    ...(isSuper ? [{ value: 'admin', label: 'Admin (All teams, players & matches)' }] : []),
+                  ]}
+                />
               </Field>
             )}
 
             {/* Team assignment dropdown */}
             {form.role === 'viewer' && (
               <Field label="Assign Team to View" required htmlFor="u-viewteam" hint="The team this viewer will see">
-                <select
+                <DropdownSelect
                   id="u-viewteam"
-                  className="input"
                   value={form.viewTeam || ''}
-                  onChange={(e) => setForm({ ...form, viewTeam: e.target.value })}
-                >
-                  <option value="">-- Choose a team --</option>
-                  {teamsList.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name} ({t.code || 'No code'}{t.location ? ` - ${t.location}` : ''})
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => setForm({ ...form, viewTeam: val })}
+                  options={[
+                    { value: '', label: '-- Choose a team --' },
+                    ...teamsList.map((t) => ({
+                      value: t.id,
+                      label: `${t.name} (${t.code || 'No code'}${t.location ? ` - ${t.location}` : ''})`,
+                    })),
+                  ]}
+                  placeholder="-- Choose a team --"
+                />
               </Field>
             )}
 
             {(form.role === 'user' || form.role === 'teamadmin') && teamsList.length > 0 && (
               <Field label="Assign to Existing Team (Optional)" htmlFor="u-assignteam" hint="Link this team admin to an existing team">
-                <select
+                <DropdownSelect
                   id="u-assignteam"
-                  className="input"
                   value={form.assignTeam || ''}
-                  onChange={(e) => setForm({ ...form, assignTeam: e.target.value })}
-                >
-                  <option value="">-- None (user can create their own team) --</option>
-                  {teamsList.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name} ({t.code || 'No code'})
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => setForm({ ...form, assignTeam: val })}
+                  options={[
+                    { value: '', label: '-- None (user can create their own team) --' },
+                    ...teamsList.map((t) => ({
+                      value: t.id,
+                      label: `${t.name} (${t.code || 'No code'})`,
+                    })),
+                  ]}
+                  placeholder="-- None (user can create their own team) --"
+                />
               </Field>
             )}
 

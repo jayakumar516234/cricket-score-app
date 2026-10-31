@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ScrollText } from 'lucide-react';
 import { qs } from '../api.js';
 import { useFetch } from '../useFetch.js';
-import { Empty, ErrorBox, Pagination, Spinner, SkeletonList, fmtDate } from '../components/ui.jsx';
+import { Empty, ErrorBox, Pagination, Spinner, SkeletonList, fmtDate, DropdownSelect } from '../components/ui.jsx';
 
 const FILTERS = [['', 'All activity'], ['score', 'Score changes'], ['match', 'Matches'], ['team', 'Teams'], ['user', 'Users']];
 
@@ -14,9 +14,14 @@ export default function Audit() {
     <div>
       <div className="mb-4 flex items-center justify-between gap-3">
         <h1 className="text-xl font-bold text-slate-900">Audit log</h1>
-        <select className="input w-44" aria-label="Filter activity" value={action} onChange={(e) => { setAction(e.target.value); setPage(1); }}>
-          {FILTERS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-        </select>
+        <div className="w-44">
+          <DropdownSelect
+            value={action}
+            onChange={(val) => { setAction(val); setPage(1); }}
+            options={FILTERS}
+            buttonClassName="!py-1.5 !px-3 text-xs font-semibold"
+          />
+        </div>
       </div>
       {loading && !data ? <SkeletonList count={6} /> : error ? <ErrorBox message={error} onRetry={reload} /> : data.items.length === 0 ? (
         <Empty icon={ScrollText} title="Nothing recorded yet" text="Team, match, user and score-correction changes will appear here." />

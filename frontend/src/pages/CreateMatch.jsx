@@ -363,20 +363,23 @@ export default function CreateMatch() {
                       placeholder={`Player ${idx + 1}`}
                       maxLength={40}
                     />
-                    <select
-                      className="input !py-1 !px-1.5 text-xs w-24 border-slate-200 font-medium text-slate-700 bg-slate-50"
-                      value={player.role}
-                      onChange={(e) => {
-                        const updated = [...guestPlayers];
-                        updated[idx] = { ...updated[idx], role: e.target.value };
-                        setGuestPlayers(updated);
-                      }}
-                    >
-                      <option value="Batsman">🏏 Batsman</option>
-                      <option value="Bowler">⚾ Bowler</option>
-                      <option value="All-rounder">⚡ All-rounder</option>
-                      <option value="Wicket Keeper">🧤 Keeper</option>
-                    </select>
+                    <div className="w-28 shrink-0">
+                      <DropdownSelect
+                        value={player.role}
+                        onChange={(val) => {
+                          const updated = [...guestPlayers];
+                          updated[idx] = { ...updated[idx], role: val };
+                          setGuestPlayers(updated);
+                        }}
+                        options={[
+                          { value: 'Batsman', label: '🏏 Batsman' },
+                          { value: 'Bowler', label: '⚾ Bowler' },
+                          { value: 'All-rounder', label: '⚡ All-rounder' },
+                          { value: 'Wicket Keeper', label: '🧤 Keeper' },
+                        ]}
+                        buttonClassName="!py-1 !px-2 text-xs font-semibold bg-slate-50 border-slate-200"
+                      />
+                    </div>
                   </div>
                 ))}
               </div>

@@ -652,6 +652,9 @@ export function DropdownSelect({
   placeholder = 'Select option',
   disabled = false,
   className = '',
+  buttonClassName = '',
+  menuClassName = '',
+  clearable = false,
   error = false,
 }) {
   const [open, setOpen] = useState(false);
@@ -664,19 +667,31 @@ export function DropdownSelect({
         setOpen(false);
       }
     };
+    const handleKey = (e) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
     document.addEventListener('mousedown', handleClick);
     document.addEventListener('touchstart', handleClick);
+    document.addEventListener('keydown', handleKey);
     return () => {
       document.removeEventListener('mousedown', handleClick);
       document.removeEventListener('touchstart', handleClick);
+      document.removeEventListener('keydown', handleKey);
     };
   }, [open]);
 
-  const normalizedOptions = options.map((opt) =>
-    typeof opt === 'object' && opt !== null ? opt : { value: opt, label: String(opt) }
-  );
+  const normalizedOptions = options.map((opt) => {
+    if (Array.isArray(opt)) {
+      return { value: opt[0], label: opt[1] ?? String(opt[0]) };
+    }
+    if (typeof opt === 'object' && opt !== null) {
+      return { value: opt.value, label: opt.label ?? String(opt.value), badge: opt.badge, icon: opt.icon };
+    }
+    return { value: opt, label: String(opt) };
+  });
 
-  const selectedOption = normalizedOptions.find((opt) => String(opt.value) === String(value));
+  const selectedOption = normalizedOptions.find((opt) => String(opt.value ?? '') === String(value ?? ''));
+  const hasEmptyOption = normalizedOptions.some((opt) => opt.value === '' || opt.value == null);
 
   return (
     <div className={`relative ${className}`} ref={ref}>
@@ -685,7 +700,7 @@ export function DropdownSelect({
         type="button"
         disabled={disabled}
         onClick={() => setOpen((prev) => !prev)}
-        className={`input flex w-full items-center justify-between text-left ${error ? 'input-error' : ''} ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+        className={`input flex w-full items-center justify-between text-left ${error ? 'input-error' : ''} ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${buttonClassName}`}
       >
         <span className={`truncate ${!selectedOption && (value === '' || value === undefined) ? 'text-slate-400' : 'text-slate-900 font-medium'}`}>
           {selectedOption ? selectedOption.label : placeholder}
@@ -694,30 +709,31 @@ export function DropdownSelect({
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-xl">
-          {placeholder && (
+        <div className={`absolute left-0 top-full z-50 mt-1 max-h-60 w-full min-w-full overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-xl ring-1 ring-black/5 ${menuClassName}`}>
+          {clearable && !hasEmptyOption && placeholder && (
             <div
               onClick={() => { onChange(''); setOpen(false); }}
-              className="cursor-pointer px-3 py-2 text-sm text-slate-500 hover:bg-slate-50 transition"
+              className="cursor-pointer px-3.5 py-2 text-sm text-slate-400 hover:bg-slate-50 transition border-b border-slate-100"
             >
               {placeholder}
             </div>
           )}
-          {normalizedOptions.map((opt) => {
-            const isSelected = String(opt.value) === String(value);
+          {normalizedOptions.map((opt, idx) => {
+            const isSelected = String(opt.value ?? '') === String(value ?? '');
             return (
               <div
-                key={String(opt.value)}
+                key={`${String(opt.value)}_${idx}`}
                 onClick={() => { onChange(opt.value); setOpen(false); }}
-                className={`flex cursor-pointer items-center justify-between px-3 py-2 text-sm transition ${
-                  isSelected ? 'bg-blue-50 font-semibold text-blue-700' : 'text-slate-800 hover:bg-slate-100'
+                className={`flex cursor-pointer items-center justify-between px-3.5 py-2 text-sm transition ${
+                  isSelected ? 'bg-pitch-50 font-bold text-pitch-900' : 'text-slate-800 hover:bg-slate-50'
                 }`}
               >
                 <div className="flex items-center gap-2 truncate">
+                  {opt.icon && <span className="shrink-0">{opt.icon}</span>}
                   <span className="truncate">{opt.label}</span>
-                  {opt.badge && <span className="badge bg-blue-100 text-blue-700 text-[10px]">{opt.badge}</span>}
+                  {opt.badge && <span className="badge bg-pitch-100 text-pitch-800 text-[10px]">{opt.badge}</span>}
                 </div>
-                {isSelected && <Check className="h-4 w-4 text-blue-600 shrink-0" />}
+                {isSelected && <Check className="h-4 w-4 text-pitch-600 shrink-0" />}
               </div>
             );
           })}

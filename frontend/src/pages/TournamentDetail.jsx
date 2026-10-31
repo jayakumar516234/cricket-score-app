@@ -26,7 +26,7 @@ import {
 import { useFetch } from '../useFetch.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { api } from '../api.js';
-import { Spinner, ErrorBox, Modal, ConfirmDialog, SkeletonCard } from '../components/ui.jsx';
+import { Spinner, ErrorBox, Modal, ConfirmDialog, SkeletonCard, DropdownSelect } from '../components/ui.jsx';
 import { ScorerLoginModal } from '../components/ScorerLoginModal.jsx';
 
 export default function TournamentDetail() {
@@ -821,19 +821,16 @@ export default function TournamentDetail() {
         <form onSubmit={handleAwardBye} className="space-y-4">
           <div>
             <label className="label">Select Team to Receive Bye</label>
-            <select
+            <DropdownSelect
               value={selectedTeamForBye}
-              onChange={(e) => setSelectedTeamForBye(e.target.value)}
-              className="input font-semibold"
-              required
-            >
-              <option value="">-- Choose Team --</option>
-              {teams.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
+              onChange={(val) => setSelectedTeamForBye(val)}
+              options={[
+                { value: '', label: '-- Choose Team --' },
+                ...teams.map((t) => ({ value: t.id, label: t.name })),
+              ]}
+              placeholder="-- Choose Team --"
+              buttonClassName="font-semibold"
+            />
             <p className="text-[11px] text-slate-500 mt-1">
               This team will skip Round 1 and advance directly to the next round.
             </p>
@@ -866,66 +863,50 @@ export default function TournamentDetail() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="label">Home Team</label>
-              <select
+              <DropdownSelect
                 value={matchHomeTeam}
-                onChange={(e) => setMatchHomeTeam(e.target.value)}
-                className="input text-xs font-semibold"
-                required
-              >
-                <option value="">-- Select --</option>
-                {teams.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setMatchHomeTeam(val)}
+                options={[
+                  { value: '', label: '-- Select Home --' },
+                  ...teams.map((t) => ({ value: t.id, label: t.name })),
+                ]}
+                placeholder="-- Select --"
+                buttonClassName="text-xs font-semibold"
+              />
             </div>
             <div>
               <label className="label">Away Team</label>
-              <select
+              <DropdownSelect
                 value={matchAwayTeam}
-                onChange={(e) => setMatchAwayTeam(e.target.value)}
-                className="input text-xs font-semibold"
-                required
-              >
-                <option value="">-- Select --</option>
-                {teams.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setMatchAwayTeam(val)}
+                options={[
+                  { value: '', label: '-- Select Away --' },
+                  ...teams.map((t) => ({ value: t.id, label: t.name })),
+                ]}
+                placeholder="-- Select --"
+                buttonClassName="text-xs font-semibold"
+              />
             </div>
           </div>
 
           <div className="grid grid-cols-3 gap-2">
             <div>
               <label className="label">Round</label>
-              <select
+              <DropdownSelect
                 value={matchRound}
-                onChange={(e) => setMatchRound(e.target.value)}
-                className="input text-xs font-semibold"
-              >
-                <option value="Round 1">Round 1</option>
-                <option value="Round 2">Round 2</option>
-                <option value="Quarter-Final">Quarter-Final</option>
-                <option value="Semi-Final">Semi-Final</option>
-                <option value="Final">Final</option>
-              </select>
+                onChange={(val) => setMatchRound(val)}
+                options={['Round 1', 'Round 2', 'Quarter-Final', 'Semi-Final', 'Final']}
+                buttonClassName="text-xs font-semibold"
+              />
             </div>
             <div>
               <label className="label">Ground</label>
-              <select
+              <DropdownSelect
                 value={matchGround}
-                onChange={(e) => setMatchGround(e.target.value)}
-                className="input text-xs font-semibold"
-              >
-                {grounds.map((g) => (
-                  <option key={g} value={g}>
-                    {g}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setMatchGround(val)}
+                options={grounds}
+                buttonClassName="text-xs font-semibold"
+              />
             </div>
             <div>
               <label className="label">Overs</label>
@@ -968,17 +949,12 @@ export default function TournamentDetail() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="label">Assigned Ground</label>
-              <select
+              <DropdownSelect
                 value={scorerGround}
-                onChange={(e) => setScorerGround(e.target.value)}
-                className="input font-semibold"
-              >
-                {grounds.map((g) => (
-                  <option key={g} value={g}>
-                    {g}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setScorerGround(val)}
+                options={grounds}
+                buttonClassName="font-semibold"
+              />
             </div>
             <div>
               <label className="label">4-Digit PIN</label>

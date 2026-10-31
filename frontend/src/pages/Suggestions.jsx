@@ -21,7 +21,7 @@ import {
 import { api, qs } from '../api.js';
 import { useFetch } from '../useFetch.js';
 import { useAuth } from '../context/AuthContext.jsx';
-import { ConfirmDialog, Empty, ErrorBox, Modal, Pagination, SkeletonList, fmtDate } from '../components/ui.jsx';
+import { ConfirmDialog, DropdownSelect, Empty, ErrorBox, Modal, Pagination, SkeletonList, fmtDate } from '../components/ui.jsx';
 
 function StatusBadge({ status }) {
   if (status === 'accepted') {
@@ -153,21 +153,23 @@ export default function Suggestions() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {hasAdminPrivileges && (
-            <select
-              className="input w-36 rounded-xl font-medium text-xs"
-              aria-label="Filter by status"
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
-                setPage(1);
-              }}
-            >
-              <option value="">All Statuses</option>
-              <option value="pending">Pending</option>
-              <option value="reviewed">Reviewed</option>
-              <option value="accepted">Accepted</option>
-              <option value="rejected">Closed</option>
-            </select>
+            <div className="w-36">
+              <DropdownSelect
+                value={statusFilter}
+                onChange={(val) => {
+                  setStatusFilter(val);
+                  setPage(1);
+                }}
+                options={[
+                  { value: '', label: 'All Statuses' },
+                  { value: 'pending', label: 'Pending' },
+                  { value: 'reviewed', label: 'Reviewed' },
+                  { value: 'accepted', label: 'Accepted' },
+                  { value: 'rejected', label: 'Closed' },
+                ]}
+                buttonClassName="!py-1.5 !px-3 text-xs font-semibold"
+              />
+            </div>
           )}
           <button
             className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md rounded-xl text-xs sm:text-sm"
@@ -366,17 +368,18 @@ export default function Suggestions() {
               </div>
               <div>
                 <label className="label" htmlFor="sg-status">Update Ticket Status</label>
-                <select
+                <DropdownSelect
                   id="sg-status"
-                  className="input rounded-xl font-bold"
                   value={editStatus}
-                  onChange={(e) => setEditStatus(e.target.value)}
-                >
-                  <option value="pending">⏳ Pending Review</option>
-                  <option value="reviewed">👀 Reviewed</option>
-                  <option value="accepted">✅ Accepted / In Progress</option>
-                  <option value="rejected">❌ Closed / Rejected</option>
-                </select>
+                  onChange={(val) => setEditStatus(val)}
+                  options={[
+                    { value: 'pending', label: '⏳ Pending Review' },
+                    { value: 'reviewed', label: '👀 Reviewed' },
+                    { value: 'accepted', label: '✅ Accepted / In Progress' },
+                    { value: 'rejected', label: '❌ Closed / Rejected' },
+                  ]}
+                  buttonClassName="font-bold"
+                />
               </div>
               <div>
                 <label className="label" htmlFor="sg-reply">Reply to User (Visible to submitter)</label>
