@@ -1,6 +1,6 @@
 import express from 'express';
 import { z } from 'zod';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { Tournament } from '../models/Tournament.js';
 import { Match } from '../models/Match.js';
@@ -8,7 +8,7 @@ import { Team } from '../models/Team.js';
 import { User } from '../models/User.js';
 import { Innings } from '../models/Innings.js';
 import { Player } from '../models/Player.js';
-import { requireAuth, publicUser, signToken } from '../middleware/auth.js';
+import { requireAuth, optionalAuth, publicUser, signToken } from '../middleware/auth.js';
 import { HttpError, wrap, parse, sid } from '../utils/http.js';
 import { canManageMatch } from '../utils/permissions.js';
 
@@ -71,7 +71,7 @@ function canManageTournament(user, tournament) {
 // ========================
 // 1. List Tournaments
 // ========================
-router.get('/', wrap(async (req, res) => {
+router.get('/', optionalAuth, wrap(async (req, res) => {
   const filter = {};
   if (req.query.status) filter.status = req.query.status;
   if (req.query.search) {
@@ -211,7 +211,7 @@ router.get('/code/:code', wrap(async (req, res) => {
 // ========================
 // 5. Get Tournament Detail
 // ========================
-router.get('/:id', wrap(async (req, res) => {
+router.get('/:id', optionalAuth, wrap(async (req, res) => {
   const tournament = await Tournament.findById(req.params.id)
     .populate('organizer', 'name username role')
     .populate('teams.team', 'name logo code city');

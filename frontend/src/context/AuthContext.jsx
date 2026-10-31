@@ -113,6 +113,15 @@ export function AuthProvider({ children }) {
     } catch {}
   };
 
+  const loginWithToken = (newToken, newUser) => {
+    setToken(newToken);
+    setUser(newUser);
+    try {
+      localStorage.setItem('cricket_user', JSON.stringify(newUser));
+      sessionStorage.removeItem('auth_notice');
+    } catch {}
+  };
+
   const isSuper = user?.role === 'superadmin';
   const isAdmin = isSuper || user?.role === 'admin';
   const isViewer = user?.role === 'viewer';
@@ -128,5 +137,5 @@ export function AuthProvider({ children }) {
   };
   const updateToken = (newToken) => setToken(newToken);
 
-  return <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser, updateToken, isSuper, isAdmin, isViewer }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ user, loading, login, register, loginWithToken, logout, updateUser, updateToken, isSuper, isAdmin, isViewer }}>{children}</AuthContext.Provider>;
 }

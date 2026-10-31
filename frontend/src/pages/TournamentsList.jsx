@@ -61,7 +61,7 @@ export default function TournamentsList() {
           {user && user.role !== 'viewer' && (
             <button
               onClick={() => setCreateOpen(true)}
-              className="btn btn-primary text-xs sm:text-sm flex items-center gap-1.5"
+              className="btn btn-green text-xs sm:text-sm flex items-center gap-1.5 shadow-sm"
             >
               <Plus className="h-4 w-4" />
               <span>New Tournament</span>
@@ -123,7 +123,7 @@ export default function TournamentsList() {
               {user && user.role !== 'viewer' && (
                 <button
                   onClick={() => setCreateOpen(true)}
-                  className="btn btn-primary mt-4 text-xs flex items-center gap-1.5"
+                  className="btn btn-green mt-4 text-xs flex items-center gap-1.5 shadow-sm"
                 >
                   <Plus className="h-4 w-4" />
                   <span>Create Tournament</span>

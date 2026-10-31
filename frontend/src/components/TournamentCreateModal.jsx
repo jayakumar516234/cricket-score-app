@@ -191,7 +191,7 @@ export function TournamentCreateModal({ open, onClose, onCreated }) {
             <button
               type="submit"
               disabled={loading}
-              className="btn btn-primary flex-1 flex items-center justify-center gap-2"
+              className="btn btn-green flex-1 flex items-center justify-center gap-2 shadow-sm"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
               <span>Create Tournament</span>

@@ -39,6 +39,20 @@ export const requireAuth = wrap(async (req, _res, next) => {
   next();
 });
 
+export const optionalAuth = wrap(async (req, _res, next) => {
+  const header = req.headers.authorization || '';
+  const token = header.startsWith('Bearer ') ? header.slice(7) : null;
+  if (!token) return next();
+  try {
+    const payload = jwt.verify(token, config.jwtSecret);
+    const user = await User.findById(payload.sub);
+    if (user && user.active) {
+      req.user = user;
+    }
+  } catch {}
+  next();
+});
+
 export const requireRole = (...roles) => (req, _res, next) => {
   if (!roles.includes(req.user.role)) return next(new HttpError(403, 'You do not have permission to do that'));
   next();

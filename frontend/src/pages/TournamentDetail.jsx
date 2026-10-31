@@ -63,8 +63,13 @@ export default function TournamentDetail() {
 
   if (loading && !data) return <SkeletonCard count={3} />;
   if (error && !data) return <ErrorBox message={error} onRetry={reload} />;
+  if (!data?.tournament) return <ErrorBox message="Tournament not found" onRetry={reload} />;
 
   const { tournament, matches = [], liveMatches = [], upcomingMatches = [], completedMatches = [], isOrganizer } = data;
+  const teams = tournament.teams || [];
+  const byes = tournament.byes || [];
+  const grounds = tournament.grounds || ['Ground 1'];
+  const scorers = tournament.scorers || [];
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(tournament.code);
@@ -76,7 +81,7 @@ export default function TournamentDetail() {
     const text = `🏆 *${tournament.name}*\n` +
       `📍 Venue: ${tournament.venue || 'Cricket Ground'}\n` +
       `🔢 Tournament Code: *${tournament.code}*\n` +
-      `🏏 Teams: ${tournament.teams.length} Teams · ${tournament.defaultOvers} Overs\n\n` +
+      `🏏 Teams: ${teams.length} Teams · ${tournament.defaultOvers || 8} Overs\n\n` +
       `📲 Follow Live Scores: ${window.location.href}`;
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
   };
@@ -246,7 +251,7 @@ export default function TournamentDetail() {
             <span>{tournament.name}</span>
           </h1>
           <p className="text-xs text-slate-500 truncate">
-            {tournament.venue ? `${tournament.venue} · ` : ''}{tournament.format} ({tournament.teams.length}/{tournament.maxTeams} Teams)
+            {tournament.venue ? `${tournament.venue} · ` : ''}{tournament.format} ({teams.length}/{tournament.maxTeams || 16} Teams)
           </p>
         </div>
       </div>
@@ -272,7 +277,7 @@ export default function TournamentDetail() {
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                Organized by <strong className="text-slate-700">{tournament.organizer?.name}</strong>
+                Organized by <strong className="text-slate-700">{tournament.organizer?.name || 'Tournament Admin'}</strong>
               </p>
             </div>
           </div>
@@ -311,21 +316,21 @@ export default function TournamentDetail() {
           <div className="rounded-xl bg-slate-50 p-2 border border-slate-100">
             <span className="text-[10px] text-slate-400 font-bold uppercase block">Teams Registered</span>
             <span className="font-extrabold text-slate-900 text-sm">
-              {tournament.teams.length} / {tournament.maxTeams}
+              {teams.length} / {tournament.maxTeams || 16}
             </span>
           </div>
           <div className="rounded-xl bg-slate-50 p-2 border border-slate-100">
             <span className="text-[10px] text-slate-400 font-bold uppercase block">Default Overs</span>
-            <span className="font-extrabold text-slate-900 text-sm">{tournament.defaultOvers} Overs</span>
+            <span className="font-extrabold text-slate-900 text-sm">{tournament.defaultOvers || 8} Overs</span>
           </div>
           <div className="rounded-xl bg-slate-50 p-2 border border-slate-100">
             <span className="text-[10px] text-slate-400 font-bold uppercase block">Byes Awarded</span>
-            <span className="font-extrabold text-pitch-700 text-sm">{tournament.byes?.length || 0} Byes</span>
+            <span className="font-extrabold text-pitch-700 text-sm">{byes.length} Byes</span>
           </div>
           <div className="rounded-xl bg-slate-50 p-2 border border-slate-100">
             <span className="text-[10px] text-slate-400 font-bold uppercase block">Pitches / Grounds</span>
             <span className="font-extrabold text-slate-900 text-sm truncate block">
-              {tournament.grounds?.join(', ') || 'Ground 1'}
+              {grounds.join(', ')}
             </span>
           </div>
         </div>
@@ -432,7 +437,7 @@ export default function TournamentDetail() {
           }`}
         >
           <Users className="mr-1 inline h-3.5 w-3.5" />
-          Teams & Byes ({tournament.teams.length})
+          Teams & Byes ({teams.length})
         </button>
         {isOrganizer && (
           <button
@@ -442,7 +447,7 @@ export default function TournamentDetail() {
             }`}
           >
             <KeyRound className="mr-1 inline h-3.5 w-3.5" />
-            Scorers ({tournament.scorers?.length || 0})
+            Scorers ({scorers.length})
           </button>
         )}
         <button
@@ -475,8 +480,8 @@ export default function TournamentDetail() {
                 {matches.length === 0 && (
                   <button
                     onClick={handleGenerateFixtures}
-                    disabled={actionLoading || tournament.teams.length < 2}
-                    className="btn btn-primary text-xs !py-1.5 flex items-center gap-1.5"
+                    disabled={actionLoading || teams.length < 2}
+                    className="btn btn-green text-xs !py-1.5 flex items-center gap-1.5 shadow-sm"
                   >
                     <Sparkles className="h-3.5 w-3.5" />
                     <span>Auto-Generate Round 1</span>
@@ -494,13 +499,13 @@ export default function TournamentDetail() {
           )}
 
           {/* Byes Banner (if any teams received a Bye into Round 2) */}
-          {tournament.byes && tournament.byes.length > 0 && (
+          {byes.length > 0 && (
             <div className="card p-3 border-amber-200 bg-amber-50/60">
               <span className="text-xs font-bold text-amber-900 block mb-1">
                 ⭐ Teams Advancing with Byes:
               </span>
               <div className="flex flex-wrap gap-2">
-                {tournament.byes.map((b, i) => (
+                {byes.map((b, i) => (
                   <span
                     key={i}
                     className="badge bg-white border border-amber-300 text-amber-800 text-xs px-2 py-1 rounded-lg font-bold shadow-2xs"
@@ -616,7 +621,7 @@ export default function TournamentDetail() {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <h3 className="font-bold text-slate-900 text-sm">
-                Registered Teams ({tournament.teams.length} / {tournament.maxTeams})
+                Registered Teams ({teams.length} / {tournament.maxTeams || 16})
               </h3>
               <p className="text-xs text-slate-500">
                 Village tournaments standard: 14 or 16 teams. Extra slots can be given Byes.
@@ -626,7 +631,7 @@ export default function TournamentDetail() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setAddTeamOpen(true)}
-                  className="btn btn-primary text-xs !py-1.5 flex items-center gap-1"
+                  className="btn btn-green text-xs !py-1.5 flex items-center gap-1 shadow-sm"
                 >
                   <Plus className="h-3.5 w-3.5" />
                   <span>+ Add Team</span>
@@ -643,8 +648,8 @@ export default function TournamentDetail() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {tournament.teams.map((t, idx) => {
-              const hasBye = tournament.byes?.some((b) => b.teamId === t.id || b.teamName === t.name);
+            {teams.map((t, idx) => {
+              const hasBye = byes.some((b) => b.teamId === t.id || b.teamName === t.name);
               return (
                 <div
                   key={t.id || idx}
@@ -701,7 +706,7 @@ export default function TournamentDetail() {
             </div>
             <button
               onClick={() => setAddScorerOpen(true)}
-              className="btn btn-primary text-xs !py-1.5 flex items-center gap-1"
+              className="btn btn-green text-xs !py-1.5 flex items-center gap-1 shadow-sm"
             >
               <Plus className="h-3.5 w-3.5" />
               <span>+ Add Scorer PIN</span>
@@ -709,7 +714,7 @@ export default function TournamentDetail() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-            {tournament.scorers?.map((s, idx) => (
+            {scorers.map((s, idx) => (
               <div
                 key={idx}
                 className="card p-4 border border-amber-200 bg-amber-50/30 shadow-2xs space-y-2"
@@ -761,7 +766,7 @@ export default function TournamentDetail() {
           <div className="pt-3 border-t border-slate-100">
             <h3 className="font-bold text-slate-900 text-sm mb-2">Pitches & Grounds</h3>
             <div className="flex flex-wrap gap-2">
-              {tournament.grounds?.map((g, i) => (
+              {grounds.map((g, i) => (
                 <span
                   key={i}
                   className="badge bg-slate-100 text-slate-800 font-bold px-3 py-1.5 rounded-lg text-xs"
@@ -823,7 +828,7 @@ export default function TournamentDetail() {
               required
             >
               <option value="">-- Choose Team --</option>
-              {tournament.teams.map((t) => (
+              {teams.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.name}
                 </option>
@@ -848,7 +853,7 @@ export default function TournamentDetail() {
             <button type="button" onClick={() => setAwardByeOpen(false)} className="btn btn-outline">
               Cancel
             </button>
-            <button type="submit" disabled={actionLoading} className="btn btn-primary">
+            <button type="submit" disabled={actionLoading} className="btn btn-green">
               Award Bye
             </button>
           </div>
@@ -868,7 +873,7 @@ export default function TournamentDetail() {
                 required
               >
                 <option value="">-- Select --</option>
-                {tournament.teams.map((t) => (
+                {teams.map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.name}
                   </option>
@@ -884,7 +889,7 @@ export default function TournamentDetail() {
                 required
               >
                 <option value="">-- Select --</option>
-                {tournament.teams.map((t) => (
+                {teams.map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.name}
                   </option>
@@ -915,7 +920,7 @@ export default function TournamentDetail() {
                 onChange={(e) => setMatchGround(e.target.value)}
                 className="input text-xs font-semibold"
               >
-                {tournament.grounds?.map((g) => (
+                {grounds.map((g) => (
                   <option key={g} value={g}>
                     {g}
                   </option>
@@ -939,7 +944,7 @@ export default function TournamentDetail() {
             <button type="button" onClick={() => setScheduleMatchOpen(false)} className="btn btn-outline">
               Cancel
             </button>
-            <button type="submit" disabled={actionLoading} className="btn btn-primary">
+            <button type="submit" disabled={actionLoading} className="btn btn-green">
               Create Match
             </button>
           </div>
@@ -968,7 +973,7 @@ export default function TournamentDetail() {
                 onChange={(e) => setScorerGround(e.target.value)}
                 className="input font-semibold"
               >
-                {tournament.grounds?.map((g) => (
+                {grounds.map((g) => (
                   <option key={g} value={g}>
                     {g}
                   </option>
@@ -993,7 +998,7 @@ export default function TournamentDetail() {
             <button type="button" onClick={() => setAddScorerOpen(false)} className="btn btn-outline">
               Cancel
             </button>
-            <button type="submit" disabled={actionLoading} className="btn btn-primary">
+            <button type="submit" disabled={actionLoading} className="btn btn-green">
               Save Scorer PIN
             </button>
           </div>

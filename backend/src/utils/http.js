@@ -10,6 +10,8 @@ export class HttpError extends Error {
 
 export const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
+export const sid = (v) => (v == null ? null : String(v?._id ?? v));
+
 export function parse(schema, data) {
   const result = schema.safeParse(data);
   if (!result.success) {
