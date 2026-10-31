@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useNavigate, Link } from 'react-router-dom';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LayoutDashboard, Shield, Trophy, Users, ScrollText, LogOut, Menu, X, Sparkles, Settings as SettingsIcon, Medal } from 'lucide-react';
+import { LayoutDashboard, Shield, Trophy, Users, ScrollText, LogOut, Menu, X, Sparkles, Settings as SettingsIcon, Medal, MessageSquare } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { CricketBallIcon } from './ui.jsx';
 import { APP_VERSION } from '../version.js';
@@ -20,6 +20,7 @@ export default function Layout() {
         { to: '/matches', label: t('nav.matches'), icon: Trophy },
         { to: '/tournaments', label: t('nav.tournaments'), icon: Medal },
         { to: '/users', label: t('nav.users'), icon: Users },
+        { to: '/support', label: 'Support & Feedback', icon: MessageSquare },
         ...(isSuper ? [{ to: '/audit', label: t('nav.auditLog'), icon: ScrollText }] : []),
         { to: '/settings', label: t('nav.settings'), icon: SettingsIcon },
       ]
@@ -28,6 +29,7 @@ export default function Layout() {
         { to: '/teams', label: t('nav.team'), icon: Shield },
         { to: '/matches', label: t('nav.matches'), icon: Trophy },
         { to: '/tournaments', label: t('nav.tournaments'), icon: Medal },
+        { to: '/support', label: 'Help & Feedback', icon: MessageSquare },
         { to: '/settings', label: t('nav.settings'), icon: SettingsIcon },
       ];
 

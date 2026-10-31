@@ -464,18 +464,18 @@ export const Spinner = ({ label = 'Loading...', size = 'default' }) => {
 
 export const ErrorBox = ({ message, onRetry }) =>
   message ? (
-    <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800" role="alert">
-      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-      <div className="flex-1">{message}</div>
-      {onRetry && <button onClick={onRetry} className="font-semibold underline">Try again</button>}
+    <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-3.5 text-sm text-red-800 shadow-xs" role="alert">
+      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" aria-hidden />
+      <div className="flex-1 font-medium">{message}</div>
+      {onRetry && <button onClick={onRetry} className="font-bold underline hover:text-red-900 ml-2">Try again</button>}
     </div>
   ) : null;
 
 export const Empty = ({ icon: Icon = Shield, title, text, action }) => (
-  <div className="flex flex-col items-center rounded-xl border-2 border-dashed border-slate-300 bg-white px-6 py-12 text-center">
+  <div className="flex flex-col items-center rounded-2xl border-2 border-dashed border-slate-200 bg-white/80 px-6 py-12 text-center shadow-xs">
     <Icon className="mb-3 h-10 w-10 text-slate-300" aria-hidden />
-    <h3 className="font-semibold text-slate-700">{title}</h3>
-    {text && <p className="mt-1 max-w-sm text-sm text-slate-500">{text}</p>}
+    <h3 className="font-bold text-slate-800">{title}</h3>
+    {text && <p className="mt-1 max-w-sm text-sm text-slate-500 leading-relaxed">{text}</p>}
     {action && <div className="mt-4">{action}</div>}
   </div>
 );
