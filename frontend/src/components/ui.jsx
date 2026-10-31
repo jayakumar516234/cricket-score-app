@@ -267,6 +267,184 @@ export const CricketShotLoader = ({ label = 'Loading match details...' }) => (
   </div>
 );
 
+export const Skeleton = ({ className = '' }) => (
+  <div className={`animate-pulse rounded-lg bg-slate-200/90 ${className}`} aria-hidden="true" />
+);
+
+export const SkeletonCard = ({ count = 3 }) => (
+  <div className="space-y-3">
+    {Array.from({ length: count }).map((_, i) => (
+      <div key={i} className="card p-4 border border-slate-200/80 space-y-3 shadow-xs">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-11 w-11 rounded-xl shrink-0" />
+            <div className="space-y-1.5">
+              <Skeleton className="h-4 w-36 sm:w-48" />
+              <Skeleton className="h-3 w-20 sm:w-28" />
+            </div>
+          </div>
+          <Skeleton className="h-6 w-16 rounded-full" />
+        </div>
+        <div className="space-y-1.5 pt-1">
+          <Skeleton className="h-3 w-3/4" />
+          <Skeleton className="h-3 w-1/2" />
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+export const SkeletonList = ({ count = 4 }) => (
+  <ul className="space-y-2">
+    {Array.from({ length: count }).map((_, i) => (
+      <li key={i} className="card p-3.5 flex items-center justify-between gap-3 border border-slate-200/80 shadow-xs">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <Skeleton className="h-12 w-12 rounded-xl shrink-0" />
+          <div className="flex-1 space-y-2 min-w-0">
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-4 w-36 sm:w-52" />
+              <Skeleton className="h-4 w-12 rounded-md" />
+            </div>
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-3 w-24" />
+              <Skeleton className="h-3 w-16" />
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <Skeleton className="h-8 w-16 rounded-lg" />
+          <Skeleton className="h-8 w-8 rounded-lg" />
+        </div>
+      </li>
+    ))}
+  </ul>
+);
+
+export const SkeletonMatchCard = ({ count = 3 }) => (
+  <div className="space-y-3">
+    {Array.from({ length: count }).map((_, i) => (
+      <div key={i} className="card p-4 border border-slate-200/80 space-y-3.5 shadow-xs">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-4 w-16 rounded-md" />
+          </div>
+          <Skeleton className="h-5 w-20 rounded-full" />
+        </div>
+        <div className="space-y-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <Skeleton className="h-8 w-8 rounded-lg" />
+              <Skeleton className="h-4 w-32" />
+            </div>
+            <Skeleton className="h-5 w-16" />
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <Skeleton className="h-8 w-8 rounded-lg" />
+              <Skeleton className="h-4 w-28" />
+            </div>
+            <Skeleton className="h-5 w-16" />
+          </div>
+        </div>
+        <div className="pt-1 flex items-center justify-between border-t border-slate-100">
+          <Skeleton className="h-3 w-40" />
+          <Skeleton className="h-7 w-20 rounded-lg" />
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+export const SkeletonScorecard = () => (
+  <div className="space-y-4">
+    <div className="rounded-2xl bg-gradient-to-br from-navy-950 to-navy-900 p-5 text-white shadow-lg space-y-4 border border-navy-800">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-5 w-28 bg-navy-800" />
+        <Skeleton className="h-5 w-16 bg-navy-800 rounded-full" />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Skeleton className="h-6 w-36 bg-navy-800" />
+          <Skeleton className="h-8 w-24 bg-navy-800" />
+        </div>
+        <div className="space-y-2 text-right flex flex-col items-end">
+          <Skeleton className="h-6 w-36 bg-navy-800" />
+          <Skeleton className="h-8 w-24 bg-navy-800" />
+        </div>
+      </div>
+    </div>
+    <div className="flex gap-2">
+      <Skeleton className="h-10 w-28 rounded-xl" />
+      <Skeleton className="h-10 w-28 rounded-xl" />
+    </div>
+    <div className="card p-4 space-y-3">
+      <Skeleton className="h-5 w-40 mb-3" />
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className="flex items-center justify-between py-2 border-b border-slate-100">
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-7 w-7 rounded-full" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-4 w-8" />
+            <Skeleton className="h-4 w-8" />
+            <Skeleton className="h-4 w-12" />
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+export const SkeletonTeamDetail = () => (
+  <div className="space-y-4">
+    <div className="rounded-2xl bg-gradient-to-br from-navy-950 to-navy-900 p-5 text-white shadow-lg space-y-3 border border-navy-800">
+      <div className="flex items-center gap-3.5">
+        <Skeleton className="h-16 w-16 rounded-2xl bg-navy-800 shrink-0" />
+        <div className="space-y-2">
+          <Skeleton className="h-6 w-44 bg-navy-800" />
+          <Skeleton className="h-4 w-32 bg-navy-800/80" />
+        </div>
+      </div>
+    </div>
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="card p-3 space-y-1.5 shadow-xs">
+          <Skeleton className="h-6 w-12" />
+          <Skeleton className="h-3 w-16" />
+        </div>
+      ))}
+    </div>
+    <SkeletonList count={5} />
+  </div>
+);
+
+export const SkeletonForm = () => (
+  <div className="card p-5 max-w-xl mx-auto space-y-4 shadow-sm border border-slate-200/80">
+    <Skeleton className="h-6 w-44 mb-4" />
+    <div className="space-y-2">
+      <Skeleton className="h-4 w-24" />
+      <Skeleton className="h-10 w-full rounded-lg" />
+    </div>
+    <div className="space-y-2">
+      <Skeleton className="h-4 w-32" />
+      <Skeleton className="h-10 w-full rounded-lg" />
+    </div>
+    <div className="grid grid-cols-2 gap-3">
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-20" />
+        <Skeleton className="h-10 w-full rounded-lg" />
+      </div>
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-20" />
+        <Skeleton className="h-10 w-full rounded-lg" />
+      </div>
+    </div>
+    <Skeleton className="h-11 w-full rounded-xl mt-4" />
+  </div>
+);
+
 export const Spinner = ({ label = 'Loading...', size = 'default' }) => {
   if (size === 'sm') {
     return (
@@ -279,7 +457,8 @@ export const Spinner = ({ label = 'Loading...', size = 'default' }) => {
     );
   }
 
-  return <CricketShotLoader label={label} />;
+  // Modern Skeleton fallback instead of jarring animated spinner
+  return <SkeletonList count={3} />;
 };
 
 

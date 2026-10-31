@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ChevronDown, Loader2, Plus, Trash2 } from 'lucide-react';
 import { api } from '../api.js';
-import { ErrorBox, Field, ImagePicker, Spinner } from '../components/ui.jsx';
+import { ErrorBox, Field, ImagePicker, Spinner, SkeletonForm } from '../components/ui.jsx';
 
 const ROLES = ['Batsman', 'Bowler', 'All-rounder', 'Wicket Keeper'];
 const BALLS = ['Leather Ball', 'Tennis Ball', 'Rubber Ball', 'Other'];
@@ -86,7 +86,7 @@ export default function TeamForm() {
     }
   };
 
-  if (loading) return <Spinner />;
+  if (loading) return <SkeletonForm />;
   if (loadError) return <ErrorBox message={loadError} />;
 
   return (

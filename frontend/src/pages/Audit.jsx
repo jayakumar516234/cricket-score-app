@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ScrollText } from 'lucide-react';
 import { qs } from '../api.js';
 import { useFetch } from '../useFetch.js';
-import { Empty, ErrorBox, Pagination, Spinner, fmtDate } from '../components/ui.jsx';
+import { Empty, ErrorBox, Pagination, Spinner, SkeletonList, fmtDate } from '../components/ui.jsx';
 
 const FILTERS = [['', 'All activity'], ['score', 'Score changes'], ['match', 'Matches'], ['team', 'Teams'], ['user', 'Users']];
 
@@ -18,7 +18,7 @@ export default function Audit() {
           {FILTERS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
         </select>
       </div>
-      {loading && !data ? <Spinner /> : error ? <ErrorBox message={error} onRetry={reload} /> : data.items.length === 0 ? (
+      {loading && !data ? <SkeletonList count={6} /> : error ? <ErrorBox message={error} onRetry={reload} /> : data.items.length === 0 ? (
         <Empty icon={ScrollText} title="Nothing recorded yet" text="Team, match, user and score-correction changes will appear here." />
       ) : (
         <>

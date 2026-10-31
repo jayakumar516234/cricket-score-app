@@ -25,7 +25,7 @@ import {
 import { api } from '../api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useFetch } from '../useFetch.js';
-import { ConfirmDialog, ErrorBox, Field, Modal, Spinner, TeamLogo } from '../components/ui.jsx';
+import { ConfirmDialog, ErrorBox, Field, Modal, Spinner, SkeletonTeamDetail, SkeletonList, TeamLogo } from '../components/ui.jsx';
 import { PlayerCardModal } from '../components/PlayerCardModal.jsx';
 
 const slug = (name) => name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 20);
@@ -37,8 +37,8 @@ export default function TeamDetail() {
   const [tab, setTab] = useState('squad');
   const [copied, setCopied] = useState(false);
 
-  if (loading) return <Spinner />;
-  if (error) return <ErrorBox message={error} onRetry={reload} />;
+  if (loading && !data) return <SkeletonTeamDetail />;
+  if (error && !data) return <ErrorBox message={error} onRetry={reload} />;
   const { team, players, record } = data;
   const canSeeCode = user?.role !== 'viewer' && (user?.role === 'superadmin' || user?.role === 'admin' || team.canManage);
 
@@ -185,8 +185,8 @@ function PlayerStats({ teamId, teamName, teamLogo }) {
   const [view, setView] = useState('batting');
   const [selectedPlayer, setSelectedPlayer] = useState(null);
 
-  if (loading) return <Spinner label="Calculating stats..." />;
-  if (error) return <ErrorBox message={error} onRetry={reload} />;
+  if (loading && !data) return <SkeletonList count={4} />;
+  if (error && !data) return <ErrorBox message={error} onRetry={reload} />;
 
   const stats = data.stats || [];
   const hasBatting = stats.some((s) => s.innings > 0);
@@ -523,8 +523,8 @@ function TeamCredentialsManager({ team }) {
         </div>
       </div>
 
-      {loading ? (
-        <Spinner />
+      {loading && !players ? (
+        <SkeletonList count={5} />
       ) : error ? (
         <ErrorBox message={error} onRetry={reload} />
       ) : credTab === 'viewer' ? (
@@ -832,8 +832,8 @@ function OpponentsSection({ team }) {
     }
   };
 
-  if (loading) return <Spinner label="Loading opponents..." />;
-  if (error) return <ErrorBox message={error} onRetry={reload} />;
+  if (loading && !data) return <SkeletonList count={4} />;
+  if (error && !data) return <ErrorBox message={error} onRetry={reload} />;
 
   const { connected = [], incoming = [], outgoing = [] } = data || {};
 
@@ -1029,7 +1029,7 @@ function OpponentSquadAndStats({ teamId, teamName }) {
   const { data: statsData, loading: statsLoading } = useFetch(`/teams/${teamId}/player-stats`);
   const [subTab, setSubTab] = useState('squad');
 
-  if (teamLoading || statsLoading) return <Spinner label={`Loading ${teamName} squad & stats...`} />;
+  if ((teamLoading && !teamData) || (statsLoading && !statsData)) return <SkeletonList count={5} />;
 
   const players = teamData?.players || [];
   const stats = statsData?.stats || [];

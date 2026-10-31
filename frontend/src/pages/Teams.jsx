@@ -4,7 +4,7 @@ import { Pencil, Plus, Search, Shield, Trash2, Handshake, Copy, Check, Clock, Tr
 import { api, qs } from '../api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useFetch } from '../useFetch.js';
-import { ConfirmDialog, Empty, ErrorBox, Pagination, Spinner, TeamLogo, DropdownSelect } from '../components/ui.jsx';
+import { ConfirmDialog, Empty, ErrorBox, Pagination, Spinner, SkeletonList, TeamLogo, DropdownSelect } from '../components/ui.jsx';
 
 const BALLS = ['Leather Ball', 'Tennis Ball', 'Rubber Ball', 'Other'];
 
@@ -300,7 +300,7 @@ export default function Teams() {
         {actionSuccess && <p className="rounded-lg bg-green-50 p-3 text-sm text-green-800" role="status">{actionSuccess}</p>}
       </div>
 
-      {loading && !data ? <Spinner /> : error ? <ErrorBox message={error} onRetry={reload} /> : data.items.length === 0 ? (
+      {loading && !data ? <SkeletonList count={6} /> : error ? <ErrorBox message={error} onRetry={reload} /> : data.items.length === 0 ? (
         <Empty
           icon={Shield}
           title={q || ball ? 'No teams match your search' : 'No teams yet'}

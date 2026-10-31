@@ -26,7 +26,7 @@ import {
 import { useFetch } from '../useFetch.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { api } from '../api.js';
-import { Spinner, ErrorBox, Modal, ConfirmDialog } from '../components/ui.jsx';
+import { Spinner, ErrorBox, Modal, ConfirmDialog, SkeletonCard } from '../components/ui.jsx';
 import { ScorerLoginModal } from '../components/ScorerLoginModal.jsx';
 
 export default function TournamentDetail() {
@@ -61,8 +61,8 @@ export default function TournamentDetail() {
 
   const { data, loading, error, reload } = useFetch(`/tournaments/${id}`);
 
-  if (loading) return <Spinner label="Loading tournament details..." />;
-  if (error) return <ErrorBox message={error} onRetry={reload} />;
+  if (loading && !data) return <SkeletonCard count={3} />;
+  if (error && !data) return <ErrorBox message={error} onRetry={reload} />;
 
   const { tournament, matches = [], liveMatches = [], upcomingMatches = [], completedMatches = [], isOrganizer } = data;
 

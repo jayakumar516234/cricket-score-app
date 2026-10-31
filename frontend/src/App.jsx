@@ -1,7 +1,7 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext.jsx';
 import Layout from './components/Layout.jsx';
-import { Spinner } from './components/ui.jsx';
 import CricketAppLoader from './components/CricketAppLoader.jsx';
 import Login from './pages/Login.jsx';
 import SuperLogin from './pages/SuperLogin.jsx';
@@ -35,6 +35,27 @@ function Protected({ children, superOnly, adminOnly, noViewer }) {
 
 export default function App() {
   const { user, loading } = useAuth();
+  const location = useLocation();
+
+  // Background warmup ping to keep Render server awake
+  useEffect(() => {
+    const ping = () => {
+      fetch('https://cricket-score-api-9xe0.onrender.com/api/health', { method: 'GET', mode: 'cors' }).catch(() => {});
+    };
+    ping();
+    const timer = setInterval(ping, 8 * 60 * 1000); // every 8 minutes
+    return () => clearInterval(timer);
+  }, []);
+
+  // Save current route for seamless app restoration
+  useEffect(() => {
+    if (user && location.pathname && !location.pathname.startsWith('/login') && !location.pathname.startsWith('/super-login')) {
+      try {
+        localStorage.setItem('cricket_last_path', location.pathname);
+      } catch {}
+    }
+  }, [location, user]);
+
   if (loading) return <CricketAppLoader text="Loading Cricket Arena..." />;
   return (
     <Routes>

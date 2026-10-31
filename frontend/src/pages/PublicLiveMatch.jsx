@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Trophy, Radio, Share2, Crown, ArrowRight, Shield } from 'lucide-react';
 import { useFetch } from '../useFetch.js';
-import { ErrorBox, Spinner, StatusBadge, TeamLogo } from '../components/ui.jsx';
+import { ErrorBox, Spinner, SkeletonScorecard, StatusBadge, TeamLogo } from '../components/ui.jsx';
 import { BatTable, BowlTable, ExtrasLine, OverByOver, ScorecardTabs, teamOf } from '../components/ScoreParts.jsx';
 import { WhatsAppShareButton } from '../components/WhatsAppShare.jsx';
 import { OverBarChart } from '../components/OverBarChart.jsx';
@@ -19,7 +19,7 @@ export default function PublicLiveMatch() {
     }
   }, [view?.match?.status]);
 
-  if (loading && !view) return <Spinner label="Connecting to Live Cricket Arena..." />;
+  if (loading && !view) return <SkeletonScorecard />;
   if (error) return (
     <div className="max-w-md mx-auto p-4 space-y-3 text-center">
       <ErrorBox message={error} onRetry={reload} />

@@ -4,7 +4,7 @@ import { ArrowLeft, Loader2, Handshake, Users } from 'lucide-react';
 import { api } from '../api.js';
 import { useFetch } from '../useFetch.js';
 import { useAuth } from '../context/AuthContext.jsx';
-import { ErrorBox, Field, Spinner, TeamLogo, DropdownSelect } from '../components/ui.jsx';
+import { ErrorBox, Field, Spinner, SkeletonForm, TeamLogo, DropdownSelect } from '../components/ui.jsx';
 
 const FORMATS = [
   { v: 'T10', label: 'T10 (10 Overs)', overs: 10 },
@@ -156,8 +156,8 @@ export default function CreateMatch() {
     }
   };
 
-  if (loading) return <Spinner />;
-  if (error) return <ErrorBox message={error} />;
+  if (loading && myTeams.length === 0) return <SkeletonForm />;
+  if (error && myTeams.length === 0) return <ErrorBox message={error} />;
 
   if (myTeams.length === 0) {
     return (

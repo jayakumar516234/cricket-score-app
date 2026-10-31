@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Medal, Plus, Search, Trophy, KeyRound, MapPin, Users, Clock, Check, Copy, Flame } from 'lucide-react';
 import { useFetch } from '../useFetch.js';
 import { useAuth } from '../context/AuthContext.jsx';
-import { Spinner, ErrorBox } from '../components/ui.jsx';
+import { Spinner, ErrorBox, SkeletonCard } from '../components/ui.jsx';
 import { TournamentCreateModal } from '../components/TournamentCreateModal.jsx';
 import { ScorerLoginModal } from '../components/ScorerLoginModal.jsx';
 
@@ -105,11 +105,11 @@ export default function TournamentsList() {
       </div>
 
       {/* Loading & Errors */}
-      {loading && <Spinner label="Loading tournaments..." />}
-      {error && <ErrorBox message={error} onRetry={reload} />}
+      {loading && !data && <SkeletonCard count={3} />}
+      {error && !data && <ErrorBox message={error} onRetry={reload} />}
 
       {/* Tournaments Grid */}
-      {!loading && !error && (
+      {data && (
         <>
           {filteredTournaments.length === 0 ? (
             <div className="card p-10 text-center flex flex-col items-center justify-center">

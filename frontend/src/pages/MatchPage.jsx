@@ -4,7 +4,7 @@ import { ArrowLeft, Crosshair, Loader2, Play, Trophy, Undo2, Crown, UserPlus, X,
 import { api } from '../api.js';
 import { useFetch } from '../useFetch.js';
 import { useAuth } from '../context/AuthContext.jsx';
-import { ConfirmDialog, ErrorBox, Modal, Spinner, StatusBadge, TeamLogo, DropdownSelect, fmtDate } from '../components/ui.jsx';
+import { ConfirmDialog, ErrorBox, Modal, Spinner, SkeletonScorecard, SkeletonList, StatusBadge, TeamLogo, DropdownSelect, fmtDate } from '../components/ui.jsx';
 import { BatTable, BowlTable, ExtrasLine, OverByOver, ScorecardTabs, teamOf } from '../components/ScoreParts.jsx';
 import { useBallQueue } from '../useBallQueue.js';
 import { playBallSound, playUndoSound, isSoundEnabled, setSoundEnabled } from '../utils/audio.js';
@@ -56,7 +56,7 @@ export default function MatchPage() {
 
   const queueProps = useBallQueue({ matchId: id, view, setData, setActError, act });
 
-  if (loading && !view) return <Spinner />;
+  if (loading && !view) return <SkeletonScorecard />;
   if (error) return <ErrorBox message={error} onRetry={reload} />;
   const { match } = view;
 
@@ -176,7 +176,7 @@ function XISide({ team, editable, value, onChange }) {
         <h2 className="font-bold text-slate-900">{team.name}</h2>
         <span className={`badge ${count === XI ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-800'}`}>{count}/{XI} selected</span>
       </div>
-      {loading && !data ? <Spinner /> : error ? <ErrorBox message={error} onRetry={reload} /> : (
+      {loading && !data ? <SkeletonList count={4} /> : error ? <ErrorBox message={error} onRetry={reload} /> : (
         <>
           <ul className="max-h-80 divide-y divide-slate-100 overflow-y-auto">
             {players.map((p) => {

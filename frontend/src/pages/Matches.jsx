@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Search, Trash2, Trophy } from 'lucide-react';
 import { api, qs } from '../api.js';
 import { useFetch } from '../useFetch.js';
-import { ConfirmDialog, Empty, ErrorBox, Pagination, Spinner, StatusBadge, TeamLogo, DropdownSelect, fmtDate } from '../components/ui.jsx';
+import { ConfirmDialog, Empty, ErrorBox, Pagination, Spinner, SkeletonMatchCard, StatusBadge, TeamLogo, DropdownSelect, fmtDate } from '../components/ui.jsx';
 
 export function MatchScoreLine({ match }) {
   const sc = (teamId) => match.scores?.find((s) => s.team === teamId);
@@ -100,7 +100,7 @@ export default function Matches() {
         </div>
       </div>
       <div className="mb-3"><ErrorBox message={actionError} /></div>
-      {loading && !data ? <Spinner /> : error ? <ErrorBox message={error} onRetry={reload} /> : data.items.length === 0 ? (
+      {loading && !data ? <SkeletonMatchCard count={4} /> : error ? <ErrorBox message={error} onRetry={reload} /> : data.items.length === 0 ? (
         <Empty icon={Trophy} title={q || status ? 'No matches found' : 'No matches yet'} text={q || status ? 'Try a different search or filter.' : 'Create a match between two teams to start scoring.'}
           action={!q && !status && data.canCreate && <Link to="/matches/new" className="btn font-bold" style={{ backgroundColor: '#f59e0b', color: '#ffffff' }}>Create Match</Link>} />
       ) : (

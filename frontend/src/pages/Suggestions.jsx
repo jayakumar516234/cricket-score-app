@@ -4,7 +4,7 @@ import { Lightbulb, Plus, Pencil, Trash2, Loader2, MessageSquare, ArrowLeft } fr
 import { api, qs } from '../api.js';
 import { useFetch } from '../useFetch.js';
 import { useAuth } from '../context/AuthContext.jsx';
-import { ConfirmDialog, Empty, ErrorBox, Modal, Pagination, Spinner, fmtDate } from '../components/ui.jsx';
+import { ConfirmDialog, Empty, ErrorBox, Modal, Pagination, Spinner, SkeletonList, fmtDate } from '../components/ui.jsx';
 
 const STATUS_COLORS = {
   pending: 'bg-yellow-100 text-yellow-700',
@@ -101,7 +101,7 @@ export default function Suggestions() {
 
       {actionError && <div className="mb-3"><ErrorBox message={actionError} /></div>}
 
-      {loading && !data ? <Spinner /> : error ? <ErrorBox message={error} onRetry={reload} /> : data.items.length === 0 ? (
+      {loading && !data ? <SkeletonList count={4} /> : error ? <ErrorBox message={error} onRetry={reload} /> : data.items.length === 0 ? (
         <Empty icon={Lightbulb} title="No suggestions yet" text="Share your ideas to improve the app!" action={<button className="btn btn-primary" onClick={openCreate}><Plus className="h-4 w-4" /> Submit a suggestion</button>} />
       ) : (
         <>

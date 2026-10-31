@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Crown, Printer, Download, Image as ImageIcon, Loader2, QrCode, Sparkles } from 'lucide-react';
 import { useFetch } from '../useFetch.js';
-import { ErrorBox, Spinner, StatusBadge } from '../components/ui.jsx';
+import { ErrorBox, Spinner, SkeletonScorecard, StatusBadge } from '../components/ui.jsx';
 import { ScorecardTabs, teamOf } from '../components/ScoreParts.jsx';
 import { WhatsAppShareButton } from '../components/WhatsAppShare.jsx';
 import { OverBarChart } from '../components/OverBarChart.jsx';
@@ -18,8 +18,8 @@ export default function Scorecard() {
   const [posterLoading, setPosterLoading] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
 
-  if (loading) return <Spinner />;
-  if (error) return <ErrorBox message={error} onRetry={reload} />;
+  if (loading && !view) return <SkeletonScorecard />;
+  if (error && !view) return <ErrorBox message={error} onRetry={reload} />;
   const { match } = view;
 
   const handlePrint = () => {
