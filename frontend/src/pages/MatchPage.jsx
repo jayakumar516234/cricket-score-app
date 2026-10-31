@@ -909,11 +909,23 @@ function ResultView({ view }) {
 function ManagerTools({ view, act, busy, id, nav }) {
   const { match } = view;
   const [dialog, setDialog] = useState(null);
+  const [editOpen, setEditOpen] = useState(false);
   const [reason, setReason] = useState('');
   const items = [];
+  if (match.status === 'scheduled') items.push(['edit', 'Edit match details']);
   if (match.status === 'scheduled' || match.status === 'live') items.push(['abandon', 'Abandon match']);
   if (match.status === 'completed') items.push(['reopen', 'Reopen to correct the score']);
   items.push(['delete', 'Delete match']);
+
+  const handleAction = (k) => {
+    if (k === 'edit') setEditOpen(true);
+    else setDialog(k);
+  };
+
+  const handleSaveDetails = async (body) => {
+    const r = await act(() => api(`/matches/${id}`, { method: 'PUT', body }));
+    if (r.ok) setEditOpen(false);
+  };
 
   const run = async () => {
     if (dialog === 'abandon') {
@@ -932,8 +944,27 @@ function ManagerTools({ view, act, busy, id, nav }) {
     <section className="rounded-xl border border-slate-200 bg-white p-3">
       <p className="mb-2 text-xs font-semibold text-slate-500">Match administration</p>
       <div className="flex flex-wrap gap-2">
-        {items.map(([k, label]) => <button key={k} className={`btn btn-outline !py-1.5 ${k === 'delete' ? 'text-red-600' : ''}`} onClick={() => setDialog(k)}>{label}</button>)}
+        {items.map(([k, label]) => (
+          <button
+            key={k}
+            className={`btn btn-outline !py-1.5 ${k === 'delete' ? 'text-red-600' : k === 'edit' ? 'text-emerald-700 font-bold border-emerald-300 bg-emerald-50/50' : ''}`}
+            onClick={() => handleAction(k)}
+          >
+            {label}
+          </button>
+        ))}
       </div>
+
+      {editOpen && (
+        <EditMatchDialog
+          open={editOpen}
+          onClose={() => setEditOpen(false)}
+          match={match}
+          onSave={handleSaveDetails}
+          busy={busy}
+        />
+      )}
+
       <ConfirmDialog open={!!dialog} danger={dialog === 'delete' || dialog === 'abandon'} busy={busy} onCancel={() => setDialog(null)} onConfirm={run}
         title={{ abandon: 'Abandon match?', reopen: 'Reopen this match?', delete: 'Delete match?' }[dialog] || ''}
         confirmLabel={{ abandon: 'Abandon', reopen: 'Reopen match', delete: 'Delete match' }[dialog] || 'Confirm'}
@@ -950,5 +981,112 @@ function ManagerTools({ view, act, busy, id, nav }) {
         )}
       </ConfirmDialog>
     </section>
+  );
+}
+
+function EditMatchDialog({ open, onClose, match, onSave, busy }) {
+  const [name, setName] = useState(match.name || '');
+  const [venue, setVenue] = useState(match.venue || '');
+  const [date, setDate] = useState(match.date ? new Date(match.date).toISOString().slice(0, 10) : '');
+  const [format, setFormat] = useState(match.format || 'T20');
+  const [overs, setOvers] = useState(match.overs || 20);
+  const [tossWinner, setTossWinner] = useState(match.toss?.winner || match.homeTeam?.id);
+  const [tossDecision, setTossDecision] = useState(match.toss?.decision || 'bat');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    await onSave({
+      name: name.trim(),
+      venue: venue.trim(),
+      date: date || undefined,
+      format,
+      overs: Number(overs) || 20,
+      tossWinner,
+      tossDecision,
+    });
+  };
+
+  return (
+    <Modal open={open} onClose={onClose} title="Edit Match Details">
+      <form onSubmit={handleSubmit} className="space-y-3.5 text-sm">
+        <div>
+          <label className="label">Match Name *</label>
+          <input className="input" value={name} onChange={(e) => setName(e.target.value)} required />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="label">Format</label>
+            <DropdownSelect
+              value={format}
+              onChange={(val) => {
+                setFormat(val);
+                if (val === 'T10') setOvers(10);
+                else if (val === 'T20') setOvers(20);
+                else if (val === 'ODI') setOvers(50);
+              }}
+              options={[
+                { value: 'T10', label: 'T10 (10 Overs)' },
+                { value: 'T20', label: 'T20 (20 Overs)' },
+                { value: 'ODI', label: 'ODI (50 Overs)' },
+                { value: 'Custom', label: 'Custom Overs' },
+              ]}
+            />
+          </div>
+          <div>
+            <label className="label">Overs</label>
+            <input
+              type="number"
+              className="input font-semibold"
+              min={1}
+              max={50}
+              value={overs}
+              disabled={format !== 'Custom'}
+              onChange={(e) => setOvers(e.target.value)}
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="label">Toss Winner</label>
+            <DropdownSelect
+              value={tossWinner}
+              onChange={setTossWinner}
+              options={[
+                { value: match.homeTeam?.id, label: `${match.homeTeam?.name} (Home)` },
+                { value: match.awayTeam?.id, label: `${match.awayTeam?.name} (Away)` },
+              ]}
+            />
+          </div>
+          <div>
+            <label className="label">Elected To</label>
+            <DropdownSelect
+              value={tossDecision}
+              onChange={setTossDecision}
+              options={[
+                { value: 'bat', label: 'Bat First' },
+                { value: 'bowl', label: 'Bowl First' },
+              ]}
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="label">Venue / Ground</label>
+            <input className="input" value={venue} onChange={(e) => setVenue(e.target.value)} placeholder="e.g. Ground 1" />
+          </div>
+          <div>
+            <label className="label">Date</label>
+            <input type="date" className="input" value={date} onChange={(e) => setDate(e.target.value)} />
+          </div>
+        </div>
+        <div className="mt-5 flex justify-end gap-2 pt-2 border-t">
+          <button type="button" className="btn btn-outline" onClick={onClose}>Cancel</button>
+          <button type="submit" disabled={busy} className="btn btn-green flex items-center gap-1.5 font-bold">
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            <span>Save Changes</span>
+          </button>
+        </div>
+      </form>
+    </Modal>
   );
 }

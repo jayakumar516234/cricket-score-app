@@ -89,9 +89,13 @@ async function getMatch(id) {
 
 async function requireManage(user, match) {
   if (canManageMatch(user, match)) return;
+  const homeId = match.homeTeam?._id ?? match.homeTeam;
+  const awayId = match.awayTeam?._id ?? match.awayTeam;
+  const or = [{ createdBy: user._id }];
+  if (user.viewTeam) or.push({ _id: user.viewTeam });
   const canManageATeam = await Team.exists({
-    _id: { $in: [match.homeTeam, match.awayTeam] },
-    createdBy: user._id,
+    _id: { $in: [homeId, awayId] },
+    $or: or,
   });
   if (canManageATeam) return;
   throw new HttpError(403, 'You do not have permission to manage this match');

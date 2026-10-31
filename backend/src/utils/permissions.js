@@ -20,19 +20,25 @@ export const isViewer = (user) => user?.role === 'viewer';
 export const viewerMayViewTeam = (user, teamId) => !isViewer(user) || String(user.viewTeam) === String(teamId?._id ?? teamId);
 export const viewerMayViewMatch = (user, match) => !isViewer(user) || viewerMayViewTeam(user, match.homeTeam) || viewerMayViewTeam(user, match.awayTeam);
 
-/** Only superadmin or the team owner (creator of homeTeam / awayTeam) may score a match.
+/** Either superadmin, admin, or the team owner/manager of homeTeam OR awayTeam can manage and score a match.
  *  Tournament scorers may also score their tournament's matches. */
 export function canManageMatch(user, match, homeTeamDoc = null, awayTeamDoc = null) {
   if (!user) return false;
-  if (user.role === 'superadmin') return true;
+  if (user.role === 'superadmin' || user.role === 'admin') return true;
   if (owns(user, match)) return true;
   
-  // Team owner who created homeTeam or awayTeam can score their matches
-  if (homeTeamDoc && owns(user, homeTeamDoc)) return true;
-  if (awayTeamDoc && owns(user, awayTeamDoc)) return true;
+  // Either team's owner or manager (homeTeam or awayTeam) can edit and score their match
+  if (homeTeamDoc && (owns(user, homeTeamDoc) || canManageTeam(user, homeTeamDoc))) return true;
+  if (awayTeamDoc && (owns(user, awayTeamDoc) || canManageTeam(user, awayTeamDoc))) return true;
 
-  if (match?.homeTeam && typeof match.homeTeam === 'object' && owns(user, match.homeTeam)) return true;
-  if (match?.awayTeam && typeof match.awayTeam === 'object' && owns(user, match.awayTeam)) return true;
+  if (match?.homeTeam && typeof match.homeTeam === 'object' && (owns(user, match.homeTeam) || canManageTeam(user, match.homeTeam))) return true;
+  if (match?.awayTeam && typeof match.awayTeam === 'object' && (owns(user, match.awayTeam) || canManageTeam(user, match.awayTeam))) return true;
+
+  // If user is assigned to either team (e.g. viewTeam / teamadmin)
+  const userTeamId = user.viewTeam ? String(user.viewTeam) : null;
+  const homeId = String(match?.homeTeam?._id ?? match?.homeTeam ?? '');
+  const awayId = String(match?.awayTeam?._id ?? match?.awayTeam ?? '');
+  if (userTeamId && (userTeamId === homeId || userTeamId === awayId)) return true;
 
   if (user.role === 'scorer' && match?.tournament && String(user.tournamentId) === String(match.tournament)) {
     return true;
