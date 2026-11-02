@@ -22,11 +22,15 @@ const createTournamentSchema = z.object({
   venue: z.string().trim().max(100).optional().default(''),
   grounds: z.array(z.string().trim().min(1)).optional().default(['Ground 1', 'Ground 2']),
   format: z.enum(['knockout', 'league', 'flexible']).optional().default('knockout'),
-  maxTeams: z.coerce.number().int().min(2).max(64).optional().default(16),
+  maxTeams: z.coerce.number().int().min(2).max(128).optional().default(16),
   defaultOvers: z.coerce.number().int().min(1).max(50).optional().default(8),
   startDate: z.string().nullable().optional().refine((v) => !v || !Number.isNaN(Date.parse(v)), 'Invalid start date'),
   endDate: z.string().nullable().optional().refine((v) => !v || !Number.isNaN(Date.parse(v)), 'Invalid end date'),
   rules: z.string().trim().max(1000).optional().default(''),
+});
+
+const updateTeamStatusSchema = z.object({
+  status: z.enum(['approved', 'eliminated', 'winner', 'pending']),
 });
 
 const addTeamSchema = z.object({
@@ -355,6 +359,34 @@ router.delete('/:id/teams/:teamId', requireAuth, wrap(async (req, res) => {
   await tournament.save();
   res.json({ message: 'Team removed from tournament' });
 }));
+
+// ========================
+// 7.1 Update Team Status (Eliminate / Reactivate / Mark Winner)
+// ========================
+const handleUpdateTeamStatus = wrap(async (req, res) => {
+  const tournament = await Tournament.findById(req.params.id);
+  if (!tournament) throw new HttpError(404, 'Tournament not found');
+  if (!canManageTournament(req.user, tournament)) throw new HttpError(403, 'Only organizer can update team status');
+
+  const { status } = parse(updateTeamStatusSchema, req.body);
+  const teamEntry = tournament.teams.find((t) => String(t.team) === String(req.params.teamId));
+  if (!teamEntry) throw new HttpError(404, 'Team not part of this tournament');
+
+  teamEntry.status = status;
+  await tournament.save();
+
+  res.json({
+    message: `Team status updated to ${status}`,
+    team: {
+      id: sid(teamEntry.team),
+      name: teamEntry.name,
+      status: teamEntry.status,
+    },
+  });
+});
+
+router.patch('/:id/teams/:teamId/status', requireAuth, handleUpdateTeamStatus);
+router.put('/:id/teams/:teamId/status', requireAuth, handleUpdateTeamStatus);
 
 // ========================
 // 8. Award / Remove Bye

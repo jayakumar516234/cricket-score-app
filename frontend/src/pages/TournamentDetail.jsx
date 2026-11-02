@@ -41,12 +41,16 @@ export default function TournamentDetail() {
   const [teamCodeInput, setTeamCodeInput] = useState('');
   const [awardByeOpen, setAwardByeOpen] = useState(false);
   const [selectedTeamForBye, setSelectedTeamForBye] = useState('');
+  const [byeRound, setByeRound] = useState('Round 1');
   const [byeReason, setByeReason] = useState('Bye advancement to next round');
   const [scheduleMatchOpen, setScheduleMatchOpen] = useState(false);
   const [addScorerOpen, setAddScorerOpen] = useState(false);
   const [scorerName, setScorerName] = useState('');
   const [scorerPin, setScorerPin] = useState('');
   const [scorerGround, setScorerGround] = useState('Ground 1');
+  const [teamFilter, setTeamFilter] = useState('all'); // 'all' | 'active' | 'eliminated' | 'byes'
+  const [editLimitOpen, setEditLimitOpen] = useState(false);
+  const [customMaxTeams, setCustomMaxTeams] = useState(16);
 
   // Custom match scheduling states
   const [matchHomeTeam, setMatchHomeTeam] = useState('');
@@ -124,16 +128,49 @@ export default function TournamentDetail() {
     try {
       await api.post(`/tournaments/${id}/byes`, {
         teamId: selectedTeamForBye,
-        round: 'Round 1',
+        round: byeRound,
         reason: byeReason.trim(),
       });
       setAwardByeOpen(false);
       setSelectedTeamForBye('');
-      setActionSuccess('Bye awarded successfully!');
+      setByeReason('Bye advancement to next round');
+      setActionSuccess(`Bye awarded for ${byeRound}!`);
       setTimeout(() => setActionSuccess(''), 3000);
       reload();
     } catch (err) {
       setActionError(err.message || 'Failed to award Bye');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleUpdateTeamStatus = async (teamId, status) => {
+    setActionLoading(true);
+    setActionError('');
+    try {
+      await api.patch(`/tournaments/${id}/teams/${teamId}/status`, { status });
+      setActionSuccess(`Team marked as ${status}!`);
+      setTimeout(() => setActionSuccess(''), 3000);
+      reload();
+    } catch (err) {
+      setActionError(err.message || 'Failed to update team status');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleUpdateMaxTeams = async (e) => {
+    e.preventDefault();
+    setActionLoading(true);
+    setActionError('');
+    try {
+      await api.put(`/tournaments/${id}`, { maxTeams: Number(customMaxTeams) });
+      setEditLimitOpen(false);
+      setActionSuccess(`Tournament team limit updated to ${customMaxTeams}!`);
+      setTimeout(() => setActionSuccess(''), 3000);
+      reload();
+    } catch (err) {
+      setActionError(err.message || 'Failed to update team limit');
     } finally {
       setActionLoading(false);
     }
@@ -336,14 +373,26 @@ export default function TournamentDetail() {
           {/* Quick Stats */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-3 border-t border-white/20">
             {[
-              { label: 'Teams', value: `${teams.length} / ${tournament.maxTeams || 16}` },
+              { label: 'Teams', value: `${teams.length} / ${tournament.maxTeams || 16}`, isTeams: true },
               { label: 'Overs', value: `${tournament.defaultOvers || 8} ov` },
               { label: 'Byes', value: `${byes.length}` },
               { label: 'Grounds', value: grounds.length > 1 ? `${grounds.length} Pitches` : grounds[0] || 'Ground 1' },
-            ].map(({ label, value }) => (
-              <div key={label} className="rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 p-2.5 text-center">
+            ].map(({ label, value, isTeams }) => (
+              <div key={label} className="rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 p-2.5 text-center relative group">
                 <span className="text-[10px] text-white/60 font-bold uppercase block mb-0.5">{label}</span>
                 <span className="font-extrabold text-white text-sm">{value}</span>
+                {isTeams && isOrganizer && (
+                  <button
+                    onClick={() => {
+                      setCustomMaxTeams(tournament.maxTeams || 16);
+                      setEditLimitOpen(true);
+                    }}
+                    className="mt-1 block mx-auto text-[10px] bg-white/20 hover:bg-white/30 text-white font-bold px-1.5 py-0.5 rounded transition"
+                    title="Change team limit"
+                  >
+                    ✏️ Edit Limit
+                  </button>
+                )}
               </div>
             ))}
           </div>
@@ -631,7 +680,7 @@ export default function TournamentDetail() {
                         </div>
 
                         {/* Actions */}
-                        <div className="px-4 pb-4 flex items-center gap-2">
+                        <div className="px-4 pb-3 flex items-center gap-2">
                           <Link
                             to={`/matches/${m.id}`}
                             className={`flex-1 text-center rounded-xl font-black text-xs py-2 transition ${
@@ -655,6 +704,29 @@ export default function TournamentDetail() {
                             Card
                           </Link>
                         </div>
+
+                        {/* Organizer Quick Team Elimination on Completed Match */}
+                        {isOrganizer && m.status === 'completed' && (
+                          <div className="px-4 pb-3 pt-1 border-t border-slate-100 flex flex-wrap items-center justify-between gap-1 text-[11px] bg-slate-50/60">
+                            <span className="text-slate-500 font-semibold">Eliminate:</span>
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => handleUpdateTeamStatus(m.homeTeam.id, 'eliminated')}
+                                className="px-2 py-0.5 rounded-md bg-red-50 hover:bg-red-100 text-red-700 font-bold border border-red-200 text-[10px] transition"
+                                title={`Eliminate ${m.homeTeam.name}`}
+                              >
+                                🔴 {m.homeTeam.name.slice(0, 10)}
+                              </button>
+                              <button
+                                onClick={() => handleUpdateTeamStatus(m.awayTeam.id, 'eliminated')}
+                                className="px-2 py-0.5 rounded-md bg-red-50 hover:bg-red-100 text-red-700 font-bold border border-red-200 text-[10px] transition"
+                                title={`Eliminate ${m.awayTeam.name}`}
+                              >
+                                🔴 {m.awayTeam.name.slice(0, 10)}
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -666,23 +738,34 @@ export default function TournamentDetail() {
       )}
 
       {/* ============================================================== */}
-      {/* TAB 2: TEAMS & BYES (16 TEAMS VILLAGE ROSTER)                  */}
+      {/* TAB 2: TEAMS & BYES (ROSTER & ELIMINATION MANAGEMENT)           */}
       {/* ============================================================== */}
       {tab === 'teams' && (
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h3 className="font-black text-slate-900 text-base">
-                🏏 Teams ({teams.length} / {tournament.maxTeams || 16})
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-black text-slate-900 text-base">
+                  🏏 Registered Teams ({teams.length} / {tournament.maxTeams || 16})
+                </h3>
+                {isOrganizer && (
+                  <button
+                    onClick={() => {
+                      setCustomMaxTeams(tournament.maxTeams || 16);
+                      setEditLimitOpen(true);
+                    }}
+                    className="text-[11px] font-bold text-pitch-700 bg-pitch-50 hover:bg-pitch-100 border border-pitch-200 px-2 py-0.5 rounded-lg transition"
+                  >
+                    ✏️ Change Limit
+                  </button>
+                )}
+              </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                {teams.length >= (tournament.maxTeams || 16)
-                  ? 'All slots filled! Ready to generate fixtures.'
-                  : `${(tournament.maxTeams || 16) - teams.length} slots remaining`}
+                Flexible bracket: Any number of teams (e.g. 9, 14, 16) can play. Manage active & eliminated teams.
               </p>
             </div>
             {isOrganizer && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <button
                   onClick={() => setAddTeamOpen(true)}
                   className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-black text-xs px-3 py-2 shadow-md transition"
@@ -695,55 +778,153 @@ export default function TournamentDetail() {
                   className="inline-flex items-center gap-1.5 rounded-xl bg-amber-50 border-2 border-amber-300 text-amber-800 hover:bg-amber-100 font-bold text-xs px-3 py-2 transition"
                 >
                   <Award className="h-3.5 w-3.5 text-amber-600" />
-                  <span>Award Bye</span>
+                  <span>Award Bye / Finalist</span>
                 </button>
               </div>
             )}
           </div>
 
+          {/* Teams Status Filter Pills */}
+          <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 p-1 rounded-xl text-xs font-bold text-slate-600">
+            {[
+              ['all', `All (${teams.length})`],
+              ['active', `Active (${teams.filter((t) => t.status !== 'eliminated').length})`],
+              ['eliminated', `Eliminated (${teams.filter((t) => t.status === 'eliminated').length})`],
+              ['byes', `Byes (${byes.length})`],
+            ].map(([fKey, fLabel]) => (
+              <button
+                key={fKey}
+                onClick={() => setTeamFilter(fKey)}
+                className={`rounded-lg px-3 py-1.5 transition-all ${
+                  teamFilter === fKey
+                    ? 'bg-white text-slate-900 shadow-xs font-black'
+                    : 'hover:text-slate-900'
+                }`}
+              >
+                {fLabel}
+              </button>
+            ))}
+          </div>
+
+          {/* Teams Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {teams.map((t, idx) => {
-              const hasBye = byes.some((b) => b.teamId === t.id || b.teamName === t.name);
-              return (
-                <div
-                  key={t.id || idx}
-                  className={`relative overflow-hidden rounded-2xl border bg-white shadow-sm hover:shadow-md transition-all flex items-center justify-between gap-3 p-3.5 ${
-                    hasBye ? 'border-amber-200 bg-amber-50/30' : 'border-slate-200 hover:border-pitch-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl font-black text-xs ${
-                      hasBye ? 'bg-amber-100 text-amber-700' : 'bg-pitch-50 text-pitch-700'
-                    }`}>
-                      #{idx + 1}
-                    </span>
-                    <div className="min-w-0">
-                      <div className="font-black text-slate-900 text-sm truncate">{t.name}</div>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        {t.code && (
-                          <span className="text-[10px] font-mono text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">{t.code}</span>
+            {teams
+              .filter((t) => {
+                if (teamFilter === 'active') return t.status !== 'eliminated';
+                if (teamFilter === 'eliminated') return t.status === 'eliminated';
+                if (teamFilter === 'byes') return byes.some((b) => b.teamId === t.id || b.teamName === t.name);
+                return true;
+              })
+              .map((t, idx) => {
+                const teamBye = byes.find((b) => b.teamId === t.id || b.teamName === t.name);
+                const isEliminated = t.status === 'eliminated';
+                const isWinner = t.status === 'winner';
+
+                return (
+                  <div
+                    key={t.id || idx}
+                    className={`relative overflow-hidden rounded-2xl border bg-white shadow-sm hover:shadow-md transition-all flex flex-col justify-between p-4 ${
+                      isEliminated
+                        ? 'border-red-200 bg-red-50/20 opacity-80'
+                        : isWinner
+                        ? 'border-amber-300 bg-amber-50/30'
+                        : teamBye
+                        ? 'border-amber-200 bg-amber-50/20'
+                        : 'border-slate-200 hover:border-pitch-300'
+                    }`}
+                  >
+                    <div>
+                      {/* Top Bar: Seed + Status Badges + Delete */}
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-xl font-black text-xs ${
+                          isEliminated
+                            ? 'bg-red-100 text-red-700'
+                            : isWinner
+                            ? 'bg-amber-100 text-amber-700'
+                            : 'bg-pitch-50 text-pitch-700'
+                        }`}>
+                          #{idx + 1}
+                        </span>
+
+                        <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                          {isEliminated ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-700 bg-red-100 border border-red-200 px-2 py-0.5 rounded-full">
+                              🔴 Eliminated
+                            </span>
+                          ) : isWinner ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full">
+                              🏆 Champion
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-full">
+                              🟢 Active
+                            </span>
+                          )}
+
+                          {teamBye && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full" title={teamBye.reason}>
+                              ⭐ Bye ({teamBye.round})
+                            </span>
+                          )}
+                        </div>
+
+                        {isOrganizer && (
+                          <button
+                            onClick={() => handleRemoveTeam(t.id)}
+                            className="p-1 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                            title="Remove team from tournament"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                         )}
-                        {hasBye && (
-                          <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-amber-700 bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded-full">
-                            ⭐ Bye
+                      </div>
+
+                      {/* Team Name & Code */}
+                      <div className="my-1.5">
+                        <div className={`font-black text-sm truncate ${isEliminated ? 'line-through text-slate-500' : 'text-slate-900'}`}>
+                          {t.name}
+                        </div>
+                        {t.code && (
+                          <span className="text-[10px] font-mono text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded mt-1 inline-block">
+                            {t.code}
                           </span>
                         )}
                       </div>
                     </div>
-                  </div>
 
-                  {isOrganizer && (
-                    <button
-                      onClick={() => handleRemoveTeam(t.id)}
-                      className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition"
-                      title="Remove team"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-              );
-            })}
+                    {/* Organizer Elimination & Status Control Buttons */}
+                    {isOrganizer && (
+                      <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-1.5">
+                        {isEliminated ? (
+                          <button
+                            onClick={() => handleUpdateTeamStatus(t.id, 'approved')}
+                            className="flex-1 py-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold text-xs transition"
+                          >
+                            🟢 Reactivate Team
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => handleUpdateTeamStatus(t.id, 'eliminated')}
+                              className="flex-1 py-1 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-bold text-xs transition"
+                              title="Eliminate team after match"
+                            >
+                              🔴 Eliminate
+                            </button>
+                            <button
+                              onClick={() => handleUpdateTeamStatus(t.id, 'winner')}
+                              className="py-1 px-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 font-bold text-xs transition"
+                              title="Crown as Winner"
+                            >
+                              🏆 Winner
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
           </div>
         </div>
       )}
@@ -884,27 +1065,50 @@ export default function TournamentDetail() {
       </Modal>
 
       {/* Award Bye Modal */}
-      <Modal open={awardByeOpen} onClose={() => setAwardByeOpen(false)} title="Award Bye to Team">
+      <Modal open={awardByeOpen} onClose={() => setAwardByeOpen(false)} title="Award Bye / Direct Advance">
         <form onSubmit={handleAwardBye} className="space-y-4">
           <div>
-            <label className="label">Select Team to Receive Bye</label>
+            <label className="label font-bold">Select Team to Receive Bye</label>
             <DropdownSelect
               value={selectedTeamForBye}
               onChange={(val) => setSelectedTeamForBye(val)}
               options={[
                 { value: '', label: '-- Choose Team --' },
-                ...teams.map((t) => ({ value: t.id, label: t.name })),
+                ...teams.map((t) => ({ value: t.id, label: `${t.name}${t.status === 'eliminated' ? ' (Eliminated)' : ''}` })),
               ]}
               placeholder="-- Choose Team --"
               buttonClassName="font-semibold"
             />
+          </div>
+
+          <div>
+            <label className="label font-bold">Bye to Stage / Round</label>
+            <DropdownSelect
+              value={byeRound}
+              onChange={(val) => {
+                setByeRound(val);
+                if (val.includes('Final')) {
+                  setByeReason('Direct Finalist (Bye to Final)');
+                }
+              }}
+              options={[
+                { value: 'Round 1', label: 'Round 1 Bye (Advances to Round 2)' },
+                { value: 'Round 2', label: 'Round 2 Bye (Advances to Quarter-Final)' },
+                { value: 'Quarter-Final', label: 'Quarter-Final Bye' },
+                { value: 'Semi-Final', label: 'Semi-Final Bye' },
+                { value: 'Final', label: '🏆 Final (Direct Finalist)' },
+              ]}
+              buttonClassName="font-semibold"
+            />
             <p className="text-[11px] text-slate-500 mt-1">
-              This team will skip Round 1 and advance directly to the next round.
+              {byeRound === 'Final'
+                ? '⭐ This team directly plays in the Final without playing preliminary rounds.'
+                : 'This team skips this round and automatically advances.'}
             </p>
           </div>
 
           <div>
-            <label className="label">Reason / Notes</label>
+            <label className="label font-bold">Reason / Notes</label>
             <input
               type="text"
               value={byeReason}
@@ -925,30 +1129,36 @@ export default function TournamentDetail() {
       </Modal>
 
       {/* Schedule Custom Match Modal */}
-      <Modal open={scheduleMatchOpen} onClose={() => setScheduleMatchOpen(false)} title="Schedule Match">
+      <Modal open={scheduleMatchOpen} onClose={() => setScheduleMatchOpen(false)} title="Schedule Match (Any Teams / Direct Final)">
         <form onSubmit={handleScheduleCustomMatch} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="label">Home Team</label>
+              <label className="label font-bold">Home Team</label>
               <DropdownSelect
                 value={matchHomeTeam}
                 onChange={(val) => setMatchHomeTeam(val)}
                 options={[
                   { value: '', label: '-- Select Home --' },
-                  ...teams.map((t) => ({ value: t.id, label: t.name })),
+                  ...teams.map((t) => ({
+                    value: t.id,
+                    label: `${t.name}${t.status === 'eliminated' ? ' (Eliminated)' : ''}${t.status === 'winner' ? ' (Champion)' : ''}`,
+                  })),
                 ]}
                 placeholder="-- Select --"
                 buttonClassName="text-xs font-semibold"
               />
             </div>
             <div>
-              <label className="label">Away Team</label>
+              <label className="label font-bold">Away Team</label>
               <DropdownSelect
                 value={matchAwayTeam}
                 onChange={(val) => setMatchAwayTeam(val)}
                 options={[
                   { value: '', label: '-- Select Away --' },
-                  ...teams.map((t) => ({ value: t.id, label: t.name })),
+                  ...teams.map((t) => ({
+                    value: t.id,
+                    label: `${t.name}${t.status === 'eliminated' ? ' (Eliminated)' : ''}${t.status === 'winner' ? ' (Champion)' : ''}`,
+                  })),
                 ]}
                 placeholder="-- Select --"
                 buttonClassName="text-xs font-semibold"
@@ -958,11 +1168,22 @@ export default function TournamentDetail() {
 
           <div className="grid grid-cols-3 gap-2">
             <div>
-              <label className="label">Round</label>
+              <label className="label font-bold">Round / Stage</label>
               <DropdownSelect
                 value={matchRound}
                 onChange={(val) => setMatchRound(val)}
-                options={['Round 1', 'Round 2', 'Quarter-Final', 'Semi-Final', 'Final']}
+                options={[
+                  'Round 1',
+                  'Round 2',
+                  'Quarter-Final',
+                  'Semi-Final',
+                  'Final',
+                  'Qualifier 1',
+                  'Eliminator',
+                  'Qualifier 2',
+                  'Playoff',
+                  'Super Over',
+                ]}
                 buttonClassName="text-xs font-semibold"
               />
             </div>
@@ -1043,6 +1264,61 @@ export default function TournamentDetail() {
             </button>
             <button type="submit" disabled={actionLoading} className="btn btn-green">
               Save Scorer PIN
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Edit Tournament Limit Modal */}
+      <Modal open={editLimitOpen} onClose={() => setEditLimitOpen(false)} title="Change Tournament Slots / Limits">
+        <form onSubmit={handleUpdateMaxTeams} className="space-y-4">
+          <div>
+            <label className="label font-bold">Total Allowed Teams</label>
+            <div className="flex gap-2 items-center">
+              <input
+                type="number"
+                min={teams.length || 2}
+                max={128}
+                value={customMaxTeams}
+                onChange={(e) => setCustomMaxTeams(Number(e.target.value))}
+                className="input font-bold text-center w-28"
+                required
+              />
+              <div className="flex flex-wrap gap-1">
+                {[8, 9, 10, 12, 14, 16, 24, 32].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setCustomMaxTeams(n)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${
+                      customMaxTeams === n ? 'bg-pitch-600 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                    }`}
+                  >
+                    {n}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setCustomMaxTeams(64)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${
+                    customMaxTeams >= 64 ? 'bg-pitch-600 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                  }`}
+                >
+                  Open (64)
+                </button>
+              </div>
+            </div>
+            <p className="text-[11px] text-slate-500 mt-1">
+              Currently registered: {teams.length} teams. You can set any number like 9, 10, 14, 16, or 64.
+            </p>
+          </div>
+
+          <div className="flex gap-2 justify-end pt-2">
+            <button type="button" onClick={() => setEditLimitOpen(false)} className="btn btn-outline">
+              Cancel
+            </button>
+            <button type="submit" disabled={actionLoading} className="btn btn-green">
+              Update Limit
             </button>
           </div>
         </form>

@@ -42,7 +42,7 @@ const tournamentSchema = new Schema(
     venue: { type: String, trim: true, default: '' },
     grounds: { type: [String], default: ['Ground 1', 'Ground 2'] },
     format: { type: String, enum: ['knockout', 'league', 'flexible'], default: 'knockout' },
-    maxTeams: { type: Number, default: 16, min: 2, max: 64 },
+    maxTeams: { type: Number, default: 16, min: 2, max: 128 },
     defaultOvers: { type: Number, default: 8, min: 1, max: 50 },
     startDate: { type: Date },
     endDate: { type: Date },

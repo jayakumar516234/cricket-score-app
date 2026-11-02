@@ -103,36 +103,70 @@ export function TournamentCreateModal({ open, onClose, onCreated }) {
             </div>
 
             {/* Teams + Overs */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="label font-bold">Teams (Bracket Size)</label>
-                <DropdownSelect
-                  value={maxTeams}
-                  onChange={(val) => setMaxTeams(Number(val))}
-                  options={[
-                    { value: 8, label: '8 Teams' },
-                    { value: 12, label: '12 Teams' },
-                    { value: 14, label: '14 Teams' },
-                    { value: 16, label: '16 Teams — Standard' },
-                    { value: 24, label: '24 Teams' },
-                    { value: 32, label: '32 Teams' },
-                  ]}
-                  buttonClassName="font-semibold"
-                />
-              </div>
+            <div className="space-y-2">
+              <label className="label font-bold flex items-center justify-between">
+                <span>Total Teams (Bracket Size)</span>
+                <span className="text-[11px] text-pitch-600 font-semibold">Any number or Open</span>
+              </label>
 
-              <div>
-                <label className="label font-bold">Default Overs / Match</label>
-                <input
-                  type="number"
-                  min={1}
-                  max={50}
-                  value={defaultOvers}
-                  onChange={(e) => setDefaultOvers(Number(e.target.value))}
-                  className="input font-semibold"
-                />
-                <span className="text-[11px] text-slate-400 mt-0.5 block">Can be changed per match</span>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-1.5 bg-slate-100 rounded-xl px-2.5 py-1.5 border border-slate-200">
+                  <span className="text-xs font-bold text-slate-500">Slots:</span>
+                  <input
+                    type="number"
+                    min={2}
+                    max={128}
+                    value={maxTeams}
+                    onChange={(e) => setMaxTeams(Math.max(2, Number(e.target.value) || 2))}
+                    className="w-16 bg-white font-black text-center text-sm rounded-lg border border-slate-300 py-1"
+                  />
+                </div>
+
+                <div className="flex flex-wrap gap-1">
+                  {[8, 9, 10, 12, 14, 16, 24, 32].map((num) => (
+                    <button
+                      key={num}
+                      type="button"
+                      onClick={() => setMaxTeams(num)}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${
+                        maxTeams === num
+                          ? 'bg-pitch-600 text-white shadow-xs'
+                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                      }`}
+                    >
+                      {num}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setMaxTeams(64)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${
+                      maxTeams >= 64
+                        ? 'bg-pitch-600 text-white shadow-xs'
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                    }`}
+                  >
+                    Open (64)
+                  </button>
+                </div>
               </div>
+              <span className="text-[11px] text-slate-400 block">
+                Choose a preset (8, 9, 14, 16) or type any custom number of teams.
+              </span>
+            </div>
+
+            {/* Overs */}
+            <div>
+              <label className="label font-bold">Default Overs / Match</label>
+              <input
+                type="number"
+                min={1}
+                max={50}
+                value={defaultOvers}
+                onChange={(e) => setDefaultOvers(Number(e.target.value))}
+                className="input font-semibold"
+              />
+              <span className="text-[11px] text-slate-400 mt-0.5 block">Can be modified per match</span>
             </div>
 
             {/* Venue + Grounds */}
