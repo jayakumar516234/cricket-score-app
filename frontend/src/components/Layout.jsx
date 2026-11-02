@@ -156,12 +156,11 @@ export default function Layout() {
     </div>
   );
 
-  // Quick navigation items for mobile bottom bar (Home, Teams, Matches, Tournaments, More)
+  // Quick navigation items for mobile bottom bar (Exactly 4 fields: Home, Teams, Matches, More)
   const bottomNavItems = [
     { to: '/', label: t('nav.home') || 'Home', icon: LayoutDashboard, end: true },
     { to: '/teams', label: t('nav.teams') || 'Teams', icon: Shield },
     { to: '/matches', label: t('nav.matches') || 'Matches', icon: Trophy },
-    { to: '/tournaments', label: t('nav.tournaments') || 'Cups', icon: Medal },
   ];
 
   return (
@@ -233,9 +232,9 @@ export default function Layout() {
           <Outlet />
         </main>
 
-        {/* Mobile App Bottom Navigation Dock - Sleek, compact & micro-animated */}
+        {/* Mobile App Bottom Navigation Dock - Exactly 4 fields, spacious, sleek & animated */}
         <nav
-          className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-navy-800/80 bg-navy-950/95 px-1.5 pb-[calc(0.45rem+env(safe-area-inset-bottom))] pt-1.5 backdrop-blur-xl shadow-2xl lg:hidden select-none"
+          className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-navy-800/80 bg-navy-950/95 px-2 pb-[calc(0.55rem+env(safe-area-inset-bottom))] pt-1.5 backdrop-blur-xl shadow-2xl lg:hidden select-none"
           aria-label="Quick navigation"
         >
           {bottomNavItems.map(({ to, label, icon: Icon, end }) => (
@@ -244,7 +243,7 @@ export default function Layout() {
               to={to}
               end={end}
               className={({ isActive }) =>
-                `group relative flex flex-1 flex-col items-center justify-center py-0.5 text-[10px] transition-transform duration-200 active:scale-90 ${
+                `group relative flex flex-1 flex-col items-center justify-center py-1 text-[11px] transition-transform duration-200 active:scale-95 ${
                   isActive ? 'text-pitch-400' : 'text-slate-400 hover:text-slate-200'
                 }`
               }
@@ -252,19 +251,19 @@ export default function Layout() {
               {({ isActive }) => (
                 <>
                   <div
-                    className={`relative flex h-7.5 w-11 items-center justify-center rounded-xl transition-all duration-300 ${
+                    className={`relative flex h-8 w-14 items-center justify-center rounded-xl transition-all duration-300 ${
                       isActive
                         ? 'bg-gradient-to-tr from-pitch-600/25 to-emerald-500/20 text-pitch-400 border border-pitch-500/35 shadow-glow-pitch scale-110 -translate-y-0.5'
                         : 'text-slate-400 group-hover:bg-navy-900/60'
                     }`}
                   >
-                    <Icon className="h-4 w-4 shrink-0 transition-transform duration-300" aria-hidden />
+                    <Icon className="h-4.5 w-4.5 shrink-0 transition-transform duration-300" aria-hidden />
                     {isActive && (
-                      <span className="absolute -top-0.5 right-2 h-1.5 w-1.5 rounded-full bg-pitch-400 shadow-glow-pitch animate-pulse" />
+                      <span className="absolute -top-0.5 right-3 h-1.5 w-1.5 rounded-full bg-pitch-400 shadow-glow-pitch animate-pulse" />
                     )}
                   </div>
                   <span
-                    className={`mt-0.5 tracking-tight text-[9.5px] transition-all duration-200 truncate max-w-[56px] text-center ${
+                    className={`mt-1 tracking-tight text-[10.5px] transition-all duration-200 truncate ${
                       isActive ? 'font-black text-pitch-300 scale-105' : 'font-semibold text-slate-400'
                     }`}
                   >
@@ -276,13 +275,13 @@ export default function Layout() {
           ))}
           <button
             onClick={() => setOpen(true)}
-            className="group relative flex flex-1 flex-col items-center justify-center py-0.5 text-[10px] text-slate-400 hover:text-slate-200 transition-transform duration-200 active:scale-90"
+            className="group relative flex flex-1 flex-col items-center justify-center py-1 text-[11px] text-slate-400 hover:text-slate-200 transition-transform duration-200 active:scale-95"
             aria-label="Open menu drawer"
           >
-            <div className="flex h-7.5 w-11 items-center justify-center rounded-xl text-slate-400 group-hover:bg-navy-900/60 transition-all duration-200">
-              <Menu className="h-4 w-4 shrink-0" aria-hidden />
+            <div className="flex h-8 w-14 items-center justify-center rounded-xl text-slate-400 group-hover:bg-navy-900/60 transition-all duration-200">
+              <Menu className="h-4.5 w-4.5 shrink-0" aria-hidden />
             </div>
-            <span className="mt-0.5 tracking-tight text-[9.5px] font-semibold text-slate-400 truncate">More</span>
+            <span className="mt-1 tracking-tight text-[10.5px] font-semibold text-slate-400 truncate">More</span>
           </button>
         </nav>
       </div>
