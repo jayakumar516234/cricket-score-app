@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { Tournament } from '../models/Tournament.js';
 import { Match } from '../models/Match.js';
-import { Team } from '../models/Team.js';
+import { Team, generateTeamCode } from '../models/Team.js';
 import { User } from '../models/User.js';
 import { Innings } from '../models/Innings.js';
 import { Player } from '../models/Player.js';
@@ -36,6 +36,10 @@ const updateTeamStatusSchema = z.object({
 const addTeamSchema = z.object({
   teamId: oid.optional(),
   teamCode: z.string().trim().optional(),
+  isGuest: z.boolean().optional(),
+  name: z.string().trim().min(2).max(60).optional(),
+  location: z.string().trim().max(80).optional(),
+  contact: z.string().trim().max(100).optional(),
 });
 
 const awardByeSchema = z.object({
@@ -219,7 +223,7 @@ router.get('/code/:code', wrap(async (req, res) => {
 router.get('/:id', optionalAuth, wrap(async (req, res) => {
   const tournament = await Tournament.findById(req.params.id)
     .populate('organizer', 'name username role')
-    .populate('teams.team', 'name logo code city');
+    .populate('teams.team', 'name logo code city location isGuest description');
   if (!tournament) throw new HttpError(404, 'Tournament not found');
 
   // Fetch all matches for this tournament
@@ -289,6 +293,9 @@ router.get('/:id', optionalAuth, wrap(async (req, res) => {
         code: t.team?.code,
         status: t.status,
         seed: t.seed,
+        location: t.team?.location || t.team?.city || '',
+        isGuest: Boolean(t.team?.isGuest),
+        contact: t.team?.description || '',
       })),
       byes: tournament.byes.map((b) => ({
         teamId: sid(b.team),
@@ -313,23 +320,46 @@ router.get('/:id', optionalAuth, wrap(async (req, res) => {
 }));
 
 // ========================
-// 6. Add Team to Tournament
+// 6. Add Team to Tournament (Registered Team Code OR Guest Team)
 // ========================
 router.post('/:id/teams', requireAuth, wrap(async (req, res) => {
   const tournament = await Tournament.findById(req.params.id);
   if (!tournament) throw new HttpError(404, 'Tournament not found');
 
-  const { teamId, teamCode } = parse(addTeamSchema, req.body);
+  const { teamId, teamCode, isGuest, name, location, contact } = parse(addTeamSchema, req.body);
   let team;
   if (teamId) {
     team = await Team.findById(teamId);
   } else if (teamCode) {
     team = await Team.findOne({ code: teamCode.toUpperCase() });
+  } else if (isGuest || name) {
+    if (!name || name.trim().length < 2) {
+      throw new HttpError(400, 'Guest team name must have at least 2 characters');
+    }
+    // Check if team with this name already exists
+    let existing = await Team.findOne({ name: new RegExp(`^${name.trim()}$`, 'i') });
+    if (existing) {
+      team = existing;
+    } else {
+      let code = generateTeamCode();
+      while (await Team.findOne({ code })) {
+        code = generateTeamCode();
+      }
+      team = await Team.create({
+        name: name.trim(),
+        code,
+        location: location?.trim() || tournament.venue || '',
+        description: contact ? `Contact: ${contact.trim()}` : 'Guest Team',
+        createdBy: req.user._id,
+        isGuest: true,
+      });
+    }
   }
-  if (!team) throw new HttpError(404, 'Team not found');
+
+  if (!team) throw new HttpError(404, 'Team not found. Please provide a valid Team Code or Guest Team Name.');
 
   if (tournament.teams.length >= tournament.maxTeams) {
-    throw new HttpError(400, `Tournament is full (Maximum ${tournament.maxTeams} teams allowed)`);
+    throw new HttpError(400, `Tournament is full (Maximum ${tournament.maxTeams} teams allowed). Please increase team limit first.`);
   }
 
   const alreadyJoined = tournament.teams.some((t) => String(t.team) === String(team._id));
@@ -343,7 +373,53 @@ router.post('/:id/teams', requireAuth, wrap(async (req, res) => {
   });
 
   await tournament.save();
-  res.json({ message: `${team.name} added to tournament`, teamCount: tournament.teams.length });
+  res.json({
+    message: `${team.name} ${team.isGuest ? '(Guest Team) ' : ''}added to tournament`,
+    teamCount: tournament.teams.length,
+    team: {
+      id: sid(team._id),
+      name: team.name,
+      code: team.code,
+      location: team.location,
+      isGuest: Boolean(team.isGuest),
+    },
+  });
+}));
+
+// ========================
+// 6.1 Edit Team / Guest Team Details in Tournament
+// ========================
+router.put('/:id/teams/:teamId', requireAuth, wrap(async (req, res) => {
+  const tournament = await Tournament.findById(req.params.id);
+  if (!tournament) throw new HttpError(404, 'Tournament not found');
+  if (!canManageTournament(req.user, tournament)) throw new HttpError(403, 'Only organizer can edit team details');
+
+  const { name, location, contact } = req.body;
+  const teamEntry = tournament.teams.find((t) => String(t.team) === String(req.params.teamId));
+  if (!teamEntry) throw new HttpError(404, 'Team not part of this tournament');
+
+  if (name && name.trim()) {
+    teamEntry.name = name.trim();
+  }
+
+  const teamDoc = await Team.findById(req.params.teamId);
+  if (teamDoc) {
+    if (name && name.trim()) teamDoc.name = name.trim();
+    if (location !== undefined) teamDoc.location = location.trim();
+    if (contact !== undefined) teamDoc.description = `Contact: ${contact.trim()}`;
+    await teamDoc.save();
+  }
+
+  await tournament.save();
+  res.json({
+    message: 'Team details updated successfully',
+    team: {
+      id: sid(teamEntry.team),
+      name: teamEntry.name,
+      location: teamDoc?.location || '',
+      isGuest: Boolean(teamDoc?.isGuest),
+    },
+  });
 }));
 
 // ========================

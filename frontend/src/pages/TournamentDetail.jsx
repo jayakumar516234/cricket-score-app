@@ -38,7 +38,19 @@ export default function TournamentDetail() {
 
   // Sub-modals for Organizer
   const [addTeamOpen, setAddTeamOpen] = useState(false);
+  const [addTeamTab, setAddTeamTab] = useState('code'); // 'code' | 'guest'
   const [teamCodeInput, setTeamCodeInput] = useState('');
+  const [guestTeamName, setGuestTeamName] = useState('');
+  const [guestTeamCity, setGuestTeamCity] = useState('');
+  const [guestTeamContact, setGuestTeamContact] = useState('');
+
+  // Edit Team modal
+  const [editTeamOpen, setEditTeamOpen] = useState(false);
+  const [editTeamId, setEditTeamId] = useState(null);
+  const [editTeamName, setEditTeamName] = useState('');
+  const [editTeamCity, setEditTeamCity] = useState('');
+  const [editTeamContact, setEditTeamContact] = useState('');
+
   const [awardByeOpen, setAwardByeOpen] = useState(false);
   const [selectedTeamForBye, setSelectedTeamForBye] = useState('');
   const [byeRound, setByeRound] = useState('Round 1');
@@ -93,18 +105,69 @@ export default function TournamentDetail() {
   // Organizer Actions
   const handleAddTeam = async (e) => {
     e.preventDefault();
-    if (!teamCodeInput.trim()) return;
     setActionLoading(true);
     setActionError('');
     try {
-      await api.post(`/tournaments/${id}/teams`, { teamCode: teamCodeInput.trim() });
+      if (addTeamTab === 'code') {
+        if (!teamCodeInput.trim()) {
+          setActionError('Please enter a Team Code');
+          setActionLoading(false);
+          return;
+        }
+        await api.post(`/tournaments/${id}/teams`, { teamCode: teamCodeInput.trim() });
+      } else {
+        if (!guestTeamName.trim()) {
+          setActionError('Please enter a team name');
+          setActionLoading(false);
+          return;
+        }
+        await api.post(`/tournaments/${id}/teams`, {
+          isGuest: true,
+          name: guestTeamName.trim(),
+          location: guestTeamCity.trim(),
+          contact: guestTeamContact.trim(),
+        });
+      }
       setTeamCodeInput('');
+      setGuestTeamName('');
+      setGuestTeamCity('');
+      setGuestTeamContact('');
       setAddTeamOpen(false);
       setActionSuccess('Team added successfully!');
       setTimeout(() => setActionSuccess(''), 3000);
       reload();
     } catch (err) {
       setActionError(err.message || 'Failed to add team');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const openEditTeam = (t) => {
+    setEditTeamId(t.id);
+    setEditTeamName(t.name || '');
+    setEditTeamCity(t.location || '');
+    setEditTeamContact(t.contact || '');
+    setEditTeamOpen(true);
+  };
+
+  const handleEditTeam = async (e) => {
+    e.preventDefault();
+    if (!editTeamName.trim()) return;
+    setActionLoading(true);
+    setActionError('');
+    try {
+      await api.put(`/tournaments/${id}/teams/${editTeamId}`, {
+        name: editTeamName.trim(),
+        location: editTeamCity.trim(),
+        contact: editTeamContact.trim(),
+      });
+      setEditTeamOpen(false);
+      setActionSuccess('Team details updated successfully!');
+      setTimeout(() => setActionSuccess(''), 3000);
+      reload();
+    } catch (err) {
+      setActionError(err.message || 'Failed to update team');
     } finally {
       setActionLoading(false);
     }
@@ -869,13 +932,22 @@ export default function TournamentDetail() {
                         </div>
 
                         {isOrganizer && (
-                          <button
-                            onClick={() => handleRemoveTeam(t.id)}
-                            className="p-1 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
-                            title="Remove team from tournament"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => openEditTeam(t)}
+                              className="p-1 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition text-xs"
+                              title="Edit team details / name"
+                            >
+                              ✏️
+                            </button>
+                            <button
+                              onClick={() => handleRemoveTeam(t.id)}
+                              className="p-1 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                              title="Remove team from tournament"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
                         )}
                       </div>
 
@@ -884,11 +956,23 @@ export default function TournamentDetail() {
                         <div className={`font-black text-sm truncate ${isEliminated ? 'line-through text-slate-500' : 'text-slate-900'}`}>
                           {t.name}
                         </div>
-                        {t.code && (
-                          <span className="text-[10px] font-mono text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded mt-1 inline-block">
-                            {t.code}
-                          </span>
-                        )}
+                        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                          {t.code && (
+                            <span className="text-[10px] font-mono text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
+                              {t.code}
+                            </span>
+                          )}
+                          {t.isGuest && (
+                            <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded">
+                              Guest Team
+                            </span>
+                          )}
+                          {t.location && (
+                            <span className="text-[10px] text-slate-400 truncate max-w-[120px]">
+                              📍 {t.location}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -1036,29 +1120,155 @@ export default function TournamentDetail() {
         defaultCode={tournament.code}
       />
 
-      {/* Add Team Modal */}
+      {/* Add Team Modal (Registered Code OR Guest Team) */}
       <Modal open={addTeamOpen} onClose={() => setAddTeamOpen(false)} title="Add Team to Tournament">
-        <form onSubmit={handleAddTeam} className="space-y-4">
+        <div className="space-y-4">
+          {/* Mode Switcher Tabs */}
+          <div className="flex rounded-xl bg-slate-100 p-1 text-xs font-bold text-slate-600">
+            <button
+              type="button"
+              onClick={() => setAddTeamTab('code')}
+              className={`flex-1 py-2 rounded-lg text-center transition ${
+                addTeamTab === 'code' ? 'bg-white text-slate-900 shadow-xs font-black' : 'hover:text-slate-900'
+              }`}
+            >
+              🔑 Team Code
+            </button>
+            <button
+              type="button"
+              onClick={() => setAddTeamTab('guest')}
+              className={`flex-1 py-2 rounded-lg text-center transition ${
+                addTeamTab === 'guest' ? 'bg-white text-slate-900 shadow-xs font-black' : 'hover:text-slate-900'
+              }`}
+            >
+              ➕ Guest Team (நேரடி பதிவு)
+            </button>
+          </div>
+
+          <form onSubmit={handleAddTeam} className="space-y-4 text-sm">
+            {addTeamTab === 'code' ? (
+              <div className="space-y-2">
+                <label className="label font-bold text-slate-700">6-Character Team Code</label>
+                <input
+                  type="text"
+                  placeholder="e.g. TM-4892"
+                  value={teamCodeInput}
+                  onChange={(e) => setTeamCodeInput(e.target.value.toUpperCase())}
+                  className="input uppercase font-mono font-black text-center text-lg sm:text-base tracking-widest py-3"
+                  maxLength={10}
+                  autoFocus
+                />
+                <p className="text-xs text-slate-500">
+                  Ask the team captain for their Team Code. If they are not registered on the app, click <strong>"Guest Team"</strong> tab above.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div>
+                  <label className="label font-bold text-slate-700">Team Name *</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Kanchipuram Super Kings"
+                    value={guestTeamName}
+                    onChange={(e) => setGuestTeamName(e.target.value)}
+                    className="input font-bold py-3 text-base sm:text-sm"
+                    required
+                    autoFocus
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="label font-bold text-slate-700">City / Village (Optional)</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Kanchipuram"
+                      value={guestTeamCity}
+                      onChange={(e) => setGuestTeamCity(e.target.value)}
+                      className="input py-2.5 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="label font-bold text-slate-700">Captain / Contact (Optional)</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Kumar - 9876543210"
+                      value={guestTeamContact}
+                      onChange={(e) => setGuestTeamContact(e.target.value)}
+                      className="input py-2.5 text-sm"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-slate-500 bg-amber-50 border border-amber-200/60 p-2.5 rounded-xl">
+                  💡 Guest team will be created immediately and added to the tournament. You can edit their name or details later.
+                </p>
+              </div>
+            )}
+
+            <div className="flex gap-2 justify-end pt-3">
+              <button
+                type="button"
+                onClick={() => setAddTeamOpen(false)}
+                className="btn btn-outline flex-1 sm:flex-initial py-2.5"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={actionLoading}
+                className="btn btn-green flex-1 sm:flex-initial py-2.5 font-bold shadow-md"
+              >
+                {actionLoading ? 'Adding...' : addTeamTab === 'code' ? 'Add by Code' : 'Create Guest Team'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </Modal>
+
+      {/* Edit Team Modal */}
+      <Modal open={editTeamOpen} onClose={() => setEditTeamOpen(false)} title="Edit Team Details">
+        <form onSubmit={handleEditTeam} className="space-y-4 text-sm">
           <div>
-            <label className="label">Team Code</label>
+            <label className="label font-bold text-slate-700">Team Name *</label>
             <input
               type="text"
-              placeholder="e.g. TM-4892"
-              value={teamCodeInput}
-              onChange={(e) => setTeamCodeInput(e.target.value.toUpperCase())}
-              className="input uppercase font-mono font-bold"
+              value={editTeamName}
+              onChange={(e) => setEditTeamName(e.target.value)}
+              className="input font-bold py-3 text-base sm:text-sm"
               required
             />
-            <p className="text-[11px] text-slate-500 mt-1">
-              Ask the team captain for their 6-character Team Code.
-            </p>
           </div>
-          <div className="flex gap-2 justify-end pt-2">
-            <button type="button" onClick={() => setAddTeamOpen(false)} className="btn btn-outline">
+          <div>
+            <label className="label font-bold text-slate-700">City / Village</label>
+            <input
+              type="text"
+              value={editTeamCity}
+              onChange={(e) => setEditTeamCity(e.target.value)}
+              className="input py-2.5 text-sm"
+            />
+          </div>
+          <div>
+            <label className="label font-bold text-slate-700">Captain / Contact</label>
+            <input
+              type="text"
+              value={editTeamContact}
+              onChange={(e) => setEditTeamContact(e.target.value)}
+              className="input py-2.5 text-sm"
+            />
+          </div>
+          <div className="flex gap-2 justify-end pt-3">
+            <button
+              type="button"
+              onClick={() => setEditTeamOpen(false)}
+              className="btn btn-outline flex-1 sm:flex-initial py-2.5"
+            >
               Cancel
             </button>
-            <button type="submit" disabled={actionLoading} className="btn btn-primary">
-              Add Team
+            <button
+              type="submit"
+              disabled={actionLoading}
+              className="btn btn-green flex-1 sm:flex-initial py-2.5 font-bold shadow-md"
+            >
+              Save Changes
             </button>
           </div>
         </form>
