@@ -240,7 +240,7 @@ export default function TournamentDetail() {
 
   return (
     <div className="space-y-5">
-      {/* Back and Page Header */}
+      {/* ─── Back + Header ─── */}
       <div className="flex items-center gap-2">
         <Link to="/tournaments" className="btn btn-ghost !p-2" aria-label="Back to tournaments">
           <ArrowLeft className="h-5 w-5" />
@@ -251,87 +251,101 @@ export default function TournamentDetail() {
             <span>{tournament.name}</span>
           </h1>
           <p className="text-xs text-slate-500 truncate">
-            {tournament.venue ? `${tournament.venue} · ` : ''}{tournament.format} ({teams.length}/{tournament.maxTeams || 16} Teams)
+            {tournament.venue ? `${tournament.venue} · ` : ''}{tournament.format} · {teams.length}/{tournament.maxTeams || 16} Teams
           </p>
         </div>
       </div>
 
-      {/* Main Tournament Banner Card */}
-      <section className="card p-4 sm:p-5 border border-slate-200/90 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-start sm:items-center gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-400 font-black text-white shadow-md">
-              <Trophy className="h-6 w-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base sm:text-lg font-bold text-slate-900">{tournament.name}</h2>
-                <span
-                  className={`badge text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ${
-                    tournament.status === 'live'
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-300'
-                      : 'bg-amber-50 text-amber-700 border border-amber-300'
-                  }`}
-                >
-                  {tournament.status}
-                </span>
+      {/* ─── Hero Banner Card ─── */}
+      <section className="relative overflow-hidden rounded-2xl shadow-md">
+        {/* Gradient BG */}
+        <div className={`absolute inset-0 ${
+          tournament.status === 'live'
+            ? 'bg-gradient-to-br from-emerald-600 via-green-600 to-teal-700'
+            : tournament.status === 'completed'
+            ? 'bg-gradient-to-br from-slate-700 via-slate-600 to-slate-800'
+            : 'bg-gradient-to-br from-amber-500 via-orange-500 to-red-500'
+        }`} />
+        <div className="pointer-events-none absolute -right-10 -top-10 h-48 w-48 rounded-full bg-white/10" />
+        <div className="pointer-events-none absolute -bottom-8 -left-6 h-32 w-32 rounded-full bg-white/10" />
+
+        <div className="relative p-5 sm:p-6 text-white space-y-4">
+          {/* Top row */}
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 shadow-lg">
+                <Trophy className="h-7 w-7 text-white" />
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Organized by <strong className="text-slate-700">{tournament.organizer?.name || 'Tournament Admin'}</strong>
-              </p>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-lg sm:text-xl font-black">{tournament.name}</h2>
+                  <span
+                    className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full capitalize border ${
+                      tournament.status === 'live'
+                        ? 'bg-white/20 text-white border-white/40'
+                        : 'bg-white/20 text-white border-white/40'
+                    }`}
+                  >
+                    {tournament.status === 'live' && (
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 animate-ping" />
+                    )}
+                    {tournament.status === 'live' ? 'LIVE' : tournament.status}
+                  </span>
+                </div>
+                <p className="text-sm text-white/80 mt-0.5">
+                  By <strong className="text-white">{tournament.organizer?.name || 'Tournament Admin'}</strong>
+                </p>
+                {tournament.venue && (
+                  <p className="flex items-center gap-1 text-xs text-white/70 mt-1">
+                    <MapPin className="h-3 w-3" />
+                    {tournament.venue}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={handleCopyCode}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 px-3 py-1.5 text-xs font-mono font-bold text-white transition"
+                title="Click to copy code"
+              >
+                <span>{tournament.code}</span>
+                {copied ? <Check className="h-3.5 w-3.5 text-emerald-300" /> : <Copy className="h-3.5 w-3.5 text-white/70" />}
+              </button>
+
+              <button
+                onClick={handleShareWhatsApp}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 px-3 py-1.5 text-xs font-bold text-white transition"
+              >
+                <Share2 className="h-3.5 w-3.5" />
+                <span>Share</span>
+              </button>
+
+              <button
+                onClick={() => setScorerModalOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-white text-orange-600 hover:bg-orange-50 px-3 py-1.5 text-xs font-black shadow-md transition"
+              >
+                <KeyRound className="h-3.5 w-3.5" />
+                <span>Scorer Mode</span>
+              </button>
             </div>
           </div>
 
-          {/* Tournament Code & Share */}
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={handleCopyCode}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-mono font-bold text-slate-800 hover:bg-slate-100 transition shadow-2xs"
-              title="Click to copy code"
-            >
-              <span>Code: {tournament.code}</span>
-              {copied ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5 text-slate-500" />}
-            </button>
-
-            <button
-              onClick={handleShareWhatsApp}
-              className="btn btn-outline text-xs !py-1.5 !px-3 border-emerald-300 text-emerald-700 hover:bg-emerald-50"
-            >
-              <Share2 className="h-3.5 w-3.5 text-emerald-600" />
-              <span>Share</span>
-            </button>
-
-            <button
-              onClick={() => setScorerModalOpen(true)}
-              className="btn btn-outline text-xs !py-1.5 !px-3 border-amber-300 text-amber-800 bg-amber-50/60 hover:bg-amber-100"
-            >
-              <KeyRound className="h-3.5 w-3.5 text-amber-600" />
-              <span>Scorer Mode</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Quick Stats Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-100 text-center text-xs">
-          <div className="rounded-xl bg-slate-50 p-2 border border-slate-100">
-            <span className="text-[10px] text-slate-400 font-bold uppercase block">Teams Registered</span>
-            <span className="font-extrabold text-slate-900 text-sm">
-              {teams.length} / {tournament.maxTeams || 16}
-            </span>
-          </div>
-          <div className="rounded-xl bg-slate-50 p-2 border border-slate-100">
-            <span className="text-[10px] text-slate-400 font-bold uppercase block">Default Overs</span>
-            <span className="font-extrabold text-slate-900 text-sm">{tournament.defaultOvers || 8} Overs</span>
-          </div>
-          <div className="rounded-xl bg-slate-50 p-2 border border-slate-100">
-            <span className="text-[10px] text-slate-400 font-bold uppercase block">Byes Awarded</span>
-            <span className="font-extrabold text-pitch-700 text-sm">{byes.length} Byes</span>
-          </div>
-          <div className="rounded-xl bg-slate-50 p-2 border border-slate-100">
-            <span className="text-[10px] text-slate-400 font-bold uppercase block">Pitches / Grounds</span>
-            <span className="font-extrabold text-slate-900 text-sm truncate block">
-              {grounds.join(', ')}
-            </span>
+          {/* Quick Stats */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-3 border-t border-white/20">
+            {[
+              { label: 'Teams', value: `${teams.length} / ${tournament.maxTeams || 16}` },
+              { label: 'Overs', value: `${tournament.defaultOvers || 8} ov` },
+              { label: 'Byes', value: `${byes.length}` },
+              { label: 'Grounds', value: grounds.length > 1 ? `${grounds.length} Pitches` : grounds[0] || 'Ground 1' },
+            ].map(({ label, value }) => (
+              <div key={label} className="rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 p-2.5 text-center">
+                <span className="text-[10px] text-white/60 font-bold uppercase block mb-0.5">{label}</span>
+                <span className="font-extrabold text-white text-sm">{value}</span>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -350,68 +364,72 @@ export default function TournamentDetail() {
         </div>
       )}
 
-      {/* ============================================================== */}
-      {/* 🔴 MULTI-GROUND LIVE MATCHES TICKER / CARDS (SIMULTANEOUS PLAY) */}
-      {/* ============================================================== */}
+      {/* ─── Multi-Ground Live Ticker ─── */}
       {liveMatches.length > 0 && (
-        <section className="space-y-2">
+        <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs sm:text-sm font-extrabold text-slate-900 flex items-center gap-1.5 uppercase tracking-wide">
-              <span className="h-2.5 w-2.5 rounded-full bg-red-500 animate-ping inline-block" />
-              <span>Simultaneous Live Matches ({liveMatches.length})</span>
+            <h3 className="text-xs sm:text-sm font-extrabold text-slate-900 flex items-center gap-2 uppercase tracking-wide">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-100">
+                <span className="h-2 w-2 rounded-full bg-red-500 animate-ping" />
+              </span>
+              Simultaneous Live ({liveMatches.length})
             </h3>
-            <span className="text-[11px] text-slate-500">Live across tournament grounds</span>
+            <span className="text-[11px] text-emerald-600 font-semibold animate-pulse">● Scoring now</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {liveMatches.map((m) => (
               <div
                 key={m.id}
-                className="card p-3.5 border-2 border-emerald-400/80 bg-gradient-to-br from-emerald-50/40 via-white to-white shadow-xs relative overflow-hidden"
+                className="relative overflow-hidden rounded-2xl border-2 border-emerald-400 bg-gradient-to-br from-emerald-900 via-green-800 to-teal-900 text-white shadow-md"
               >
-                <div className="flex items-center justify-between text-xs mb-2">
-                  <span className="badge bg-emerald-100 text-emerald-800 font-bold">
-                    {m.ground || 'Ground 1'} · {m.round}
-                  </span>
-                  <span className="text-[11px] font-semibold text-emerald-700 animate-pulse">● LIVE</span>
-                </div>
+                {/* top strip */}
+                <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-400 to-teal-400" />
 
-                <div className="grid grid-cols-2 gap-2 text-center my-2">
-                  <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
-                    <span className="font-bold text-slate-800 block text-xs truncate">{m.homeTeam.name}</span>
-                    <span className="text-base font-black text-slate-900">
-                      {m.scores.find((s) => s.team === m.homeTeam.id)?.runs ?? '-'}/
-                      {m.scores.find((s) => s.team === m.homeTeam.id)?.wickets ?? '-'}
+                <div className="p-4">
+                  <div className="flex items-center justify-between text-xs mb-3">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 border border-white/30 px-2.5 py-0.5 font-bold text-white">
+                      📍 {m.ground || 'Ground 1'} · {m.round}
                     </span>
-                    <span className="text-[10px] text-slate-500 block">
-                      ({m.scores.find((s) => s.team === m.homeTeam.id)?.overs ?? '0.0'} ov)
+                    <span className="text-[11px] font-bold text-emerald-300 animate-pulse flex items-center gap-1">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
+                      LIVE
                     </span>
                   </div>
-                  <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
-                    <span className="font-bold text-slate-800 block text-xs truncate">{m.awayTeam.name}</span>
-                    <span className="text-base font-black text-slate-900">
-                      {m.scores.find((s) => s.team === m.awayTeam.id)?.runs ?? '-'}/
-                      {m.scores.find((s) => s.team === m.awayTeam.id)?.wickets ?? '-'}
-                    </span>
-                    <span className="text-[10px] text-slate-500 block">
-                      ({m.scores.find((s) => s.team === m.awayTeam.id)?.overs ?? '0.0'} ov)
-                    </span>
-                  </div>
-                </div>
 
-                <div className="flex gap-2 mt-2 pt-2 border-t border-slate-100">
-                  <Link
-                    to={`/matches/${m.id}`}
-                    className="btn btn-green flex-1 !py-1 text-xs font-bold"
-                  >
-                    {m.canManage ? 'Score Match' : 'Watch Live'}
-                  </Link>
-                  <Link
-                    to={`/matches/${m.id}/scorecard`}
-                    className="btn btn-outline !py-1 text-xs"
-                  >
-                    Scorecard
-                  </Link>
+                  <div className="grid grid-cols-2 gap-2 text-center">
+                    {[
+                      { team: m.homeTeam, label: 'Home' },
+                      { team: m.awayTeam, label: 'Away' },
+                    ].map(({ team, label }) => {
+                      const sc = m.scores.find((s) => s.team === team.id);
+                      return (
+                        <div key={team.id} className="rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 p-2.5">
+                          <span className="text-[10px] text-white/60 font-bold uppercase block mb-0.5">{label}</span>
+                          <span className="font-bold text-white block text-xs truncate">{team.name}</span>
+                          <span className="text-xl font-black text-white">
+                            {sc?.runs ?? '-'}/{sc?.wickets ?? '-'}
+                          </span>
+                          <span className="text-[10px] text-white/60 block">({sc?.overs ?? '0.0'} ov)</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="flex gap-2 mt-3">
+                    <Link
+                      to={`/matches/${m.id}`}
+                      className="flex-1 text-center rounded-xl bg-emerald-400 hover:bg-emerald-300 text-emerald-900 font-black text-xs py-2 transition"
+                    >
+                      {m.canManage ? '🏏 Score Match' : '👁 Watch Live'}
+                    </Link>
+                    <Link
+                      to={`/matches/${m.id}/scorecard`}
+                      className="rounded-xl bg-white/20 hover:bg-white/30 border border-white/30 text-white font-bold text-xs px-3 py-2 transition"
+                    >
+                      Card
+                    </Link>
+                  </div>
                 </div>
               </div>
             ))}
@@ -419,44 +437,47 @@ export default function TournamentDetail() {
         </section>
       )}
 
-      {/* Tabs Switcher */}
-      <div className="flex gap-1.5 rounded-xl bg-slate-200/70 p-1.5 shadow-2xs text-xs font-bold text-slate-600">
+      {/* Tabs */}
+      <div className="flex gap-1 rounded-2xl bg-slate-100 p-1 shadow-inner text-xs font-bold text-slate-500">
         <button
           onClick={() => setTab('fixtures')}
-          className={`flex-1 rounded-lg px-3 py-2 transition ${
-            tab === 'fixtures' ? 'bg-white text-slate-900 shadow-xs' : 'hover:text-slate-900'
+          className={`flex-1 flex items-center justify-center gap-1.5 rounded-xl px-2 py-2.5 transition-all ${
+            tab === 'fixtures' ? 'bg-white text-slate-900 shadow font-extrabold' : 'hover:text-slate-800'
           }`}
         >
-          <Swords className="mr-1 inline h-3.5 w-3.5" />
-          Fixtures & Bracket ({matches.length})
+          <Swords className="h-3.5 w-3.5 shrink-0" />
+          <span className="hidden sm:inline">Fixtures ({matches.length})</span>
+          <span className="sm:hidden">Fixtures</span>
         </button>
         <button
           onClick={() => setTab('teams')}
-          className={`flex-1 rounded-lg px-3 py-2 transition ${
-            tab === 'teams' ? 'bg-white text-slate-900 shadow-xs' : 'hover:text-slate-900'
+          className={`flex-1 flex items-center justify-center gap-1.5 rounded-xl px-2 py-2.5 transition-all ${
+            tab === 'teams' ? 'bg-white text-slate-900 shadow font-extrabold' : 'hover:text-slate-800'
           }`}
         >
-          <Users className="mr-1 inline h-3.5 w-3.5" />
-          Teams & Byes ({teams.length})
+          <Users className="h-3.5 w-3.5 shrink-0" />
+          <span className="hidden sm:inline">Teams ({teams.length})</span>
+          <span className="sm:hidden">Teams</span>
         </button>
         {isOrganizer && (
           <button
             onClick={() => setTab('scorers')}
-            className={`flex-1 rounded-lg px-3 py-2 transition ${
-              tab === 'scorers' ? 'bg-white text-slate-900 shadow-xs' : 'hover:text-slate-900'
+            className={`flex-1 flex items-center justify-center gap-1.5 rounded-xl px-2 py-2.5 transition-all ${
+              tab === 'scorers' ? 'bg-white text-slate-900 shadow font-extrabold' : 'hover:text-slate-800'
             }`}
           >
-            <KeyRound className="mr-1 inline h-3.5 w-3.5" />
-            Scorers ({scorers.length})
+            <KeyRound className="h-3.5 w-3.5 shrink-0" />
+            <span className="hidden sm:inline">Scorers ({scorers.length})</span>
+            <span className="sm:hidden">Scorers</span>
           </button>
         )}
         <button
           onClick={() => setTab('rules')}
-          className={`flex-1 rounded-lg px-3 py-2 transition ${
-            tab === 'rules' ? 'bg-white text-slate-900 shadow-xs' : 'hover:text-slate-900'
+          className={`flex-1 flex items-center justify-center gap-1.5 rounded-xl px-2 py-2.5 transition-all ${
+            tab === 'rules' ? 'bg-white text-slate-900 shadow font-extrabold' : 'hover:text-slate-800'
           }`}
         >
-          Rules & Grounds
+          <span>Rules</span>
         </button>
       </div>
 
@@ -467,13 +488,13 @@ export default function TournamentDetail() {
         <div className="space-y-4">
           {/* Organizer Control Bar */}
           {isOrganizer && (
-            <div className="card p-3 sm:p-4 bg-slate-50 border border-slate-200 flex flex-wrap items-center justify-between gap-2.5">
+            <div className="rounded-2xl bg-gradient-to-r from-slate-50 to-slate-100 border border-slate-200 p-4 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <span className="font-bold text-slate-800 text-xs sm:text-sm block">Organizer Bracket Controls</span>
+                <span className="font-black text-slate-800 text-sm block">🏟️ Organizer Controls</span>
                 <span className="text-[11px] text-slate-500">
                   {matches.length === 0
                     ? 'Generate Round 1 pairings or schedule custom matches.'
-                    : 'Add more matches as teams advance.'}
+                    : 'Add more matches as teams advance to next rounds.'}
                 </span>
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -481,18 +502,18 @@ export default function TournamentDetail() {
                   <button
                     onClick={handleGenerateFixtures}
                     disabled={actionLoading || teams.length < 2}
-                    className="btn btn-green text-xs !py-1.5 flex items-center gap-1.5 shadow-sm"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-black text-xs px-4 py-2 shadow-md transition disabled:opacity-50"
                   >
-                    <Sparkles className="h-3.5 w-3.5" />
+                    <Sparkles className="h-4 w-4" />
                     <span>Auto-Generate Round 1</span>
                   </button>
                 )}
                 <button
                   onClick={() => setScheduleMatchOpen(true)}
-                  className="btn btn-outline text-xs !py-1.5 flex items-center gap-1.5"
+                  className="inline-flex items-center gap-1.5 rounded-xl border-2 border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs px-3 py-2 transition"
                 >
                   <Plus className="h-3.5 w-3.5" />
-                  <span>+ Schedule Match</span>
+                  <span>Schedule Match</span>
                 </button>
               </div>
             </div>
@@ -532,75 +553,106 @@ export default function TournamentDetail() {
             <div className="space-y-5">
               {Object.keys(matchesByRound).map((roundName) => (
                 <div key={roundName} className="space-y-2">
-                  <div className="flex items-center gap-2 pb-1 border-b border-slate-200">
-                    <span className="font-black text-sm text-slate-900 uppercase tracking-wider">{roundName}</span>
-                    <span className="text-xs text-slate-400 font-medium">({matchesByRound[roundName].length} matches)</span>
+                  <div className="flex items-center gap-3 mb-1">
+                    <div className="h-7 px-3 rounded-full bg-gradient-to-r from-slate-800 to-slate-700 text-white text-xs font-black uppercase tracking-wider flex items-center">
+                      {roundName}
+                    </div>
+                    <span className="text-xs text-slate-400 font-medium">{matchesByRound[roundName].length} matches</span>
+                    <div className="flex-1 h-px bg-slate-200" />
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {matchesByRound[roundName].map((m) => (
                       <div
                         key={m.id}
-                        className="card p-3.5 hover:border-slate-300 transition shadow-2xs flex flex-col justify-between"
+                        className={`relative overflow-hidden rounded-2xl border bg-white shadow-sm hover:shadow-md transition-all flex flex-col justify-between ${
+                          m.status === 'live'
+                            ? 'border-emerald-300'
+                            : m.status === 'completed'
+                            ? 'border-slate-200'
+                            : 'border-slate-200 hover:border-pitch-300'
+                        }`}
                       >
-                        <div>
+                        {m.status === 'live' && (
+                          <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-400 to-teal-400" />
+                        )}
+                        <div className="p-4">
                           {/* Match Top Bar */}
-                          <div className="flex items-center justify-between text-[11px] text-slate-500 mb-2">
-                            <span className="font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">
-                              {m.ground || 'Ground 1'}
+                          <div className="flex items-center justify-between text-[11px] mb-3">
+                            <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2 py-0.5 font-bold text-slate-600">
+                              📍 {m.ground || 'Ground 1'}
                             </span>
-                            <span className="capitalize font-semibold text-slate-600">
+                            <span className="capitalize font-bold">
                               {m.status === 'live' ? (
-                                <span className="text-emerald-600 font-bold">● LIVE</span>
+                                <span className="inline-flex items-center gap-1 text-emerald-600">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping" />
+                                  LIVE
+                                </span>
                               ) : m.status === 'completed' ? (
-                                'Completed'
+                                <span className="text-slate-400">✓ Done</span>
                               ) : (
-                                `${m.overs} Overs`
+                                <span className="text-slate-500">{m.overs} Overs</span>
                               )}
                             </span>
                           </div>
 
                           {/* Teams vs block */}
-                          <div className="space-y-1.5 my-2">
-                            <div className="flex items-center justify-between text-xs sm:text-sm font-bold text-slate-900">
-                              <span className="truncate">{m.homeTeam.name}</span>
-                              <span className="font-mono text-slate-700">
-                                {m.scores.find((s) => s.team === m.homeTeam.id)?.runs != null
-                                  ? `${m.scores.find((s) => s.team === m.homeTeam.id).runs}/${m.scores.find((s) => s.team === m.homeTeam.id).wickets}`
-                                  : '-'}
-                              </span>
-                            </div>
-                            <div className="flex items-center justify-between text-xs sm:text-sm font-bold text-slate-900">
-                              <span className="truncate">{m.awayTeam.name}</span>
-                              <span className="font-mono text-slate-700">
-                                {m.scores.find((s) => s.team === m.awayTeam.id)?.runs != null
-                                  ? `${m.scores.find((s) => s.team === m.awayTeam.id).runs}/${m.scores.find((s) => s.team === m.awayTeam.id).wickets}`
-                                  : '-'}
-                              </span>
-                            </div>
+                          <div className="space-y-2">
+                            {[
+                              { team: m.homeTeam, label: 'Home' },
+                              { team: m.awayTeam, label: 'Away' },
+                            ].map(({ team, label }, ti) => {
+                              const sc = m.scores.find((s) => s.team === team.id);
+                              const hasScore = sc?.runs != null;
+                              return (
+                                <div key={team.id} className="flex items-center justify-between gap-2">
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <span className={`h-5 w-5 shrink-0 rounded-full flex items-center justify-center text-[10px] font-black ${
+                                      ti === 0 ? 'bg-pitch-100 text-pitch-700' : 'bg-amber-100 text-amber-700'
+                                    }`}>
+                                      {ti === 0 ? 'H' : 'A'}
+                                    </span>
+                                    <span className="font-bold text-slate-900 text-xs sm:text-sm truncate">{team.name}</span>
+                                  </div>
+                                  <span className={`font-mono font-black text-sm shrink-0 ${hasScore ? 'text-slate-900' : 'text-slate-300'}`}>
+                                    {hasScore ? `${sc.runs}/${sc.wickets}` : '–'}
+                                  </span>
+                                </div>
+                              );
+                            })}
                           </div>
 
                           {/* Result */}
                           {m.resultSummary && (
-                            <div className="text-[11px] font-semibold text-pitch-700 mt-1 bg-pitch-50/70 p-1 rounded">
-                              {m.resultSummary}
+                            <div className="mt-2.5 text-[11px] font-semibold text-pitch-700 bg-pitch-50 border border-pitch-200/50 px-2.5 py-1.5 rounded-lg">
+                              🏆 {m.resultSummary}
                             </div>
                           )}
                         </div>
 
                         {/* Actions */}
-                        <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+                        <div className="px-4 pb-4 flex items-center gap-2">
                           <Link
                             to={`/matches/${m.id}`}
-                            className="btn btn-primary flex-1 !py-1 text-xs"
+                            className={`flex-1 text-center rounded-xl font-black text-xs py-2 transition ${
+                              m.status === 'live'
+                                ? 'bg-emerald-500 hover:bg-emerald-600 text-white'
+                                : m.canManage && m.status !== 'completed'
+                                ? 'bg-pitch-600 hover:bg-pitch-700 text-white'
+                                : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                            }`}
                           >
-                            {m.canManage ? (m.status === 'completed' ? 'View Details' : 'Score') : 'View Match'}
+                            {m.status === 'live'
+                              ? (m.canManage ? '🏏 Score' : '👁 Watch')
+                              : m.canManage
+                              ? (m.status === 'completed' ? 'View Details' : '▶ Start')
+                              : 'View Match'}
                           </Link>
                           <Link
                             to={`/matches/${m.id}/scorecard`}
-                            className="btn btn-outline !py-1 text-xs"
+                            className="rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 font-bold text-xs px-3 py-2 transition"
                           >
-                            Scorecard
+                            Card
                           </Link>
                         </div>
                       </div>
@@ -618,27 +670,29 @@ export default function TournamentDetail() {
       {/* ============================================================== */}
       {tab === 'teams' && (
         <div className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h3 className="font-bold text-slate-900 text-sm">
-                Registered Teams ({teams.length} / {tournament.maxTeams || 16})
+              <h3 className="font-black text-slate-900 text-base">
+                🏏 Teams ({teams.length} / {tournament.maxTeams || 16})
               </h3>
-              <p className="text-xs text-slate-500">
-                Village tournaments standard: 14 or 16 teams. Extra slots can be given Byes.
+              <p className="text-xs text-slate-500 mt-0.5">
+                {teams.length >= (tournament.maxTeams || 16)
+                  ? 'All slots filled! Ready to generate fixtures.'
+                  : `${(tournament.maxTeams || 16) - teams.length} slots remaining`}
               </p>
             </div>
             {isOrganizer && (
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setAddTeamOpen(true)}
-                  className="btn btn-green text-xs !py-1.5 flex items-center gap-1 shadow-sm"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-black text-xs px-3 py-2 shadow-md transition"
                 >
                   <Plus className="h-3.5 w-3.5" />
-                  <span>+ Add Team</span>
+                  <span>Add Team</span>
                 </button>
                 <button
                   onClick={() => setAwardByeOpen(true)}
-                  className="btn btn-outline text-xs !py-1.5 border-amber-300 text-amber-800 bg-amber-50/60"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-amber-50 border-2 border-amber-300 text-amber-800 hover:bg-amber-100 font-bold text-xs px-3 py-2 transition"
                 >
                   <Award className="h-3.5 w-3.5 text-amber-600" />
                   <span>Award Bye</span>
@@ -653,21 +707,25 @@ export default function TournamentDetail() {
               return (
                 <div
                   key={t.id || idx}
-                  className="card p-3.5 border border-slate-200/80 hover:border-pitch-300 transition shadow-2xs flex items-center justify-between gap-3"
+                  className={`relative overflow-hidden rounded-2xl border bg-white shadow-sm hover:shadow-md transition-all flex items-center justify-between gap-3 p-3.5 ${
+                    hasBye ? 'border-amber-200 bg-amber-50/30' : 'border-slate-200 hover:border-pitch-300'
+                  }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 font-mono font-bold text-slate-600 text-xs">
+                    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl font-black text-xs ${
+                      hasBye ? 'bg-amber-100 text-amber-700' : 'bg-pitch-50 text-pitch-700'
+                    }`}>
                       #{idx + 1}
                     </span>
                     <div className="min-w-0">
-                      <div className="font-bold text-slate-900 text-sm truncate">{t.name}</div>
-                      <div className="flex items-center gap-1.5 mt-0.5">
+                      <div className="font-black text-slate-900 text-sm truncate">{t.name}</div>
+                      <div className="flex items-center gap-2 mt-0.5">
                         {t.code && (
-                          <span className="text-[10px] font-mono text-slate-400">{t.code}</span>
+                          <span className="text-[10px] font-mono text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">{t.code}</span>
                         )}
                         {hasBye && (
-                          <span className="badge bg-amber-100 text-amber-800 text-[10px] font-bold">
-                            Bye Awarded
+                          <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-amber-700 bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded-full">
+                            ⭐ Bye
                           </span>
                         )}
                       </div>
@@ -677,7 +735,7 @@ export default function TournamentDetail() {
                   {isOrganizer && (
                     <button
                       onClick={() => handleRemoveTeam(t.id)}
-                      className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                      className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition"
                       title="Remove team"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -695,21 +753,19 @@ export default function TournamentDetail() {
       {/* ============================================================== */}
       {tab === 'scorers' && isOrganizer && (
         <div className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h3 className="font-bold text-slate-900 text-sm">
-                Multi-Device Match Scorers
-              </h3>
-              <p className="text-xs text-slate-500">
-                Share these PINs with officials scoring Ground 1, Ground 2, Ground 3 from their own phones.
+              <h3 className="font-black text-slate-900 text-base">🔑 Multi-Device Scorers</h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Share PINs with ground officials to score simultaneously from their phones.
               </p>
             </div>
             <button
               onClick={() => setAddScorerOpen(true)}
-              className="btn btn-green text-xs !py-1.5 flex items-center gap-1 shadow-sm"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-black text-xs px-3 py-2 shadow-md transition"
             >
               <Plus className="h-3.5 w-3.5" />
-              <span>+ Add Scorer PIN</span>
+              <span>Add Scorer PIN</span>
             </button>
           </div>
 
@@ -717,24 +773,26 @@ export default function TournamentDetail() {
             {scorers.map((s, idx) => (
               <div
                 key={idx}
-                className="card p-4 border border-amber-200 bg-amber-50/30 shadow-2xs space-y-2"
+                className="relative overflow-hidden rounded-2xl border-2 border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 shadow-sm space-y-3 p-4"
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-slate-900 text-sm">{s.name}</span>
+                  <div>
+                    <span className="font-black text-slate-900 text-sm block">{s.name}</span>
+                    <span className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
+                      📍 {s.ground || 'Ground 1'}
+                    </span>
+                  </div>
                   <button
                     onClick={() => handleRemoveScorer(s.pin)}
-                    className="text-slate-400 hover:text-red-600 p-1 rounded"
+                    className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition"
                     title="Remove PIN"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
-                <div className="text-xs text-slate-600">
-                  Assigned Ground: <strong>{s.ground || 'Ground 1'}</strong>
-                </div>
-                <div className="flex items-center justify-between bg-white rounded-lg p-2 border border-amber-200">
-                  <span className="text-xs text-slate-500 font-medium">Scorer PIN:</span>
-                  <span className="font-mono text-base font-black text-amber-700 tracking-wider">
+                <div className="flex items-center justify-between bg-white rounded-xl p-3 border-2 border-amber-200 shadow-inner">
+                  <span className="text-xs text-slate-500 font-bold uppercase tracking-wide">Scorer PIN</span>
+                  <span className="font-mono text-xl font-black text-amber-700 tracking-[0.3em]">
                     {s.pin}
                   </span>
                 </div>
@@ -755,25 +813,34 @@ export default function TournamentDetail() {
       {/* TAB 4: RULES & GROUNDS INFO                                    */}
       {/* ============================================================== */}
       {tab === 'rules' && (
-        <div className="card p-5 space-y-4">
-          <div>
-            <h3 className="font-bold text-slate-900 text-sm mb-1">Tournament Rules & Guidelines</h3>
-            <p className="text-xs text-slate-600 whitespace-pre-wrap leading-relaxed">
-              {tournament.rules || 'Standard ICC & Village Tennis/Leather ball rules apply. 2 overs powerplay.'}
-            </p>
-          </div>
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+            <div>
+              <h3 className="font-black text-slate-900 text-base mb-2 flex items-center gap-2">
+                📋 Tournament Rules
+              </h3>
+              <div className="rounded-xl bg-slate-50 border border-slate-200 p-4">
+                <p className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">
+                  {tournament.rules || 'Standard ICC & Village Tennis/Leather ball rules apply. 2 overs powerplay, no-ball free hit, standard DLS rules.'}
+                </p>
+              </div>
+            </div>
 
-          <div className="pt-3 border-t border-slate-100">
-            <h3 className="font-bold text-slate-900 text-sm mb-2">Pitches & Grounds</h3>
-            <div className="flex flex-wrap gap-2">
-              {grounds.map((g, i) => (
-                <span
-                  key={i}
-                  className="badge bg-slate-100 text-slate-800 font-bold px-3 py-1.5 rounded-lg text-xs"
-                >
-                  📍 {g}
-                </span>
-              ))}
+            <div className="pt-3 border-t border-slate-100">
+              <h3 className="font-black text-slate-900 text-base mb-3 flex items-center gap-2">
+                🏟️ Pitches & Grounds
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {grounds.map((g, i) => (
+                  <div
+                    key={i}
+                    className="rounded-xl bg-gradient-to-br from-pitch-50 to-emerald-50 border border-pitch-200/60 p-3 text-center"
+                  >
+                    <span className="text-lg block mb-1">📍</span>
+                    <span className="font-black text-pitch-800 text-sm">{g}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
