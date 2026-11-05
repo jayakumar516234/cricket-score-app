@@ -99,7 +99,8 @@ export function BallChips({ labels, dark }) {
 
 /**
  * Compact horizontal strip showing ONLY the current over in progress.
- * Fits perfectly in 1 line on mobile without pushing content down.
+ * If a bowler bowls multiple wides/no balls (5-6 extras), it automatically
+ * wraps or scrolls horizontally with touch support so all balls are clearly visible.
  */
 export function CurrentOverStrip({ state, dark = false }) {
   const muted = dark ? 'text-slate-300' : 'text-slate-600';
@@ -108,25 +109,41 @@ export function CurrentOverStrip({ state, dark = false }) {
   const current = state.completed ? null : overs[idx] || { number: idx + 1, bowlerName: state.bowlerName, runs: 0, wickets: 0, legalBalls: 0, balls: [] };
   if (!current) return null;
   const empties = Math.max(0, 6 - current.legalBalls);
+  const isLongOver = current.balls.length > 5;
 
   return (
-    <div className={`flex items-center justify-between gap-2 rounded-xl px-2.5 py-1.5 ${dark ? 'bg-white/10 ring-1 ring-pitch-400/40' : 'bg-green-50 ring-1 ring-green-200'}`} aria-label={`Over ${current.number}, in progress`}>
-      <div className="flex items-center gap-1.5 min-w-0">
-        <span className="text-xs font-bold text-pitch-400 shrink-0">Ov {current.number}</span>
-        <span className={`text-[11px] truncate ${muted}`}>
-          {current.bowlerName ? `${current.bowlerName}` : 'This over'} · <span className="font-semibold text-white">{current.runs}R{current.wickets ? `, ${current.wickets}w` : ''}</span>
-        </span>
+    <div className={`rounded-xl px-2.5 py-1.5 transition-all ${dark ? 'bg-white/10 ring-1 ring-pitch-400/40' : 'bg-green-50 ring-1 ring-green-200'}`} aria-label={`Over ${current.number}, in progress`}>
+      <div className={`flex ${isLongOver ? 'flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5' : 'items-center justify-between gap-2'}`}>
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className="text-xs font-bold text-pitch-400 shrink-0">Ov {current.number}</span>
+          <span className={`text-[11px] truncate ${muted}`}>
+            {current.bowlerName ? `${current.bowlerName}` : 'This over'} · <span className="font-semibold text-white">{current.runs}R{current.wickets ? `, ${current.wickets}w` : ''}</span>
+            {current.balls.length > 6 && (
+              <span className="ml-1 rounded-full bg-amber-500/20 px-1.5 py-0.2 text-[10px] font-bold text-amber-300">
+                {current.balls.length} balls
+              </span>
+            )}
+          </span>
+        </div>
+
+        {/* Horizontal scrollable balls container with touch scroll for handling 5-6 wides */}
+        <div className="overflow-x-auto max-w-full pb-0.5 no-scrollbar touch-pan-x">
+          <ul className="flex items-center gap-1 shrink-0 py-0.5" aria-label="Balls in this over">
+            {current.balls.map((l, i) => (
+              <li
+                key={i}
+                className={`flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-[11px] font-bold shadow-2xs shrink-0 ${chipTone(l, dark)}`}
+                title={`Ball ${i + 1}: ${l}`}
+              >
+                {l}
+              </li>
+            ))}
+            {Array.from({ length: empties }).map((_, i) => (
+              <li key={`e${i}`} aria-hidden className={`h-6 w-6 shrink-0 rounded-full border border-dashed ${dark ? 'border-white/25' : 'border-slate-300'}`} />
+            ))}
+          </ul>
+        </div>
       </div>
-      <ul className="flex items-center gap-1 shrink-0" aria-label="Balls in this over">
-        {current.balls.map((l, i) => (
-          <li key={i} className={`flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-[11px] font-bold ${chipTone(l, dark)}`}>
-            {l}
-          </li>
-        ))}
-        {Array.from({ length: empties }).map((_, i) => (
-          <li key={`e${i}`} aria-hidden className={`h-6 w-6 rounded-full border border-dashed ${dark ? 'border-white/25' : 'border-slate-300'}`} />
-        ))}
-      </ul>
     </div>
   );
 }
@@ -159,13 +176,15 @@ export function PreviousOversList({ state, dark = false }) {
             <span className="font-semibold w-12 shrink-0">Ov {o.number}</span>
             <span className={`truncate flex-1 min-w-0 ${muted}`}>{o.bowlerName}</span>
             <span className="font-semibold text-right shrink-0">{o.runs}R{o.wickets ? `, ${o.wickets}w` : ''}</span>
-            <ul className="flex gap-1 shrink-0">
-              {o.balls.map((l, i) => (
-                <li key={i} className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-bold ${chipTone(l, dark)}`}>
-                  {l}
-                </li>
-              ))}
-            </ul>
+            <div className="overflow-x-auto max-w-[140px] sm:max-w-xs no-scrollbar touch-pan-x">
+              <ul className="flex items-center gap-1 shrink-0">
+                {o.balls.map((l, i) => (
+                  <li key={i} className={`flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1 text-[10px] font-bold ${chipTone(l, dark)}`}>
+                    {l}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </li>
         ))}
       </ul>

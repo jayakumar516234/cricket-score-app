@@ -4,7 +4,7 @@ import { api, qs } from '../api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useFetch } from '../useFetch.js';
 import { Link } from 'react-router-dom';
-import { ConfirmDialog, DropdownSelect, Empty, ErrorBox, Field, Modal, Pagination, Spinner, SkeletonList, fmtDate } from '../components/ui.jsx';
+import { ConfirmDialog, DropdownSelect, Empty, ErrorBox, Field, Modal, Pagination, Spinner, SkeletonList, SkeletonUsersPage, fmtDate } from '../components/ui.jsx';
 
 const blank = { name: '', username: '', phone: '', password: '', role: 'user', viewTeam: '', assignTeam: '', active: true };
 
@@ -170,7 +170,7 @@ export default function UsersPage() {
       <div className="mb-3"><ErrorBox message={actionError} /></div>
 
       {loading && !data ? (
-        <SkeletonList count={6} />
+        <SkeletonUsersPage />
       ) : error ? (
         <ErrorBox message={error} onRetry={reload} />
       ) : data.items.length === 0 ? (

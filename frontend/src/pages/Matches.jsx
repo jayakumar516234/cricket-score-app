@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Search, Trash2, Trophy, FileText } from 'lucide-react';
 import { api, qs } from '../api.js';
 import { useFetch } from '../useFetch.js';
-import { ConfirmDialog, Empty, ErrorBox, Pagination, Spinner, SkeletonMatchCard, StatusBadge, TeamLogo, DropdownSelect, fmtDate } from '../components/ui.jsx';
+import { ConfirmDialog, Empty, ErrorBox, Pagination, Spinner, SkeletonMatchCard, SkeletonMatchesPage, StatusBadge, TeamLogo, DropdownSelect, fmtDate } from '../components/ui.jsx';
 
 export function MatchScoreLine({ match }) {
   const sc = (teamId) => match.scores?.find((s) => s.team === teamId);
@@ -72,6 +72,8 @@ export default function Matches() {
       setActionError(e.message);
     } finally { setBusy(false); }
   };
+
+  if (loading && !data) return <SkeletonMatchesPage />;
 
   return (
     <div>

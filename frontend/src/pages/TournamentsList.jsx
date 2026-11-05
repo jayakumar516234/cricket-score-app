@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Medal, Plus, Search, Trophy, KeyRound, MapPin, Users, Clock, Check, Copy, Flame, ChevronRight, Zap, Shield } from 'lucide-react';
 import { useFetch } from '../useFetch.js';
 import { useAuth } from '../context/AuthContext.jsx';
-import { Spinner, ErrorBox, SkeletonCard } from '../components/ui.jsx';
+import { Spinner, ErrorBox, SkeletonCard, SkeletonTournamentList } from '../components/ui.jsx';
 import { TournamentCreateModal } from '../components/TournamentCreateModal.jsx';
 import { ScorerLoginModal } from '../components/ScorerLoginModal.jsx';
 
@@ -38,6 +38,8 @@ export default function TournamentsList() {
     upcoming: tournaments.filter((t) => t.status === 'upcoming').length,
     completed: tournaments.filter((t) => t.status === 'completed').length,
   };
+
+  if (loading && !data) return <SkeletonTournamentList />;
 
   return (
     <div className="space-y-6">

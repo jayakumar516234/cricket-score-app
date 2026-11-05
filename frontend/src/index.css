@@ -17,6 +17,8 @@ body { @apply bg-slate-100 text-slate-800 antialiased; }
   .label { @apply mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-600; }
   .card { @apply rounded-2xl bg-white shadow-xs border border-slate-200/80 transition-shadow duration-200; }
   .badge { @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 }
 
 

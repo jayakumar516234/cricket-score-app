@@ -357,43 +357,227 @@ export const SkeletonMatchCard = ({ count = 3 }) => (
 );
 
 export const SkeletonScorecard = () => (
-  <div className="space-y-4">
-    <div className="rounded-2xl bg-gradient-to-br from-navy-950 to-navy-900 p-5 text-white shadow-lg space-y-4 border border-navy-800">
+  <div className="space-y-3">
+    {/* Top Header */}
+    <div className="flex items-center gap-2">
+      <Skeleton className="h-8 w-8 rounded-xl shrink-0" />
+      <div className="flex-1 space-y-1">
+        <Skeleton className="h-5 w-44" />
+        <Skeleton className="h-3 w-28" />
+      </div>
+      <Skeleton className="h-6 w-16 rounded-full" />
+    </div>
+
+    {/* Navy Scoreboard Card Skeleton */}
+    <div className="rounded-2xl bg-navy-900 p-3.5 sm:p-4 text-white shadow-md space-y-3 border border-navy-800">
       <div className="flex items-center justify-between">
-        <Skeleton className="h-5 w-28 bg-navy-800" />
-        <Skeleton className="h-5 w-16 bg-navy-800 rounded-full" />
+        <Skeleton className="h-4 w-32 bg-navy-800" />
+        <Skeleton className="h-4 w-16 bg-navy-800 rounded-full" />
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="flex items-end justify-between gap-3">
+        <div className="space-y-1.5">
+          <Skeleton className="h-4 w-28 bg-navy-800" />
+          <Skeleton className="h-8 w-36 bg-navy-800" />
+        </div>
+        <div className="space-y-1 text-right flex flex-col items-end">
+          <Skeleton className="h-4 w-24 bg-navy-800" />
+          <Skeleton className="h-3 w-20 bg-navy-800" />
+        </div>
+      </div>
+      {/* Batters Skeleton Rows */}
+      <div className="space-y-2 pt-2 border-t border-white/10">
+        <div className="flex justify-between">
+          <Skeleton className="h-3.5 w-28 bg-navy-800" />
+          <Skeleton className="h-3.5 w-20 bg-navy-800" />
+        </div>
+        <div className="flex justify-between">
+          <Skeleton className="h-3.5 w-24 bg-navy-800" />
+          <Skeleton className="h-3.5 w-20 bg-navy-800" />
+        </div>
+        {/* Bowler Skeleton Row */}
+        <div className="flex justify-between pt-1">
+          <Skeleton className="h-3.5 w-24 bg-navy-800" />
+          <Skeleton className="h-3.5 w-20 bg-navy-800" />
+        </div>
+      </div>
+      {/* Current Over Strip Skeleton */}
+      <Skeleton className="h-8 w-full rounded-xl bg-navy-800" />
+    </div>
+
+    {/* Scoring Keypad Skeleton Card */}
+    <div className="card p-3 space-y-2.5 border border-slate-200/80 shadow-xs">
+      <div className="grid grid-cols-4 gap-1.5">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-8 rounded-xl" />
+        ))}
+      </div>
+      <div className="grid grid-cols-6 gap-1.5">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} className="h-10 rounded-xl" />
+        ))}
+      </div>
+      <div className="grid grid-cols-3 gap-1.5">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-9 rounded-xl" />
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
+export const SkeletonMatchesPage = () => (
+  <div className="space-y-3.5">
+    <div className="flex items-center justify-between">
+      <Skeleton className="h-6 w-28" />
+      <Skeleton className="h-9 w-32 rounded-xl" />
+    </div>
+    <div className="flex flex-col sm:flex-row gap-2">
+      <Skeleton className="h-10 flex-1 rounded-xl" />
+      <Skeleton className="h-10 sm:w-44 rounded-xl" />
+    </div>
+    <SkeletonMatchCard count={4} />
+  </div>
+);
+
+export const SkeletonTeamsPage = () => (
+  <div className="space-y-3.5">
+    <div className="flex flex-wrap items-center justify-between gap-2.5">
+      <div className="space-y-1">
+        <Skeleton className="h-6 w-28" />
+        <Skeleton className="h-3 w-48" />
+      </div>
+      <div className="flex gap-2">
+        <Skeleton className="h-9 w-32 rounded-xl" />
+        <Skeleton className="h-9 w-32 rounded-xl" />
+      </div>
+    </div>
+    <div className="rounded-2xl border border-pitch-200 bg-pitch-50/50 p-4 space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-8 w-8 rounded-lg" />
+          <Skeleton className="h-5 w-32" />
+        </div>
+        <Skeleton className="h-8 w-24 rounded-lg" />
+      </div>
+    </div>
+    <div className="flex flex-col sm:flex-row gap-2">
+      <Skeleton className="h-10 flex-1 rounded-xl" />
+      <Skeleton className="h-10 sm:w-48 rounded-xl" />
+    </div>
+    <SkeletonList count={5} />
+  </div>
+);
+
+export const SkeletonTournamentList = () => (
+  <div className="space-y-4 sm:space-y-6">
+    {/* Hero Banner Skeleton */}
+    <div className="rounded-2xl bg-gradient-to-br from-amber-500/20 via-orange-500/20 to-red-500/20 border border-amber-300/40 p-5 sm:p-7 space-y-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-2">
-          <Skeleton className="h-6 w-36 bg-navy-800" />
-          <Skeleton className="h-8 w-24 bg-navy-800" />
+          <Skeleton className="h-6 w-48 bg-amber-200/60" />
+          <Skeleton className="h-4 w-64 bg-amber-200/50" />
         </div>
-        <div className="space-y-2 text-right flex flex-col items-end">
-          <Skeleton className="h-6 w-36 bg-navy-800" />
-          <Skeleton className="h-8 w-24 bg-navy-800" />
-        </div>
+        <Skeleton className="h-10 w-36 rounded-xl bg-amber-200/60" />
       </div>
     </div>
+
+    {/* Filter Pills Skeleton */}
     <div className="flex gap-2">
-      <Skeleton className="h-10 w-28 rounded-xl" />
-      <Skeleton className="h-10 w-28 rounded-xl" />
+      <Skeleton className="h-9 w-20 rounded-xl" />
+      <Skeleton className="h-9 w-20 rounded-xl" />
+      <Skeleton className="h-9 w-24 rounded-xl" />
+      <Skeleton className="h-9 w-24 rounded-xl" />
     </div>
-    <div className="card p-4 space-y-3">
-      <Skeleton className="h-5 w-40 mb-3" />
-      {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="flex items-center justify-between py-2 border-b border-slate-100">
-          <div className="flex items-center gap-3">
-            <Skeleton className="h-7 w-7 rounded-full" />
-            <Skeleton className="h-4 w-32" />
+
+    {/* Tournament Cards Skeleton Grid */}
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div key={i} className="card p-4 space-y-3.5 border border-slate-200/80 shadow-xs">
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-5 w-32" />
+            <Skeleton className="h-5 w-16 rounded-full" />
           </div>
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-4 w-8" />
-            <Skeleton className="h-4 w-8" />
-            <Skeleton className="h-4 w-12" />
+          <div className="space-y-2">
+            <Skeleton className="h-3 w-3/4" />
+            <Skeleton className="h-3 w-1/2" />
+          </div>
+          <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-8 w-24 rounded-lg" />
           </div>
         </div>
       ))}
     </div>
+  </div>
+);
+
+export const SkeletonTournamentDetail = () => (
+  <div className="space-y-4">
+    {/* Header & Back button */}
+    <div className="flex items-center gap-2">
+      <Skeleton className="h-9 w-9 rounded-xl shrink-0" />
+      <div className="flex-1 space-y-1.5">
+        <Skeleton className="h-5 w-44 sm:w-60" />
+        <Skeleton className="h-3 w-28" />
+      </div>
+      <Skeleton className="h-6 w-20 rounded-full" />
+    </div>
+
+    {/* Gradient Hero Card Skeleton */}
+    <div className="rounded-2xl bg-gradient-to-br from-amber-500/20 via-orange-500/20 to-red-500/20 border border-amber-300/40 p-4 sm:p-5 space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-12 w-12 rounded-2xl bg-amber-200/60 shrink-0" />
+          <div className="space-y-1.5">
+            <Skeleton className="h-5 w-36 bg-amber-200/60" />
+            <Skeleton className="h-3 w-24 bg-amber-200/50" />
+          </div>
+        </div>
+        <Skeleton className="h-7 w-20 rounded-xl bg-amber-200/60" />
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-amber-200/30">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="p-2 rounded-xl bg-white/40 space-y-1">
+            <Skeleton className="h-4 w-12" />
+            <Skeleton className="h-3 w-16" />
+          </div>
+        ))}
+      </div>
+    </div>
+
+    {/* Tabs Switcher Skeleton */}
+    <div className="flex gap-1.5 rounded-2xl bg-slate-100 p-1">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <Skeleton key={i} className="h-8 flex-1 rounded-xl" />
+      ))}
+    </div>
+
+    {/* Match Cards Skeleton */}
+    <SkeletonMatchCard count={3} />
+  </div>
+);
+
+export const SkeletonUsersPage = () => (
+  <div className="space-y-3.5">
+    <div className="flex items-center justify-between">
+      <div className="space-y-1">
+        <Skeleton className="h-6 w-36" />
+        <Skeleton className="h-3 w-48" />
+      </div>
+      <Skeleton className="h-9 w-32 rounded-xl" />
+    </div>
+    <Skeleton className="h-10 w-full rounded-xl" />
+    <SkeletonList count={6} />
+  </div>
+);
+
+export const SkeletonAuditPage = () => (
+  <div className="space-y-3.5">
+    <div className="flex items-center justify-between">
+      <Skeleton className="h-6 w-28" />
+      <Skeleton className="h-9 w-40 rounded-xl" />
+    </div>
+    <SkeletonList count={6} />
   </div>
 );
 

@@ -4,7 +4,7 @@ import { Pencil, Plus, Search, Shield, Trash2, Handshake, Copy, Check, Clock, Tr
 import { api, qs } from '../api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useFetch } from '../useFetch.js';
-import { ConfirmDialog, Empty, ErrorBox, Pagination, Spinner, SkeletonList, TeamLogo, DropdownSelect } from '../components/ui.jsx';
+import { ConfirmDialog, Empty, ErrorBox, Pagination, Spinner, SkeletonList, SkeletonTeamsPage, TeamLogo, DropdownSelect } from '../components/ui.jsx';
 
 const BALLS = ['Leather Ball', 'Tennis Ball', 'Rubber Ball', 'Other'];
 
@@ -144,6 +144,8 @@ export default function Teams() {
 
   const incomingRequests = connData?.incoming || [];
   const outgoingRequests = connData?.outgoing || [];
+
+  if (loading && !data) return <SkeletonTeamsPage />;
 
   return (
     <div>
