@@ -48,39 +48,25 @@ export default function Layout() {
     <Link
       to="/settings"
       onClick={() => setOpen(false)}
-      className="group relative mx-3 my-2.5 block overflow-hidden rounded-2xl border border-navy-700/60 bg-gradient-to-br from-navy-900/90 via-navy-850/90 to-navy-900/90 p-3.5 shadow-md backdrop-blur-xs hover:border-pitch-500/50 hover:bg-navy-850 transition"
+      className="group mx-3 my-2 flex items-center gap-2.5 rounded-xl border border-navy-700/60 bg-navy-900/60 p-2.5 hover:border-pitch-500/50 hover:bg-navy-850 transition"
       title={t('nav.settings')}
     >
-      {/* Decorative ambient accent */}
-      <div className="pointer-events-none absolute -right-4 -bottom-4 h-14 w-14 rounded-full bg-pitch-500/15 blur-xl group-hover:bg-pitch-500/25 transition" />
-      <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-pitch-600 via-pitch-500 to-emerald-400 font-black text-navy-950 text-sm shadow-glow-pitch">
-          {userInitials}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="truncate text-sm font-bold text-white tracking-tight group-hover:text-pitch-300 transition">{user?.name}</div>
-          <div className="flex items-center gap-1.5 mt-1">
-            <span className="relative flex h-2 w-2 shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pitch-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-pitch-500"></span>
-            </span>
-            <span className={`badge border text-[10px] font-bold uppercase tracking-wider py-0 px-1.5 rounded-md ${roleBadgeStyle}`}>
-              {roleLabel}
-            </span>
-          </div>
-        </div>
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-tr from-pitch-600 via-pitch-500 to-emerald-400 font-black text-navy-950 text-xs shadow-glow-pitch">
+        {userInitials}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="truncate text-xs font-bold text-white tracking-tight group-hover:text-pitch-300 transition">{user?.name}</div>
+        <span className={`badge border text-[9px] font-bold uppercase tracking-wider py-0 px-1.5 rounded-md ${roleBadgeStyle}`}>
+          {roleLabel}
+        </span>
       </div>
     </Link>
   );
 
   const nav = (
-    <nav className="flex flex-1 flex-col gap-1.5 p-3" aria-label="Main navigation">
+    <nav className="flex flex-1 flex-col gap-1 p-2.5" aria-label="Main navigation">
       {userProfileCard}
-      <div className="my-1.5 border-t border-navy-800/80" />
-      
-      <div className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-        Menu
-      </div>
+      <div className="my-1 border-t border-navy-800/80" />
 
       {links.map(({ to, label, icon: Icon, end }) => (
         <NavLink
@@ -89,7 +75,7 @@ export default function Layout() {
           end={end}
           onClick={() => setOpen(false)}
           className={({ isActive }) =>
-            `group relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-all duration-150 ${
+            `group relative flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all duration-150 ${
               isActive
                 ? 'bg-gradient-to-r from-pitch-600 via-emerald-600 to-teal-600 text-white shadow-glow-pitch'
                 : 'text-slate-300 hover:bg-navy-850/80 hover:text-white'
@@ -99,10 +85,10 @@ export default function Layout() {
           {({ isActive }) => (
             <>
               {isActive && (
-                <span className="absolute left-1 top-2 bottom-2 w-1 rounded-full bg-white/70" />
+                <span className="absolute left-1 top-2 bottom-2 w-0.5 rounded-full bg-white/70" />
               )}
               <Icon
-                className={`h-5 w-5 shrink-0 transition-transform duration-150 group-hover:scale-105 ${
+                className={`h-4 w-4 shrink-0 transition-transform duration-150 group-hover:scale-105 ${
                   isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'
                 }`}
                 aria-hidden
@@ -113,22 +99,17 @@ export default function Layout() {
         </NavLink>
       ))}
 
-      <div className="mt-auto flex flex-col gap-1 pt-3 border-t border-navy-800/80">
+      <div className="mt-auto flex flex-col gap-0.5 pt-2 border-t border-navy-800/80">
         <button
           onClick={doLogout}
-          className="group flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-rose-300 hover:bg-rose-500/15 hover:text-rose-200 transition-all duration-150"
+          className="group flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-rose-300 hover:bg-rose-500/15 hover:text-rose-200 transition-all duration-150"
         >
-          <LogOut className="h-5 w-5 shrink-0 text-rose-400 group-hover:text-rose-300 group-hover:scale-105 transition-transform" aria-hidden />
+          <LogOut className="h-4 w-4 shrink-0 text-rose-400 group-hover:text-rose-300 group-hover:scale-105 transition-transform" aria-hidden />
           <span>{t('nav.signOut')}</span>
         </button>
-        <div className="flex items-center justify-between px-3.5 py-1.5 text-[11px] font-medium text-slate-500">
+        <div className="flex items-center justify-between px-3 py-1 text-[10px] font-medium text-slate-500">
           <span>Cricket Score</span>
           <span className="font-mono text-slate-400">v{APP_VERSION}</span>
-        </div>
-        <div className="flex items-center justify-center gap-2 px-3.5 pb-2 text-[10px] text-slate-600">
-          <NavLink to="/privacy" className="hover:text-slate-300 transition">Privacy</NavLink>
-          <span className="text-slate-700">·</span>
-          <NavLink to="/terms" className="hover:text-slate-300 transition">Terms</NavLink>
         </div>
       </div>
     </nav>
@@ -156,11 +137,12 @@ export default function Layout() {
     </div>
   );
 
-  // Quick navigation items for mobile bottom bar (Exactly 4 fields: Home, Teams, Matches, More)
+  // Quick navigation items for mobile bottom bar (4 items + More = 5 total)
   const bottomNavItems = [
     { to: '/', label: t('nav.home') || 'Home', icon: LayoutDashboard, end: true },
     { to: '/teams', label: t('nav.teams') || 'Teams', icon: Shield },
     { to: '/matches', label: t('nav.matches') || 'Matches', icon: Trophy },
+    { to: '/tournaments', label: t('nav.tournaments') || 'Cups', icon: Medal },
   ];
 
   return (

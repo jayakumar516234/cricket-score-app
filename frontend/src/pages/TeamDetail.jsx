@@ -43,26 +43,26 @@ export default function TeamDetail() {
   const canSeeCode = user?.role !== 'viewer' && (user?.role === 'superadmin' || user?.role === 'admin' || team.canManage);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       <div className="flex items-center gap-2">
-        <Link to="/teams" className="btn btn-ghost !p-2" aria-label="Back to teams"><ArrowLeft className="h-5 w-5" /></Link>
-        <h1 className="flex-1 text-xl font-bold text-slate-900">{team.name}</h1>
-        {team.canManage && <Link to={`/teams/${team.id}/edit`} className="btn btn-outline"><Pencil className="h-4 w-4" /> Update Team</Link>}
+        <Link to="/teams" className="btn btn-ghost !p-1.5 sm:!p-2" aria-label="Back to teams"><ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" /></Link>
+        <h1 className="flex-1 text-lg sm:text-xl font-bold text-slate-900 leading-tight">{team.name}</h1>
+        {team.canManage && <Link to={`/teams/${team.id}/edit`} className="btn btn-outline text-xs sm:text-sm !py-1.5 !px-3"><Pencil className="h-3.5 w-3.5 mr-1" /> Update Team</Link>}
       </div>
 
-      <section className="card p-4">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-          <TeamLogo team={team} size={72} />
-          <div className="flex-1 text-sm text-slate-600">
-            {team.location && <div className="font-medium text-slate-800">{team.location}</div>}
-            <div>{team.ballType} · {players.length} players</div>
-            {team.description && <p className="mt-1 text-slate-500">{team.description}</p>}
+      <section className="card p-3.5 sm:p-4">
+        <div className="flex flex-col gap-3.5 sm:flex-row sm:items-center">
+          <TeamLogo team={team} size={56} className="h-14 w-14 sm:h-16 sm:w-16 rounded-xl sm:rounded-2xl shrink-0" />
+          <div className="flex-1 text-xs sm:text-sm text-slate-600">
+            {team.location && <div className="font-bold text-slate-900 text-sm sm:text-base">{team.location}</div>}
+            <div className="mt-0.5">{team.ballType} · {players.length} players</div>
+            {team.description && <p className="mt-1 text-slate-500 text-xs">{team.description}</p>}
           </div>
           {team.code && canSeeCode && (
-            <div className="rounded-xl border border-pitch-200 bg-pitch-50/70 p-3 sm:text-right">
-              <div className="text-xs font-semibold uppercase tracking-wider text-pitch-700">Team Code</div>
+            <div className="rounded-xl border border-pitch-200 bg-pitch-50/70 p-2.5 sm:p-3 sm:text-right">
+              <div className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-pitch-700">Team Code</div>
               <div className="mt-0.5 flex items-center gap-2 sm:justify-end">
-                <span className="font-mono text-xl font-bold tracking-widest text-pitch-900">{team.code}</span>
+                <span className="font-mono text-lg sm:text-xl font-black tracking-widest text-pitch-900">{team.code}</span>
                 <button
                   type="button"
                   onClick={() => {
