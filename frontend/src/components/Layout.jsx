@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LayoutDashboard, Shield, Trophy, Users, ScrollText, LogOut, Menu, X, Sparkles, Settings as SettingsIcon, Medal, MessageSquare } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useMenuConfig } from '../context/MenuConfigContext.jsx';
 import { CricketBallIcon } from './ui.jsx';
 import { APP_VERSION } from '../version.js';
 
@@ -11,27 +12,36 @@ export default function Layout() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const { isVisible } = useMenuConfig() ?? {};
 
-  // Role-based navigation distinction
-  const links = isAdmin
-    ? [
-        { to: '/', label: t('nav.overview'), icon: LayoutDashboard, end: true },
-        { to: '/teams', label: t('nav.teams'), icon: Shield },
-        { to: '/matches', label: t('nav.matches'), icon: Trophy },
-        { to: '/tournaments', label: t('nav.tournaments'), icon: Medal },
-        { to: '/users', label: t('nav.users'), icon: Users },
-        { to: '/support', label: 'Support & Feedback', icon: MessageSquare },
-        ...(isSuper ? [{ to: '/audit', label: t('nav.auditLog'), icon: ScrollText }] : []),
-        { to: '/settings', label: t('nav.settings'), icon: SettingsIcon },
-      ]
-    : [
-        { to: '/', label: t('nav.home'), icon: LayoutDashboard, end: true },
-        { to: '/teams', label: t('nav.team'), icon: Shield },
-        { to: '/matches', label: t('nav.matches'), icon: Trophy },
-        { to: '/tournaments', label: t('nav.tournaments'), icon: Medal },
-        { to: '/support', label: 'Help & Feedback', icon: MessageSquare },
-        { to: '/settings', label: t('nav.settings'), icon: SettingsIcon },
-      ];
+  // All possible nav links with visibility keys
+  const allAdminLinks = [
+    { to: '/', label: t('nav.overview'), icon: LayoutDashboard, end: true, key: 'home' },
+    { to: '/teams', label: t('nav.teams'), icon: Shield, key: 'teams' },
+    { to: '/matches', label: t('nav.matches'), icon: Trophy, key: 'matches' },
+    { to: '/tournaments', label: t('nav.tournaments'), icon: Medal, key: 'tournaments' },
+    { to: '/users', label: t('nav.users'), icon: Users, key: 'users' },
+    { to: '/support', label: 'Support & Feedback', icon: MessageSquare, key: 'support' },
+    ...(isSuper ? [{ to: '/audit', label: t('nav.auditLog'), icon: ScrollText, key: 'audit' }] : []),
+    { to: '/settings', label: t('nav.settings'), icon: SettingsIcon, key: 'settings' },
+  ];
+
+  const allUserLinks = [
+    { to: '/', label: t('nav.home'), icon: LayoutDashboard, end: true, key: 'home' },
+    { to: '/teams', label: t('nav.team'), icon: Shield, key: 'teams' },
+    { to: '/matches', label: t('nav.matches'), icon: Trophy, key: 'matches' },
+    { to: '/tournaments', label: t('nav.tournaments'), icon: Medal, key: 'tournaments' },
+    { to: '/support', label: 'Help & Feedback', icon: MessageSquare, key: 'support' },
+    { to: '/settings', label: t('nav.settings'), icon: SettingsIcon, key: 'settings' },
+  ];
+
+  const rawLinks = isAdmin ? allAdminLinks : allUserLinks;
+  // Filter by menu visibility config (home + settings always shown)
+  const links = rawLinks.filter(({ key }) => {
+    if (key === 'home' || key === 'settings') return true;
+    if (!isVisible) return true; // config not yet loaded → show all
+    return isVisible(key);
+  });
 
   const doLogout = () => { logout(); navigate('/login'); };
   const userInitials = (user?.name || '?').split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();

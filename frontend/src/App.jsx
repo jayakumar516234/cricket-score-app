@@ -19,6 +19,7 @@ import Suggestions from './pages/Suggestions.jsx';
 import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
 import TermsAndConditions from './pages/TermsAndConditions.jsx';
 import Settings from './pages/Settings.jsx';
+import SuperAdminConfig from './pages/SuperAdminConfig.jsx';
 import TournamentsList from './pages/TournamentsList.jsx';
 import TournamentDetail from './pages/TournamentDetail.jsx';
 import PublicLiveMatch from './pages/PublicLiveMatch.jsx';
@@ -83,6 +84,7 @@ export default function App() {
         <Route path="users" element={<Protected adminOnly><UsersPage /></Protected>} />
         <Route path="audit" element={<Protected superOnly><Audit /></Protected>} />
         <Route path="settings" element={<Settings />} />
+        <Route path="superadmin/config" element={<Protected superOnly><SuperAdminConfig /></Protected>} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

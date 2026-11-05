@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pencil, Phone, Plus, Search, Trash2, Users, Activity, Radio, Eye, EyeOff, MessageSquare, Shield, Check, Copy } from 'lucide-react';
+import { Pencil, Phone, Plus, Search, Trash2, Users, Activity, Radio, Eye, EyeOff, MessageSquare, Shield, Check, Copy, SlidersHorizontal } from 'lucide-react';
 import { api, qs } from '../api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useFetch } from '../useFetch.js';
@@ -115,21 +115,31 @@ export default function UsersPage() {
 
   return (
     <div>
-      <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="mb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">User Management & Accounts</h1>
-          <p className="text-xs text-slate-500 mt-0.5">Create and manage Team Admins and Viewers, edit usernames, passwords and view presence.</p>
+          <h1 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">User Management</h1>
+          <p className="text-[10px] sm:text-xs text-slate-500 mt-0.5">Create and manage Team Admins, Viewers and Users.</p>
         </div>
-        <button
-          className="btn btn-primary self-start sm:self-auto !py-2.5 !px-4 shadow-sm"
-          onClick={() => {
-            setFormError('');
-            setShowPassword(false);
-            setForm({ ...blank });
-          }}
-        >
-          <Plus className="h-4 w-4" /> Add New User
-        </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          {isSuper && (
+            <Link
+              to="/superadmin/config"
+              className="btn btn-outline text-xs !py-1.5 !px-3 text-amber-700 border-amber-300 hover:bg-amber-50"
+            >
+              <Shield className="h-3.5 w-3.5 text-amber-500" /> Menu Controls
+            </Link>
+          )}
+          <button
+            className="btn btn-primary self-start sm:self-auto !py-1.5 !px-3 text-xs shadow-sm"
+            onClick={() => {
+              setFormError('');
+              setShowPassword(false);
+              setForm({ ...blank });
+            }}
+          >
+            <Plus className="h-3.5 w-3.5" /> Add User
+          </button>
+        </div>
       </div>
 
       <div className="mb-4 flex flex-col gap-2.5 sm:flex-row sm:items-center">
