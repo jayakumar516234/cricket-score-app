@@ -175,15 +175,15 @@ export default function CreateMatch() {
   const homeOptions = myTeams.map((t) => ({ value: t.id, label: t.name }));
 
   return (
-    <form onSubmit={submit} noValidate className="mx-auto max-w-xl space-y-5">
+    <form onSubmit={submit} noValidate className="mx-auto max-w-xl space-y-3.5 sm:space-y-5 pb-6">
       <div className="flex items-center gap-2">
-        <button type="button" onClick={() => nav(-1)} className="btn btn-ghost !p-2" aria-label="Go back"><ArrowLeft className="h-5 w-5" /></button>
-        <h1 className="text-xl font-bold text-slate-900">Create Match</h1>
+        <button type="button" onClick={() => nav(-1)} className="btn btn-ghost !p-1.5 sm:!p-2" aria-label="Go back"><ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" /></button>
+        <h1 className="text-lg sm:text-xl font-bold text-slate-900 leading-tight">Create Match</h1>
       </div>
       <ErrorBox message={formError} />
-      <p className="rounded-lg bg-blue-50 p-3 text-sm text-blue-800">You will choose the playing 11 of each team when you start the match.</p>
+      <p className="rounded-xl bg-blue-50 px-3 py-2 text-xs sm:text-sm text-blue-800">You will choose the playing 11 of each team when you start the match.</p>
 
-      <section className="card space-y-4 p-4 border border-slate-200/80 shadow-xs">
+      <section className="card space-y-3 p-3 sm:p-4 border border-slate-200/80 shadow-xs">
         <Field label="Match Name (optional)" htmlFor="mname">
           <input
             id="mname"
@@ -197,14 +197,13 @@ export default function CreateMatch() {
       </section>
 
       {/* Team Selection Section - Modern Battle Arena Style */}
-      <section className="card p-4 sm:p-5 space-y-5 border border-slate-200/80 shadow-xs">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-
+      <section className="card p-3.5 sm:p-5 space-y-3.5 sm:space-y-5 border border-slate-200/80 shadow-xs">
+        <div className="flex items-center justify-between pb-2.5 border-b border-slate-100">
           <div>
-            <h2 className="text-base font-bold text-slate-900">Select Match Teams</h2>
-            <p className="text-xs text-slate-500">Pick your own squad and opponent team</p>
+            <h2 className="text-sm sm:text-base font-bold text-slate-900 leading-tight">Select Match Teams</h2>
+            <p className="text-[11px] sm:text-xs text-slate-500">Pick your own squad and opponent team</p>
           </div>
-          <span className="badge bg-pitch-50 text-pitch-700 border border-pitch-200">
+          <span className="badge bg-pitch-50 text-pitch-700 border border-pitch-200 text-[10px] sm:text-xs">
             Playing 11
           </span>
         </div>

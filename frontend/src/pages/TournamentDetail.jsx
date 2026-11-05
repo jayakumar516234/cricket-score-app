@@ -369,16 +369,16 @@ export default function TournamentDetail() {
         <div className="pointer-events-none absolute -right-10 -top-10 h-48 w-48 rounded-full bg-white/10" />
         <div className="pointer-events-none absolute -bottom-8 -left-6 h-32 w-32 rounded-full bg-white/10" />
 
-        <div className="relative p-5 sm:p-6 text-white space-y-4">
+        <div className="relative p-4 sm:p-6 text-white space-y-3 sm:space-y-4">
           {/* Top row */}
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 shadow-lg">
-                <Trophy className="h-7 w-7 text-white" />
+            <div className="flex items-center gap-2.5 sm:gap-3">
+              <div className="flex h-11 w-11 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 shadow-md">
+                <Trophy className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
               </div>
               <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className="text-lg sm:text-xl font-black">{tournament.name}</h2>
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                  <h2 className="text-base sm:text-xl font-black leading-tight">{tournament.name}</h2>
                   <span
                     className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full capitalize border ${
                       tournament.status === 'live'

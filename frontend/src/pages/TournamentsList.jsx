@@ -42,19 +42,19 @@ export default function TournamentsList() {
   if (loading && !data) return <SkeletonTournamentList />;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* ─── Hero Header ─── */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 p-5 sm:p-7 shadow-lg text-white">
+      <div className="relative overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 p-4 sm:p-6 shadow-md text-white">
         <div className="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/10" />
         <div className="pointer-events-none absolute -bottom-6 -left-4 h-28 w-28 rounded-full bg-white/10" />
 
-        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <Trophy className="h-6 w-6 text-yellow-200" />
-              <h1 className="text-xl sm:text-2xl font-black tracking-tight">Cricket Tournaments</h1>
+            <div className="flex items-center gap-2 mb-0.5">
+              <Trophy className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-200" />
+              <h1 className="text-lg sm:text-2xl font-black tracking-tight">Cricket Tournaments</h1>
             </div>
-            <p className="text-sm text-orange-100">
+            <p className="text-xs sm:text-sm text-orange-100">
               Knockout cups · Multi-ground scoring · Village brackets
             </p>
             {statusCounts.live > 0 && (

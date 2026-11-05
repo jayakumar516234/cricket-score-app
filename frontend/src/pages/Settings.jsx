@@ -19,16 +19,25 @@ import {
   HelpCircle,
   MessageSquare,
   MessageCircle,
+  Pencil,
+  ChevronRight,
+  KeyRound,
+  Check,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { api } from '../api.js';
-import { ErrorBox } from '../components/ui.jsx';
+import { ErrorBox, Modal } from '../components/ui.jsx';
 import { APP_VERSION } from '../version.js';
 
 export default function Settings() {
   const { user, updateUser, updateToken, logout } = useAuth();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+
+  // Modal Open States (Popups eliminate long scrolling!)
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [passModalOpen, setPassModalOpen] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   // Profile Form State
   const [profile, setProfile] = useState({
@@ -57,10 +66,23 @@ export default function Settings() {
   );
 
   // Danger Zone / Delete Account State
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletePass, setDeletePass] = useState('');
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+
+  const userInitials = (user?.name || '?')
+    .split(/\s+/)
+    .map((w) => w[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+
+  const roleLabel =
+    user?.role === 'superadmin'
+      ? 'SUPER ADMIN'
+      : user?.role === 'admin'
+      ? 'TEAM ADMIN'
+      : (user?.role || 'USER').toUpperCase();
 
   // Handle Profile Update
   const handleProfileSubmit = async (e) => {
@@ -82,7 +104,10 @@ export default function Settings() {
       });
       updateUser(res.user);
       setProfileMsg('Profile updated successfully!');
-      setTimeout(() => setProfileMsg(''), 4000);
+      setTimeout(() => {
+        setProfileMsg('');
+        setProfileModalOpen(false);
+      }, 1500);
     } catch (err) {
       setProfileError(err.message || 'Failed to update profile');
     } finally {
@@ -116,7 +141,10 @@ export default function Settings() {
       if (res.token) updateToken(res.token);
       setPassMsg('Password changed successfully!');
       setPassForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      setTimeout(() => setPassMsg(''), 4000);
+      setTimeout(() => {
+        setPassMsg('');
+        setPassModalOpen(false);
+      }, 1500);
     } catch (err) {
       setPassError(err.message || 'Failed to change password');
     } finally {
@@ -151,39 +179,366 @@ export default function Settings() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 pb-12">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
-          <span>{t('settings.title')}</span>
-        </h1>
-        <p className="text-sm text-slate-500 mt-1">{t('settings.subtitle')}</p>
+    <div className="mx-auto max-w-2xl space-y-3.5 pb-8">
+      {/* ─── Compact Header ─── */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
+            {t('settings.title')}
+          </h1>
+          <p className="text-[11px] sm:text-xs text-slate-500">
+            Account, security, language and preferences
+          </p>
+        </div>
+        <span className="rounded-lg bg-slate-200/70 px-2 py-0.5 text-[10px] font-bold text-slate-600">
+          v{APP_VERSION}
+        </span>
       </div>
 
-      {/* 1. Profile Information */}
-      <section className="card p-5 sm:p-6 space-y-5">
-        <div className="flex items-start gap-3 border-b border-slate-100 pb-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-            <User className="h-5 w-5" />
+      {/* ─── User Profile Card with Quick Edit Button ─── */}
+      <section className="card p-3.5 sm:p-4 bg-gradient-to-br from-navy-950 via-navy-900 to-navy-850 text-white shadow-md border border-navy-800 relative overflow-hidden">
+        <div className="pointer-events-none absolute -right-6 -bottom-6 h-24 w-24 rounded-full bg-pitch-500/15 blur-xl" />
+
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-pitch-600 to-emerald-400 font-black text-navy-950 text-base sm:text-lg shadow-glow-pitch">
+              {userInitials}
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <h2 className="text-base sm:text-lg font-bold text-white truncate leading-tight">
+                  {user?.name}
+                </h2>
+                <span className="badge bg-pitch-500/25 text-pitch-300 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider py-0.2 px-1.5 border border-pitch-500/30">
+                  {roleLabel}
+                </span>
+              </div>
+              <p className="text-xs text-slate-300 font-mono mt-0.5 truncate">
+                @{user?.username} {user?.phone ? `· ${user.phone}` : ''}
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className="font-bold text-slate-900">{t('settings.profile')}</h2>
-            <p className="text-xs text-slate-500">{t('settings.profileDesc')}</p>
+
+          <button
+            type="button"
+            onClick={() => {
+              setProfileError('');
+              setProfileMsg('');
+              setProfileModalOpen(true);
+            }}
+            className="btn btn-outline bg-white/10 text-white border-white/20 hover:bg-white/20 text-xs !py-1.5 !px-3 shrink-0 shadow-2xs font-semibold"
+          >
+            <Pencil className="h-3.5 w-3.5 mr-1 text-pitch-400" />
+            <span>Edit Profile</span>
+          </button>
+        </div>
+      </section>
+
+      {/* ─── Security & Credentials (Popup-driven: No Long Scroll) ─── */}
+      <section className="card p-3.5 sm:p-4 space-y-3 border border-slate-200/80 shadow-xs">
+        <div className="flex items-center justify-between gap-3 pb-2.5 border-b border-slate-100">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+              <Lock className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
+            </div>
+            <div className="min-w-0">
+              <h3 className="font-bold text-slate-900 text-xs sm:text-sm">
+                Password & Security
+              </h3>
+              <p className="text-[11px] text-slate-500 truncate">
+                Manage your secret password and login credentials
+              </p>
+            </div>
           </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setPassError('');
+              setPassMsg('');
+              setPassForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+              setPassModalOpen(true);
+            }}
+            className="btn btn-primary text-xs !py-1.5 !px-3 shrink-0 font-bold shadow-2xs"
+          >
+            <KeyRound className="h-3.5 w-3.5 mr-1" />
+            <span>Change Password</span>
+          </button>
         </div>
 
-        {profileMsg && (
-          <div className="flex items-center gap-2 rounded-xl bg-emerald-50 border border-emerald-200 p-3 text-xs font-semibold text-emerald-800">
-            <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
-            <span>{profileMsg}</span>
+        {/* ─── Language & Preferences (Clean In-line Rows) ─── */}
+        <div className="divide-y divide-slate-100 space-y-2">
+          {/* Language Toggle */}
+          <div className="pt-2 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Globe className="h-4 w-4 text-slate-500" />
+              <div>
+                <span className="text-xs sm:text-sm font-bold text-slate-800 block leading-tight">
+                  {t('settings.language')}
+                </span>
+                <span className="text-[10px] text-slate-400">English / தமிழ்</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                onClick={() => i18n.changeLanguage('en')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${
+                  i18n.language === 'en'
+                    ? 'bg-pitch-600 text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                🇬🇧 EN
+              </button>
+              <button
+                type="button"
+                onClick={() => i18n.changeLanguage('ta')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${
+                  i18n.language === 'ta'
+                    ? 'bg-pitch-600 text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                🇮🇳 தமிழ்
+              </button>
+            </div>
           </div>
-        )}
-        <ErrorBox message={profileError} />
 
-        <form onSubmit={handleProfileSubmit} className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
+          {/* Sound Effects Toggle */}
+          <div className="pt-2.5 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              {soundEnabled ? (
+                <Volume2 className="h-4 w-4 text-pitch-600" />
+              ) : (
+                <VolumeX className="h-4 w-4 text-slate-400" />
+              )}
+              <div>
+                <span className="text-xs sm:text-sm font-bold text-slate-800 block leading-tight">
+                  {t('settings.soundEffects')}
+                </span>
+                <span className="text-[10px] text-slate-400">Audio on runs, fours and sixes</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={toggleSound}
+              className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                soundEnabled ? 'bg-pitch-600' : 'bg-slate-300'
+              }`}
+              role="switch"
+              aria-checked={soundEnabled}
+            >
+              <span
+                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                  soundEnabled ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Support & Legal Hub (Compact 2-Col Grid) ─── */}
+      <section className="card p-3 sm:p-3.5 space-y-2 border border-slate-200/80 shadow-xs">
+        <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400 px-1">
+          Support & Legal
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          <Link
+            to="/support"
+            className="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition shadow-2xs"
+          >
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+              <MessageSquare className="h-3.5 w-3.5" />
+            </div>
+            <div className="min-w-0">
+              <span className="text-xs font-bold text-slate-800 block truncate">Help Desk</span>
+              <span className="text-[10px] text-slate-400 block truncate">Submit requests</span>
+            </div>
+          </Link>
+
+          <a
+            href="https://api.whatsapp.com/send?text=Hello%20Cricket%20Score%20Support,%20I%20need%20help%20with%20my%20app"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 p-2.5 rounded-xl border border-emerald-200 bg-emerald-50/40 hover:bg-emerald-50 transition shadow-2xs"
+          >
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white">
+              <MessageCircle className="h-3.5 w-3.5" />
+            </div>
+            <div className="min-w-0">
+              <span className="text-xs font-bold text-emerald-950 block truncate">WhatsApp</span>
+              <span className="text-[10px] text-emerald-700 block truncate">Chat with admin</span>
+            </div>
+          </a>
+
+          <Link
+            to="/privacy"
+            className="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition shadow-2xs"
+          >
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+              <Shield className="h-3.5 w-3.5" />
+            </div>
+            <div className="min-w-0">
+              <span className="text-xs font-bold text-slate-800 block truncate">Privacy Policy</span>
+              <span className="text-[10px] text-slate-400 block truncate">Data safety</span>
+            </div>
+          </Link>
+
+          <Link
+            to="/terms"
+            className="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition shadow-2xs"
+          >
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+              <FileText className="h-3.5 w-3.5" />
+            </div>
+            <div className="min-w-0">
+              <span className="text-xs font-bold text-slate-800 block truncate">Terms</span>
+              <span className="text-[10px] text-slate-400 block truncate">Usage rules</span>
+            </div>
+          </Link>
+        </div>
+      </section>
+
+      {/* ─── Danger Zone (Compact Footer Link) ─── */}
+      {user?.role !== 'superadmin' && (
+        <div className="pt-1 flex items-center justify-between px-2 text-xs">
+          <span className="text-slate-400 text-[11px]">Need to close your account?</span>
+          <button
+            type="button"
+            onClick={() => setShowDeleteModal(true)}
+            className="text-red-600 hover:text-red-700 font-semibold underline text-xs"
+          >
+            Delete Account
+          </button>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════ */}
+      {/* ─── POPUP 1: Change Password Modal ─── */}
+      {/* ═══════════════════════════════════════════════════════════ */}
+      <Modal
+        open={passModalOpen}
+        onClose={() => setPassModalOpen(false)}
+        title={t('settings.changePassword')}
+      >
+        <form onSubmit={handlePasswordSubmit} className="space-y-3.5">
+          {passMsg && (
+            <div className="flex items-center gap-2 rounded-xl bg-emerald-50 border border-emerald-200 p-2.5 text-xs font-semibold text-emerald-800">
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+              <span>{passMsg}</span>
+            </div>
+          )}
+          <ErrorBox message={passError} />
+
+          <div>
+            <label className="label" htmlFor="current-pass">
+              {t('settings.currentPassword')}
+            </label>
+            <div className="relative">
+              <input
+                id="current-pass"
+                type={showPass ? 'text' : 'password'}
+                className="input pr-10"
+                value={passForm.currentPassword}
+                onChange={(e) =>
+                  setPassForm({ ...passForm, currentPassword: e.target.value })
+                }
+                required
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={() => setShowPass(!showPass)}
+                className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
+                aria-label="Toggle password visibility"
+              >
+                {showPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <label className="label" htmlFor="prof-name">{t('settings.name')}</label>
+              <label className="label" htmlFor="new-pass">
+                {t('settings.newPassword')}
+              </label>
+              <input
+                id="new-pass"
+                type={showPass ? 'text' : 'password'}
+                className="input"
+                value={passForm.newPassword}
+                onChange={(e) =>
+                  setPassForm({ ...passForm, newPassword: e.target.value })
+                }
+                placeholder="Min 4 characters"
+                required
+                minLength={4}
+              />
+            </div>
+
+            <div>
+              <label className="label" htmlFor="confirm-pass">
+                {t('settings.confirmPassword')}
+              </label>
+              <input
+                id="confirm-pass"
+                type={showPass ? 'text' : 'password'}
+                className="input"
+                value={passForm.confirmPassword}
+                onChange={(e) =>
+                  setPassForm({ ...passForm, confirmPassword: e.target.value })
+                }
+                placeholder="Re-enter password"
+                required
+                minLength={4}
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+            <button
+              type="button"
+              className="btn btn-outline text-xs !py-2"
+              onClick={() => setPassModalOpen(false)}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="btn btn-primary text-xs !py-2"
+              disabled={passBusy}
+            >
+              {passBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Lock className="h-3.5 w-3.5" />}
+              <span>{t('settings.changePassword')}</span>
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ═══════════════════════════════════════════════════════════ */}
+      {/* ─── POPUP 2: Edit Profile Modal ─── */}
+      {/* ═══════════════════════════════════════════════════════════ */}
+      <Modal
+        open={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+        title="Edit Profile"
+      >
+        <form onSubmit={handleProfileSubmit} className="space-y-3.5">
+          {profileMsg && (
+            <div className="flex items-center gap-2 rounded-xl bg-emerald-50 border border-emerald-200 p-2.5 text-xs font-semibold text-emerald-800">
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+              <span>{profileMsg}</span>
+            </div>
+          )}
+          <ErrorBox message={profileError} />
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="label" htmlFor="prof-name">
+                {t('settings.name')}
+              </label>
               <input
                 id="prof-name"
                 type="text"
@@ -192,17 +547,25 @@ export default function Settings() {
                 onChange={(e) => setProfile({ ...profile, name: e.target.value })}
                 required
                 maxLength={80}
+                autoFocus
               />
             </div>
 
             <div>
-              <label className="label" htmlFor="prof-username">{t('settings.username')}</label>
+              <label className="label" htmlFor="prof-username">
+                {t('settings.username')}
+              </label>
               <input
                 id="prof-username"
                 type="text"
                 className="input font-mono"
                 value={profile.username}
-                onChange={(e) => setProfile({ ...profile, username: e.target.value.toLowerCase().trim() })}
+                onChange={(e) =>
+                  setProfile({
+                    ...profile,
+                    username: e.target.value.toLowerCase().trim(),
+                  })
+                }
                 required
                 maxLength={30}
               />
@@ -210,7 +573,9 @@ export default function Settings() {
           </div>
 
           <div>
-            <label className="label" htmlFor="prof-phone">{t('settings.phone')}</label>
+            <label className="label" htmlFor="prof-phone">
+              {t('settings.phone')}
+            </label>
             <input
               id="prof-phone"
               type="tel"
@@ -222,300 +587,53 @@ export default function Settings() {
             />
           </div>
 
-          <div className="flex justify-end pt-2">
-            <button type="submit" className="btn btn-primary" disabled={profileBusy}>
-              {profileBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              <span>{t('settings.saveProfile')}</span>
+          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+            <button
+              type="button"
+              className="btn btn-outline text-xs !py-2"
+              onClick={() => setProfileModalOpen(false)}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="btn btn-primary text-xs !py-2"
+              disabled={profileBusy}
+            >
+              {profileBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+              <span>Save Profile</span>
             </button>
           </div>
         </form>
-      </section>
+      </Modal>
 
-      {/* 2. Security / Change Password */}
-      <section className="card p-5 sm:p-6 space-y-5">
-        <div className="flex items-start gap-3 border-b border-slate-100 pb-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
-            <Lock className="h-5 w-5" />
-          </div>
-          <div>
-            <h2 className="font-bold text-slate-900">{t('settings.security')}</h2>
-            <p className="text-xs text-slate-500">{t('settings.securityDesc')}</p>
-          </div>
-        </div>
-
-        {passMsg && (
-          <div className="flex items-center gap-2 rounded-xl bg-emerald-50 border border-emerald-200 p-3 text-xs font-semibold text-emerald-800">
-            <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
-            <span>{passMsg}</span>
-          </div>
-        )}
-        <ErrorBox message={passError} />
-
-        <form onSubmit={handlePasswordSubmit} className="space-y-4">
-          <div>
-            <label className="label" htmlFor="current-pass">{t('settings.currentPassword')}</label>
-            <div className="relative">
-              <input
-                id="current-pass"
-                type={showPass ? 'text' : 'password'}
-                className="input pr-10"
-                value={passForm.currentPassword}
-                onChange={(e) => setPassForm({ ...passForm, currentPassword: e.target.value })}
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPass(!showPass)}
-                className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
-                aria-label="Toggle password visibility"
-              >
-                {showPass ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-              </button>
-            </div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="label" htmlFor="new-pass">{t('settings.newPassword')}</label>
-              <input
-                id="new-pass"
-                type={showPass ? 'text' : 'password'}
-                className="input"
-                value={passForm.newPassword}
-                onChange={(e) => setPassForm({ ...passForm, newPassword: e.target.value })}
-                placeholder="Min 4 characters"
-                required
-                minLength={4}
-              />
-            </div>
-
-            <div>
-              <label className="label" htmlFor="confirm-pass">{t('settings.confirmPassword')}</label>
-              <input
-                id="confirm-pass"
-                type={showPass ? 'text' : 'password'}
-                className="input"
-                value={passForm.confirmPassword}
-                onChange={(e) => setPassForm({ ...passForm, confirmPassword: e.target.value })}
-                placeholder="Re-enter new password"
-                required
-                minLength={4}
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-end pt-2">
-            <button type="submit" className="btn btn-primary" disabled={passBusy}>
-              {passBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
-              <span>{t('settings.changePassword')}</span>
-            </button>
-          </div>
-        </form>
-      </section>
-
-      {/* 3. App Preferences */}
-      <section className="card p-5 sm:p-6 space-y-5">
-        <div className="flex items-start gap-3 border-b border-slate-100 pb-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-pitch-50 text-pitch-600">
-            <Globe className="h-5 w-5" />
-          </div>
-          <div>
-            <h2 className="font-bold text-slate-900">{t('settings.preferences')}</h2>
-            <p className="text-xs text-slate-500">{t('settings.preferencesDesc')}</p>
-          </div>
-        </div>
-
-        {/* Language Selection */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border border-slate-100 bg-slate-50/70">
-          <div>
-            <div className="text-sm font-bold text-slate-800 flex items-center gap-2">
-              <Globe className="h-4 w-4 text-slate-500" />
-              <span>{t('settings.language')}</span>
-            </div>
-            <p className="text-xs text-slate-500 mt-0.5">Switch between English and தமிழ் (Tamil)</p>
-          </div>
-          <div className="flex items-center gap-1.5 shrink-0">
-            <button
-              type="button"
-              onClick={() => i18n.changeLanguage('en')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-                i18n.language === 'en'
-                  ? 'bg-pitch-600 text-white shadow-xs'
-                  : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
-              }`}
-            >
-              🇬🇧 English
-            </button>
-            <button
-              type="button"
-              onClick={() => i18n.changeLanguage('ta')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-                i18n.language === 'ta'
-                  ? 'bg-pitch-600 text-white shadow-xs'
-                  : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
-              }`}
-            >
-              🇮🇳 தமிழ்
-            </button>
-          </div>
-        </div>
-
-        {/* Scoring Sounds Toggle */}
-        <div className="flex items-center justify-between gap-3 p-3.5 rounded-xl border border-slate-100 bg-slate-50/70">
-          <div>
-            <div className="text-sm font-bold text-slate-800 flex items-center gap-2">
-              {soundEnabled ? <Volume2 className="h-4 w-4 text-pitch-600" /> : <VolumeX className="h-4 w-4 text-slate-400" />}
-              <span>{t('settings.soundEffects')}</span>
-            </div>
-            <p className="text-xs text-slate-500 mt-0.5">{t('settings.soundEffectsDesc')}</p>
-          </div>
-          <button
-            type="button"
-            onClick={toggleSound}
-            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-              soundEnabled ? 'bg-pitch-600' : 'bg-slate-300'
-            }`}
-            role="switch"
-            aria-checked={soundEnabled}
-          >
-            <span
-              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
-                soundEnabled ? 'translate-x-5' : 'translate-x-0'
-              }`}
-            />
-          </button>
-        </div>
-      </section>
-
-      {/* 4. About & Legal Links */}
-      <section className="card p-5 sm:p-6 space-y-4">
-        <div className="flex items-start gap-3 border-b border-slate-100 pb-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
-            <HelpCircle className="h-5 w-5" />
-          </div>
-          <div>
-            <h2 className="font-bold text-slate-900">{t('settings.about')}</h2>
-            <p className="text-xs text-slate-500">Legal policies, version details, and tournament terms</p>
-          </div>
-        </div>
-
-        <div className="grid gap-2 sm:grid-cols-3">
-          <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 text-center">
-            <div className="text-[11px] font-semibold text-slate-500">{t('settings.version')}</div>
-            <div className="font-mono text-sm font-bold text-slate-800 mt-0.5">v{APP_VERSION}</div>
-          </div>
-
-          <Link
-            to="/privacy"
-            className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white p-3 text-center text-xs font-bold text-slate-700 hover:border-blue-400 hover:bg-blue-50/50 transition shadow-2xs"
-          >
-            <Shield className="h-4 w-4 text-blue-600" />
-            <span>{t('settings.privacyPolicy')}</span>
-          </Link>
-
-          <Link
-            to="/terms"
-            className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white p-3 text-center text-xs font-bold text-slate-700 hover:border-blue-400 hover:bg-blue-50/50 transition shadow-2xs"
-          >
-            <FileText className="h-4 w-4 text-blue-600" />
-            <span>{t('settings.terms')}</span>
-          </Link>
-        </div>
-      </section>
-
-      {/* Support & Feedback */}
-      <section className="card p-5 sm:p-6 space-y-4">
-        <div className="flex items-start gap-3 border-b border-slate-100 pb-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-            <MessageSquare className="h-5 w-5" />
-          </div>
-          <div>
-            <h2 className="font-bold text-slate-900">Support & Feedback</h2>
-            <p className="text-xs text-slate-500">Need help or want to suggest a new tournament feature?</p>
-          </div>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Link
-            to="/support"
-            className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3.5 hover:border-blue-400 hover:bg-blue-50/40 transition shadow-2xs"
-          >
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-700">
-              <MessageSquare className="h-5 w-5" />
-            </div>
-            <div>
-              <div className="text-sm font-bold text-slate-900">Feedback & Help Desk</div>
-              <div className="text-xs text-slate-500">Submit requests and track replies</div>
-            </div>
-          </Link>
-
-          <a
-            href="https://api.whatsapp.com/send?text=Hello%20Cricket%20Score%20Support,%20I%20need%20help%20with%20my%20app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50/50 p-3.5 hover:border-emerald-400 hover:bg-emerald-50 transition shadow-2xs"
-          >
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white">
-              <MessageCircle className="h-5 w-5" />
-            </div>
-            <div>
-              <div className="text-sm font-bold text-emerald-950">Chat on WhatsApp</div>
-              <div className="text-xs text-emerald-700">Get quick support from administrators</div>
-            </div>
-          </a>
-        </div>
-      </section>
-
-      {/* 5. Danger Zone (Delete Account) */}
-      {user?.role !== 'superadmin' && (
-        <section className="card border-red-200 bg-red-50/20 p-5 sm:p-6 space-y-4">
-          <div className="flex items-start gap-3 border-b border-red-100 pb-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-600">
-              <ShieldAlert className="h-5 w-5" />
-            </div>
-            <div>
-              <h2 className="font-bold text-red-950">{t('settings.dangerZone')}</h2>
-              <p className="text-xs text-red-600">{t('settings.deleteAccountDesc')}</p>
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
-            <div>
-              <div className="text-sm font-bold text-slate-900">{t('settings.deleteAccount')}</div>
-              <p className="text-xs text-slate-500">Once deleted, your account and profile data cannot be recovered.</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowDeleteModal(true)}
-              className="btn btn-danger text-xs !py-2 shrink-0"
-            >
-              {t('settings.deleteAccount')}
-            </button>
-          </div>
-        </section>
-      )}
-
-      {/* Delete Account Confirmation Modal */}
+      {/* ═══════════════════════════════════════════════════════════ */}
+      {/* ─── POPUP 3: Delete Account Confirmation Modal ─── */}
+      {/* ═══════════════════════════════════════════════════════════ */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl space-y-4 border border-slate-200">
-            <div className="flex items-center gap-3 text-red-600">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-100">
-                <AlertTriangle className="h-5 w-5" />
+          <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl space-y-3.5 border border-slate-200">
+            <div className="flex items-center gap-2.5 text-red-600">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-100">
+                <AlertTriangle className="h-4.5 w-4.5" />
               </div>
-              <h3 className="text-lg font-bold text-slate-900">{t('settings.deleteAccount')}</h3>
+              <h3 className="text-base font-bold text-slate-900">
+                {t('settings.deleteAccount')}
+              </h3>
             </div>
 
             <p className="text-xs text-slate-600 leading-relaxed">
               Are you sure you want to permanently delete your account (<strong>{user?.username}</strong>)?
-              All your login credentials and personal session data will be permanently removed.
+              All your credentials will be removed.
             </p>
 
             <ErrorBox message={deleteError} />
 
-            <form onSubmit={handleDeleteAccount} className="space-y-4 pt-1">
+            <form onSubmit={handleDeleteAccount} className="space-y-3 pt-1">
               <div>
-                <label className="label" htmlFor="delete-pass">{t('settings.deleteAccountConfirm')}</label>
+                <label className="label" htmlFor="delete-pass">
+                  {t('settings.deleteAccountConfirm')}
+                </label>
                 <input
                   id="delete-pass"
                   type="password"
@@ -527,7 +645,7 @@ export default function Settings() {
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2">
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => {
