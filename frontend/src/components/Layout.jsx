@@ -58,15 +58,15 @@ export default function Layout() {
     <Link
       to="/settings"
       onClick={() => setOpen(false)}
-      className="group mx-3 my-2 flex items-center gap-2.5 rounded-xl border border-navy-700/60 bg-navy-900/60 p-2.5 hover:border-pitch-500/50 hover:bg-navy-850 transition"
+      className="group mx-2.5 my-2 flex items-center gap-2.5 rounded-xl border border-navy-700/60 bg-navy-900/60 p-2.5 hover:border-pitch-500/50 hover:bg-navy-850 transition"
       title={t('nav.settings')}
     >
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-tr from-pitch-600 via-pitch-500 to-emerald-400 font-black text-navy-950 text-xs shadow-glow-pitch">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-tr from-pitch-600 via-pitch-500 to-emerald-400 font-black text-navy-950 text-xs shadow-glow-pitch">
         {userInitials}
       </div>
       <div className="flex-1 min-w-0">
-        <div className="truncate text-xs font-bold text-white tracking-tight group-hover:text-pitch-300 transition">{user?.name}</div>
-        <span className={`badge border text-[9px] font-bold uppercase tracking-wider py-0 px-1.5 rounded-md ${roleBadgeStyle}`}>
+        <div className="truncate text-sm font-bold text-white tracking-tight group-hover:text-pitch-300 transition">{user?.name}</div>
+        <span className={`badge border text-[10px] font-bold uppercase tracking-wider py-0 px-1.5 rounded-md ${roleBadgeStyle}`}>
           {roleLabel}
         </span>
       </div>
@@ -85,7 +85,7 @@ export default function Layout() {
           end={end}
           onClick={() => setOpen(false)}
           className={({ isActive }) =>
-            `group relative flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all duration-150 ${
+            `group relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold transition-all duration-150 ${
               isActive
                 ? 'bg-gradient-to-r from-pitch-600 via-emerald-600 to-teal-600 text-white shadow-glow-pitch'
                 : 'text-slate-300 hover:bg-navy-850/80 hover:text-white'
@@ -95,10 +95,10 @@ export default function Layout() {
           {({ isActive }) => (
             <>
               {isActive && (
-                <span className="absolute left-1 top-2 bottom-2 w-0.5 rounded-full bg-white/70" />
+                <span className="absolute left-1 top-2 bottom-2 w-1 rounded-full bg-white/70" />
               )}
               <Icon
-                className={`h-4 w-4 shrink-0 transition-transform duration-150 group-hover:scale-105 ${
+                className={`h-4.5 w-4.5 shrink-0 transition-transform duration-150 group-hover:scale-105 ${
                   isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'
                 }`}
                 aria-hidden
@@ -109,15 +109,15 @@ export default function Layout() {
         </NavLink>
       ))}
 
-      <div className="mt-auto flex flex-col gap-0.5 pt-2 border-t border-navy-800/80">
+      <div className="mt-auto flex flex-col gap-1 pt-2.5 border-t border-navy-800/80">
         <button
           onClick={doLogout}
-          className="group flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-rose-300 hover:bg-rose-500/15 hover:text-rose-200 transition-all duration-150"
+          className="group flex items-center gap-3 rounded-xl px-3 py-2 text-xs sm:text-sm font-semibold text-rose-300 hover:bg-rose-500/15 hover:text-rose-200 transition-all duration-150"
         >
           <LogOut className="h-4 w-4 shrink-0 text-rose-400 group-hover:text-rose-300 group-hover:scale-105 transition-transform" aria-hidden />
           <span>{t('nav.signOut')}</span>
         </button>
-        <div className="flex items-center justify-between px-3 py-1 text-[10px] font-medium text-slate-500">
+        <div className="flex items-center justify-between px-3 py-1 text-[11px] font-medium text-slate-500">
           <span>Cricket Score</span>
           <span className="font-mono text-slate-400">v{APP_VERSION}</span>
         </div>
@@ -147,12 +147,11 @@ export default function Layout() {
     </div>
   );
 
-  // Quick navigation items for mobile bottom bar (4 items + More = 5 total)
+  // Quick navigation items for mobile bottom bar (Home, Teams, Matches + More = 4 total)
   const bottomNavItems = [
     { to: '/', label: t('nav.home') || 'Home', icon: LayoutDashboard, end: true },
     { to: '/teams', label: t('nav.teams') || 'Teams', icon: Shield },
     { to: '/matches', label: t('nav.matches') || 'Matches', icon: Trophy },
-    { to: '/tournaments', label: t('nav.tournaments') || 'Cups', icon: Medal },
   ];
 
   return (
