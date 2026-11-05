@@ -150,28 +150,28 @@ export default function Teams() {
   return (
     <div>
       {/* Header bar */}
-      <div className="mb-3 sm:mb-4 flex flex-wrap items-center justify-between gap-2.5">
+      <div className="mb-2.5 sm:mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h1 className="text-lg sm:text-xl font-bold text-slate-900 leading-tight">Teams</h1>
-          <p className="text-[11px] sm:text-xs text-slate-500">Manage your squad and connect with opponent teams</p>
+          <h1 className="text-base sm:text-lg font-black text-slate-900 leading-tight tracking-tight">Teams</h1>
+          <p className="text-[10px] sm:text-[11px] text-slate-500">Manage your squad and connect with opponents</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
           {data?.myTeam ? (
             <>
               <button
                 type="button"
                 onClick={() => { setShowAddOpponent(true); setOppErr(''); setOppMsg(''); }}
-                className="btn btn-primary text-xs sm:text-sm !py-2 !px-3"
+                className="btn btn-primary text-xs !py-1.5 !px-2.5"
               >
-                <Handshake className="h-4 w-4" /> Add New Opponent
+                <Handshake className="h-3.5 w-3.5" /> Add Opponent
               </button>
-              <Link to={`/teams/${data.myTeam.id}/edit`} className="btn btn-outline text-xs sm:text-sm !py-2 !px-3">
-                <Pencil className="h-4 w-4" /> Update My Team
+              <Link to={`/teams/${data.myTeam.id}/edit`} className="btn btn-outline text-xs !py-1.5 !px-2.5">
+                <Pencil className="h-3.5 w-3.5" /> Edit Team
               </Link>
             </>
           ) : data?.canCreate ? (
-            <Link to="/teams/new" className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md text-xs sm:text-sm !py-2 !px-3">
-              <Plus className="h-4 w-4" /> Create Team
+            <Link to="/teams/new" className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md text-xs !py-1.5 !px-2.5">
+              <Plus className="h-3.5 w-3.5" /> Create Team
             </Link>
           ) : null}
         </div>
@@ -179,30 +179,30 @@ export default function Teams() {
 
       {/* Own Team Code banner */}
       {data?.myTeam && canSeeCode && data.myTeam.code && (
-        <div className="mb-4 rounded-2xl border border-pitch-300/80 bg-gradient-to-br from-pitch-50/90 to-emerald-50/40 p-4 shadow-xs">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="mb-3 rounded-xl border border-pitch-300/80 bg-gradient-to-br from-pitch-50/90 to-emerald-50/40 p-3 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
             <div>
               <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-pitch-600 text-white shadow-xs">
-                  <Shield className="h-4.5 w-4.5" />
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-pitch-600 text-white shadow-xs">
+                  <Shield className="h-4 w-4" />
                 </div>
-                <span className="font-bold text-slate-900 text-base">{data.myTeam.name}</span>
-                <span className="badge bg-green-100 text-green-700 text-xs border border-green-200 font-bold">Your Team</span>
+                <span className="font-bold text-slate-900 text-sm">{data.myTeam.name}</span>
+                <span className="badge bg-green-100 text-green-700 text-[10px] border border-green-200 font-bold">Your Team</span>
               </div>
-              <p className="text-xs text-slate-600 mt-1.5">
-                Share this unique 6-character team code with opponents so they can send you a match connection request.
+              <p className="text-[10px] text-slate-600 mt-1">
+                Share this team code with opponents to connect and schedule matches.
               </p>
             </div>
-            <div className="flex items-center gap-2.5 rounded-xl border border-pitch-300 bg-white px-3.5 py-2 shadow-xs self-start sm:self-auto">
-              <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Team Code:</div>
-              <span className="font-mono text-xl font-extrabold tracking-widest text-pitch-900">{data.myTeam.code}</span>
+            <div className="flex items-center gap-2 rounded-xl border border-pitch-300 bg-white px-3 py-1.5 shadow-xs self-start sm:self-auto">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Code:</div>
+              <span className="font-mono text-lg font-extrabold tracking-widest text-pitch-900">{data.myTeam.code}</span>
               <button
                 type="button"
                 onClick={copyTeamCode}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-pitch-700 hover:bg-pitch-50 border border-pitch-200 transition"
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-pitch-700 hover:bg-pitch-50 border border-pitch-200 transition"
                 title="Copy Team Code"
               >
-                {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                {copied ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
               </button>
             </div>
           </div>
@@ -211,38 +211,38 @@ export default function Teams() {
 
       {/* Incoming Requests Alert Section */}
       {incomingRequests.length > 0 && (
-        <div className="mb-4 rounded-2xl border border-amber-300 bg-amber-50/80 p-4 shadow-xs">
-          <div className="flex items-center gap-2 text-amber-900 font-bold mb-1">
-            <Clock className="h-5 w-5 text-amber-600 shrink-0" />
-            <span>Incoming Opponent Requests ({incomingRequests.length})</span>
+        <div className="mb-3 rounded-xl border border-amber-300 bg-amber-50/80 p-3 shadow-xs">
+          <div className="flex items-center gap-2 text-amber-900 font-bold mb-1 text-xs">
+            <Clock className="h-4 w-4 text-amber-600 shrink-0" />
+            <span>Incoming Requests ({incomingRequests.length})</span>
           </div>
-          <p className="text-xs text-amber-800 mb-3">
-            These teams want to connect with you. Accept their request to allow match scheduling and view full squads.
+          <p className="text-[10px] text-amber-800 mb-2.5">
+            Accept to allow match scheduling and view full squads.
           </p>
-          <div className="space-y-2.5">
+          <div className="space-y-2">
             {incomingRequests.map((inc) => (
-              <div key={inc.connectionId} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border border-amber-200 bg-white p-3.5 shadow-xs">
-                <div className="flex items-center gap-3">
-                  <TeamLogo team={inc.fromTeam} size={42} />
+              <div key={inc.connectionId} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-xl border border-amber-200 bg-white p-2.5 shadow-xs">
+                <div className="flex items-center gap-2.5">
+                  <TeamLogo team={inc.fromTeam} size={36} />
                   <div>
-                    <div className="font-bold text-slate-900 text-sm">{inc.fromTeam.name}</div>
-                    <div className="text-xs text-slate-500">{inc.fromTeam.ballType}{inc.fromTeam.location ? ` · ${inc.fromTeam.location}` : ''}</div>
+                    <div className="font-bold text-slate-900 text-xs">{inc.fromTeam.name}</div>
+                    <div className="text-[10px] text-slate-500">{inc.fromTeam.ballType}{inc.fromTeam.location ? ` · ${inc.fromTeam.location}` : ''}</div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                <div className="flex items-center gap-1.5 pt-1.5 sm:pt-0 border-t sm:border-t-0 border-slate-100">
                   <button
                     type="button"
                     onClick={() => handleRespondRequest(inc.connectionId, 'accepted')}
                     disabled={connActionBusy}
-                    className="btn btn-green flex-1 sm:flex-none text-xs !py-2 !px-4 font-bold"
+                    className="btn btn-green flex-1 sm:flex-none text-xs !py-1.5 !px-3 font-bold"
                   >
-                    <Check className="h-3.5 w-3.5" /> Accept
+                    <Check className="h-3 w-3" /> Accept
                   </button>
                   <button
                     type="button"
                     onClick={() => handleRespondRequest(inc.connectionId, 'rejected')}
                     disabled={connActionBusy}
-                    className="btn btn-outline flex-1 sm:flex-none text-xs !py-2 !px-4 text-red-600 hover:bg-red-50 hover:border-red-200 font-bold"
+                    className="btn btn-outline flex-1 sm:flex-none text-xs !py-1.5 !px-3 text-red-600 hover:bg-red-50 hover:border-red-200 font-bold"
                   >
                     Decline
                   </button>
@@ -316,20 +316,20 @@ export default function Teams() {
               const canEditOrDelete = t.isOwn || isSuper;
               const showCode = canSeeCode && t.code && (t.isOwn || isSuper || t.canManage);
               return (
-                <li key={t.id} className="card p-3.5 space-y-2.5 sm:space-y-0 sm:flex sm:items-center sm:justify-between sm:gap-3 hover:shadow-xs transition border border-slate-200/80">
-                  <Link to={`/teams/${t.id}`} className="flex flex-1 items-center gap-3 min-w-0">
-                    <TeamLogo team={t} size={48} />
+                <li key={t.id} className="card p-3 space-y-2 sm:space-y-0 sm:flex sm:items-center sm:justify-between sm:gap-3 hover:shadow-xs transition border border-slate-200/80">
+                  <Link to={`/teams/${t.id}`} className="flex flex-1 items-center gap-2.5 min-w-0">
+                    <TeamLogo team={t} size={40} />
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-bold text-slate-900 truncate">{t.name}</span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-bold text-slate-900 text-sm truncate">{t.name}</span>
                         {t.isOwn && (
-                          <span className="badge bg-green-100 text-green-700 text-xs border border-green-200 font-bold">Your Team</span>
+                          <span className="badge bg-green-100 text-green-700 text-[9px] border border-green-200 font-bold">Your Team</span>
                         )}
                         {t.isConnectedOpponent && (
-                          <span className="badge bg-blue-100 text-blue-700 text-xs border border-blue-200 font-bold">Connected Opponent</span>
+                          <span className="badge bg-blue-100 text-blue-700 text-[9px] border border-blue-200 font-bold">Opponent</span>
                         )}
                       </div>
-                      <div className="text-xs text-slate-500 mt-0.5">
+                      <div className="text-[10px] text-slate-500 mt-0.5">
                         {t.playerCount} Players{t.location ? ` · ${t.location}` : ''} · {t.ballType}
                       </div>
                     </div>

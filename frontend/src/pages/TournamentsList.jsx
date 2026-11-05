@@ -42,45 +42,45 @@ export default function TournamentsList() {
   if (loading && !data) return <SkeletonTournamentList />;
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-3 sm:space-y-4">
       {/* ─── Hero Header ─── */}
-      <div className="relative overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 p-4 sm:p-6 shadow-md text-white">
-        <div className="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/10" />
-        <div className="pointer-events-none absolute -bottom-6 -left-4 h-28 w-28 rounded-full bg-white/10" />
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 p-3.5 sm:p-5 shadow-md text-white">
+        <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10" />
+        <div className="pointer-events-none absolute -bottom-6 -left-4 h-20 w-20 rounded-full bg-white/10" />
 
-        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
           <div>
             <div className="flex items-center gap-2 mb-0.5">
-              <Trophy className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-200" />
-              <h1 className="text-lg sm:text-2xl font-black tracking-tight">Cricket Tournaments</h1>
+              <Trophy className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-200" />
+              <h1 className="text-base sm:text-xl font-black tracking-tight">Cricket Tournaments</h1>
             </div>
-            <p className="text-xs sm:text-sm text-orange-100">
+            <p className="text-[10px] sm:text-xs text-orange-100">
               Knockout cups · Multi-ground scoring · Village brackets
             </p>
             {statusCounts.live > 0 && (
-              <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/20 backdrop-blur-sm px-3 py-1 text-xs font-bold border border-white/30">
-                <span className="h-2 w-2 rounded-full bg-emerald-300 animate-ping inline-block" />
+              <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-white/20 backdrop-blur-sm px-2.5 py-0.5 text-[10px] font-bold border border-white/30">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 animate-ping inline-block" />
                 {statusCounts.live} LIVE right now
               </div>
             )}
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <button
               onClick={() => setScorerOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-white/20 hover:bg-white/30 border border-white/30 backdrop-blur-sm px-3 py-2 text-xs font-bold text-white transition"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-white/20 hover:bg-white/30 border border-white/30 backdrop-blur-sm px-2.5 py-1.5 text-[10px] font-bold text-white transition"
               title="Log in to score a match"
             >
-              <KeyRound className="h-4 w-4" />
+              <KeyRound className="h-3.5 w-3.5" />
               <span>Scorer PIN</span>
             </button>
 
             {user && user.role !== 'viewer' && (
               <button
                 onClick={() => setCreateOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-white text-orange-600 hover:bg-orange-50 px-4 py-2 text-xs font-black shadow-md transition"
+                className="inline-flex items-center gap-1 rounded-xl bg-white text-orange-600 hover:bg-orange-50 px-3 py-1.5 text-[10px] font-black shadow-md transition"
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="h-3.5 w-3.5" />
                 <span>New Tournament</span>
               </button>
             )}
@@ -162,7 +162,7 @@ export default function TournamentsList() {
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {filteredTournaments.map((t) => {
                 const isLive = t.status === 'live';
                 const isCompleted = t.status === 'completed';
@@ -170,20 +170,20 @@ export default function TournamentsList() {
                   <Link
                     key={t.id}
                     to={`/tournaments/${t.id}`}
-                    className={`group relative flex flex-col justify-between overflow-hidden rounded-2xl border bg-white shadow-sm hover:shadow-lg transition-all duration-200 ${
+                    className={`group relative flex flex-col justify-between overflow-hidden rounded-xl border bg-white shadow-sm hover:shadow-lg transition-all duration-200 ${
                       isLive
                         ? 'border-emerald-300 hover:border-emerald-400'
                         : 'border-slate-200 hover:border-pitch-400'
                     }`}
                   >
                     {isLive && (
-                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-400 via-green-400 to-teal-400" />
+                      <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-400 via-green-400 to-teal-400" />
                     )}
 
-                    <div className="p-4 sm:p-5">
-                      <div className="flex items-center justify-between gap-2 mb-3">
+                    <div className="p-3 sm:p-4">
+                      <div className="flex items-center justify-between gap-2 mb-2">
                         <span
-                          className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-0.5 rounded-full border capitalize ${
+                          className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border capitalize ${
                             isLive
                               ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
                               : isCompleted
@@ -199,35 +199,35 @@ export default function TournamentsList() {
 
                         <button
                           onClick={(e) => handleCopyCode(t.code, e)}
-                          className="inline-flex items-center gap-1 rounded-lg bg-slate-100 hover:bg-slate-200 px-2 py-0.5 text-[11px] font-mono font-bold text-slate-700 transition"
+                          className="inline-flex items-center gap-1 rounded-lg bg-slate-100 hover:bg-slate-200 px-2 py-0.5 text-[10px] font-mono font-bold text-slate-700 transition"
                           title="Copy tournament code"
                         >
                           <span>{t.code}</span>
                           {copiedCode === t.code ? (
-                            <Check className="h-3 w-3 text-green-600" />
+                            <Check className="h-2.5 w-2.5 text-green-600" />
                           ) : (
-                            <Copy className="h-3 w-3 text-slate-400" />
+                            <Copy className="h-2.5 w-2.5 text-slate-400" />
                           )}
                         </button>
                       </div>
 
-                      <h3 className="font-extrabold text-slate-900 text-base sm:text-lg leading-snug group-hover:text-pitch-700 transition">
+                      <h3 className="font-extrabold text-slate-900 text-sm sm:text-base leading-snug group-hover:text-pitch-700 transition">
                         {t.name}
                       </h3>
 
                       {t.venue && (
-                        <p className="flex items-center gap-1.5 text-xs text-slate-500 mt-1.5">
-                          <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                        <p className="flex items-center gap-1 text-[10px] text-slate-500 mt-1">
+                          <MapPin className="h-3 w-3 text-slate-400 shrink-0" />
                           <span className="truncate">{t.venue}</span>
                         </p>
                       )}
 
                       {t.grounds && t.grounds.length > 0 && (
-                        <div className="mt-2.5 flex flex-wrap gap-1">
+                        <div className="mt-2 flex flex-wrap gap-1">
                           {t.grounds.map((g, i) => (
                             <span
                               key={i}
-                              className="text-[10px] font-semibold bg-pitch-50 text-pitch-700 border border-pitch-200/60 px-2 py-0.5 rounded-md"
+                              className="text-[9px] font-semibold bg-pitch-50 text-pitch-700 border border-pitch-200/60 px-1.5 py-0.5 rounded-md"
                             >
                               {g}
                             </span>
@@ -236,25 +236,25 @@ export default function TournamentsList() {
                       )}
                     </div>
 
-                    <div className="px-4 sm:px-5 pb-4 pt-3 border-t border-slate-100 grid grid-cols-3 gap-2 text-center text-xs">
+                    <div className="px-3 sm:px-4 pb-3 pt-2 border-t border-slate-100 grid grid-cols-3 gap-1 text-center">
                       <div>
-                        <span className="text-[10px] text-slate-400 font-bold uppercase block mb-0.5">Format</span>
-                        <span className="font-bold text-slate-800 capitalize">{t.format}</span>
+                        <span className="text-[9px] text-slate-400 font-bold uppercase block mb-0.5">Format</span>
+                        <span className="font-bold text-slate-800 text-[10px] capitalize">{t.format}</span>
                       </div>
                       <div>
-                        <span className="text-[10px] text-slate-400 font-bold uppercase block mb-0.5">Teams</span>
-                        <span className="font-bold text-slate-800">
+                        <span className="text-[9px] text-slate-400 font-bold uppercase block mb-0.5">Teams</span>
+                        <span className="font-bold text-slate-800 text-[10px]">
                           {t.teamCount}
                           <span className="text-slate-400 font-normal"> / {t.maxTeams}</span>
                         </span>
                       </div>
                       <div>
-                        <span className="text-[10px] text-slate-400 font-bold uppercase block mb-0.5">Overs</span>
-                        <span className="font-bold text-slate-800">{t.defaultOvers} ov</span>
+                        <span className="text-[9px] text-slate-400 font-bold uppercase block mb-0.5">Overs</span>
+                        <span className="font-bold text-slate-800 text-[10px]">{t.defaultOvers} ov</span>
                       </div>
                     </div>
 
-                    <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-hover:text-pitch-500 group-hover:translate-x-0.5 transition-all" />
+                    <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-300 group-hover:text-pitch-500 group-hover:translate-x-0.5 transition-all" />
                   </Link>
                 );
               })}
