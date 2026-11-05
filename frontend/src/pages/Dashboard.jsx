@@ -119,13 +119,13 @@ function DashboardSkeleton({ isAdmin }) {
 }
 
 const Stat = ({ icon: Icon, label, value, tone, borderTone }) => (
-  <div className={`card flex items-center gap-2.5 sm:gap-3.5 p-3 sm:p-4 border ${borderTone || 'border-slate-200/80'} shadow-xs hover:shadow-sm transition`}>
-    <div className={`flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl ${tone}`}>
-      <Icon className="h-5 w-5" aria-hidden />
+  <div className={`card flex items-center gap-2 sm:gap-3.5 p-2.5 sm:p-4 border ${borderTone || 'border-slate-200/80'} shadow-xs hover:shadow-sm transition`}>
+    <div className={`flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl ${tone}`}>
+      <Icon className="h-4.5 w-4.5 sm:h-5 sm:w-5" aria-hidden />
     </div>
     <div className="min-w-0">
-      <div className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight leading-tight">{value}</div>
-      <div className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">{label}</div>
+      <div className="text-lg sm:text-2xl font-extrabold text-slate-900 tracking-tight leading-tight">{value}</div>
+      <div className="text-[10px] sm:text-xs font-medium text-slate-500 truncate">{label}</div>
     </div>
   </div>
 );
@@ -144,40 +144,40 @@ function UserHomeView({ data, user, myTeam, t, isViewer }) {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-3 sm:space-y-5">
       {/* Team Profile Header Card */}
       {myTeam ? (
-        <section className="rounded-2xl bg-gradient-to-br from-navy-950 via-navy-900 to-navy-855 p-4 sm:p-6 text-white shadow-lg border border-navy-700/60 relative overflow-hidden">
+        <section className="rounded-2xl bg-gradient-to-br from-navy-950 via-navy-900 to-navy-855 p-3.5 sm:p-5 text-white shadow-lg border border-navy-700/60 relative overflow-hidden">
           <div className="pointer-events-none absolute -right-6 -bottom-6 h-28 w-28 rounded-full bg-pitch-500/10 blur-2xl" />
           
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3.5">
-              <TeamLogo team={myTeam} size="lg" className="h-14 w-14 sm:h-16 sm:w-16 rounded-2xl border-2 border-pitch-400/40 shadow-md shrink-0" />
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <TeamLogo team={myTeam} size="md" className="h-12 w-12 sm:h-16 sm:w-16 rounded-xl sm:rounded-2xl border-2 border-pitch-400/40 shadow-md shrink-0" />
               <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white truncate">{myTeam.name}</h2>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <h2 className="text-lg sm:text-2xl font-black tracking-tight text-white truncate">{myTeam.name}</h2>
                   <span className="badge bg-pitch-500/20 text-pitch-300 text-[10px] font-bold uppercase tracking-wider py-0.5 px-2 border border-pitch-500/30">
                     {t(`roles.${user?.role}`) || 'Team Admin'}
                   </span>
                 </div>
-                <div className="text-xs sm:text-sm text-slate-300 mt-1 flex items-center gap-2 flex-wrap">
+                <div className="text-xs text-slate-300 mt-0.5 flex items-center gap-2 flex-wrap">
                   {myTeam.location && <span>📍 {myTeam.location}</span>}
                   {myTeam.ballType && <span>🏏 {myTeam.ballType}</span>}
                   <span>👥 {record.playerCount || 0} players</span>
                 </div>
                 {myTeam.code && (
-                  <div className="mt-2.5 flex items-center gap-2">
-                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Team Code:</span>
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Team Code:</span>
                     <button
                       type="button"
                       onClick={() => copyCode(myTeam.code)}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-navy-800/90 hover:bg-navy-750 px-2.5 py-1 text-xs font-mono font-bold text-pitch-300 border border-pitch-500/30 transition shadow-2xs"
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-navy-800/90 hover:bg-navy-750 px-2 py-0.5 text-xs font-mono font-bold text-pitch-300 border border-pitch-500/30 transition shadow-2xs"
                       title="Click to copy team code"
                     >
                       <span>{myTeam.code}</span>
-                      {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5 text-slate-400" />}
+                      {copied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3 text-slate-400" />}
                     </button>
-                    {copied && <span className="text-[11px] text-emerald-400 font-semibold">Copied!</span>}
+                    {copied && <span className="text-[10px] text-emerald-400 font-semibold">Copied!</span>}
                   </div>
                 )}
               </div>

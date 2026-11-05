@@ -6,22 +6,29 @@ export function BatTable({ state, dark }) {
   const th = dark ? 'text-slate-400' : 'text-slate-500';
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[22rem] text-left text-sm">
-        <thead className={`text-xs ${th}`}>
-          <tr><th className="py-1.5 pr-2">Batter</th><th className="px-2 text-right">R</th><th className="px-2 text-right">B</th><th className="px-2 text-right">4s</th><th className="px-2 text-right">6s</th><th className="pl-2 text-right">SR</th></tr>
+      <table className="w-full min-w-[18rem] text-left text-xs sm:text-sm">
+        <thead className={`text-[11px] sm:text-xs ${th}`}>
+          <tr>
+            <th className="py-1 pr-2">Batter</th>
+            <th className="px-1.5 sm:px-2 text-right">R</th>
+            <th className="px-1.5 sm:px-2 text-right">B</th>
+            <th className="px-1.5 sm:px-2 text-right">4s</th>
+            <th className="px-1.5 sm:px-2 text-right">6s</th>
+            <th className="pl-1.5 sm:pl-2 text-right">SR</th>
+          </tr>
         </thead>
         <tbody>
           {state.battingCard.map((b) => (
             <tr key={b.id} className={dark ? 'border-t border-white/10' : 'border-t border-slate-100'}>
-              <td className="py-1.5 pr-2">
+              <td className="py-1 pr-2">
                 <span className="font-semibold">{b.name}{b.onStrike ? '*' : ''}</span>
-                <span className={`block text-xs ${th}`}>{b.dismissalText}</span>
+                {b.dismissalText && <span className={`block text-[11px] ${th}`}>{b.dismissalText}</span>}
               </td>
-              <td className="px-2 text-right font-bold">{b.runs}</td>
-              <td className="px-2 text-right">{b.balls}</td>
-              <td className="px-2 text-right">{b.fours}</td>
-              <td className="px-2 text-right">{b.sixes}</td>
-              <td className="pl-2 text-right">{b.strikeRate.toFixed(2)}</td>
+              <td className="px-1.5 sm:px-2 text-right font-bold">{b.runs}</td>
+              <td className="px-1.5 sm:px-2 text-right">{b.balls}</td>
+              <td className="px-1.5 sm:px-2 text-right">{b.fours}</td>
+              <td className="px-1.5 sm:px-2 text-right">{b.sixes}</td>
+              <td className="pl-1.5 sm:pl-2 text-right">{b.strikeRate.toFixed(1)}</td>
             </tr>
           ))}
         </tbody>
@@ -32,22 +39,29 @@ export function BatTable({ state, dark }) {
 
 export function BowlTable({ state, dark }) {
   const th = dark ? 'text-slate-400' : 'text-slate-500';
-  if (!state.bowlingCard.length) return <p className={`py-2 text-sm ${th}`}>No overs bowled yet.</p>;
+  if (!state.bowlingCard.length) return <p className={`py-1 text-xs ${th}`}>No overs bowled yet.</p>;
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[22rem] text-left text-sm">
-        <thead className={`text-xs ${th}`}>
-          <tr><th className="py-1.5 pr-2">Bowler</th><th className="px-2 text-right">O</th><th className="px-2 text-right">M</th><th className="px-2 text-right">R</th><th className="px-2 text-right">W</th><th className="pl-2 text-right">Eco</th></tr>
+      <table className="w-full min-w-[18rem] text-left text-xs sm:text-sm">
+        <thead className={`text-[11px] sm:text-xs ${th}`}>
+          <tr>
+            <th className="py-1 pr-2">Bowler</th>
+            <th className="px-1.5 sm:px-2 text-right">O</th>
+            <th className="px-1.5 sm:px-2 text-right">M</th>
+            <th className="px-1.5 sm:px-2 text-right">R</th>
+            <th className="px-1.5 sm:px-2 text-right">W</th>
+            <th className="pl-1.5 sm:pl-2 text-right">Eco</th>
+          </tr>
         </thead>
         <tbody>
           {state.bowlingCard.map((b) => (
             <tr key={b.id} className={dark ? 'border-t border-white/10' : 'border-t border-slate-100'}>
-              <td className="py-1.5 pr-2 font-semibold">{b.name}{state.bowler === b.id ? '*' : ''}</td>
-              <td className="px-2 text-right">{b.overs}</td>
-              <td className="px-2 text-right">{b.maidens}</td>
-              <td className="px-2 text-right">{b.runs}</td>
-              <td className="px-2 text-right font-bold">{b.wickets}</td>
-              <td className="pl-2 text-right">{b.economy.toFixed(2)}</td>
+              <td className="py-1 pr-2 font-semibold">{b.name}{state.bowler === b.id ? '*' : ''}</td>
+              <td className="px-1.5 sm:px-2 text-right">{b.overs}</td>
+              <td className="px-1.5 sm:px-2 text-right">{b.maidens}</td>
+              <td className="px-1.5 sm:px-2 text-right">{b.runs}</td>
+              <td className="px-1.5 sm:px-2 text-right font-bold">{b.wickets}</td>
+              <td className="pl-1.5 sm:pl-2 text-right">{b.economy.toFixed(1)}</td>
             </tr>
           ))}
         </tbody>
@@ -80,6 +94,82 @@ export function BallChips({ labels, dark }) {
     <ul className="flex flex-wrap gap-1.5" aria-label="Recent balls">
       {labels.map((l, i) => <li key={i} className={`flex h-8 min-w-8 items-center justify-center rounded-full px-1.5 text-xs font-bold ${chipTone(l, dark)}`}>{l}</li>)}
     </ul>
+  );
+}
+
+/**
+ * Compact horizontal strip showing ONLY the current over in progress.
+ * Fits perfectly in 1 line on mobile without pushing content down.
+ */
+export function CurrentOverStrip({ state, dark = false }) {
+  const muted = dark ? 'text-slate-300' : 'text-slate-600';
+  const idx = state.currentOver;
+  const overs = state.overSummary || [];
+  const current = state.completed ? null : overs[idx] || { number: idx + 1, bowlerName: state.bowlerName, runs: 0, wickets: 0, legalBalls: 0, balls: [] };
+  if (!current) return null;
+  const empties = Math.max(0, 6 - current.legalBalls);
+
+  return (
+    <div className={`flex items-center justify-between gap-2 rounded-xl px-2.5 py-1.5 ${dark ? 'bg-white/10 ring-1 ring-pitch-400/40' : 'bg-green-50 ring-1 ring-green-200'}`} aria-label={`Over ${current.number}, in progress`}>
+      <div className="flex items-center gap-1.5 min-w-0">
+        <span className="text-xs font-bold text-pitch-400 shrink-0">Ov {current.number}</span>
+        <span className={`text-[11px] truncate ${muted}`}>
+          {current.bowlerName ? `${current.bowlerName}` : 'This over'} · <span className="font-semibold text-white">{current.runs}R{current.wickets ? `, ${current.wickets}w` : ''}</span>
+        </span>
+      </div>
+      <ul className="flex items-center gap-1 shrink-0" aria-label="Balls in this over">
+        {current.balls.map((l, i) => (
+          <li key={i} className={`flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-[11px] font-bold ${chipTone(l, dark)}`}>
+            {l}
+          </li>
+        ))}
+        {Array.from({ length: empties }).map((_, i) => (
+          <li key={`e${i}`} aria-hidden className={`h-6 w-6 rounded-full border border-dashed ${dark ? 'border-white/25' : 'border-slate-300'}`} />
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/**
+ * Clean list of previous overs that can sit lower down or in an accordion.
+ */
+export function PreviousOversList({ state, dark = false }) {
+  const [showAll, setShowAll] = useState(false);
+  const muted = dark ? 'text-slate-400' : 'text-slate-500';
+  const idx = state.currentOver;
+  const overs = state.overSummary || [];
+  const previous = overs.filter((o) => (state.completed ? true : o.over < idx)).slice().reverse();
+  if (previous.length === 0) return null;
+  const shown = showAll ? previous : previous.slice(0, 3);
+
+  return (
+    <div className="space-y-1.5 pt-2">
+      <div className="flex items-center justify-between">
+        <p className={`text-xs font-semibold uppercase tracking-wide ${muted}`}>Previous overs</p>
+        {previous.length > 3 && (
+          <button type="button" onClick={() => setShowAll(!showAll)} className={`text-xs font-semibold ${dark ? 'text-pitch-400' : 'text-blue-600'} hover:underline`}>
+            {showAll ? 'Show fewer' : `Show all (${previous.length})`}
+          </button>
+        )}
+      </div>
+      <ul className="divide-y divide-slate-100 dark:divide-white/10">
+        {shown.map((o) => (
+          <li key={o.over} className="flex items-center justify-between gap-2 py-1.5 text-xs">
+            <span className="font-semibold w-12 shrink-0">Ov {o.number}</span>
+            <span className={`truncate flex-1 min-w-0 ${muted}`}>{o.bowlerName}</span>
+            <span className="font-semibold text-right shrink-0">{o.runs}R{o.wickets ? `, ${o.wickets}w` : ''}</span>
+            <ul className="flex gap-1 shrink-0">
+              {o.balls.map((l, i) => (
+                <li key={i} className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-bold ${chipTone(l, dark)}`}>
+                  {l}
+                </li>
+              ))}
+            </ul>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 

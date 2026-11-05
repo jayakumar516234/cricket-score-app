@@ -148,10 +148,10 @@ export default function Teams() {
   return (
     <div>
       {/* Header bar */}
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-3 sm:mb-4 flex flex-wrap items-center justify-between gap-2.5">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">Teams</h1>
-          <p className="text-xs text-slate-500">Manage your squad and connect with opponent teams</p>
+          <h1 className="text-lg sm:text-xl font-bold text-slate-900 leading-tight">Teams</h1>
+          <p className="text-[11px] sm:text-xs text-slate-500">Manage your squad and connect with opponent teams</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {data?.myTeam ? (
@@ -159,16 +159,16 @@ export default function Teams() {
               <button
                 type="button"
                 onClick={() => { setShowAddOpponent(true); setOppErr(''); setOppMsg(''); }}
-                className="btn btn-primary"
+                className="btn btn-primary text-xs sm:text-sm !py-2 !px-3"
               >
                 <Handshake className="h-4 w-4" /> Add New Opponent
               </button>
-              <Link to={`/teams/${data.myTeam.id}/edit`} className="btn btn-outline">
+              <Link to={`/teams/${data.myTeam.id}/edit`} className="btn btn-outline text-xs sm:text-sm !py-2 !px-3">
                 <Pencil className="h-4 w-4" /> Update My Team
               </Link>
             </>
           ) : data?.canCreate ? (
-            <Link to="/teams/new" className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md">
+            <Link to="/teams/new" className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md text-xs sm:text-sm !py-2 !px-3">
               <Plus className="h-4 w-4" /> Create Team
             </Link>
           ) : null}

@@ -75,14 +75,14 @@ export default function Matches() {
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold text-slate-900">Matches</h1>
-        {data?.canCreate && <Link to="/matches/new" className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md"><Plus className="h-4 w-4" /> Create Match</Link>}
+      <div className="mb-3 sm:mb-4 flex items-center justify-between">
+        <h1 className="text-lg sm:text-xl font-bold text-slate-900">Matches</h1>
+        {data?.canCreate && <Link to="/matches/new" className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md text-xs sm:text-sm !py-2 !px-3"><Plus className="h-4 w-4" /> Create Match</Link>}
       </div>
-      <div className="mb-4 flex flex-col gap-2 sm:flex-row">
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" aria-hidden />
-          <input className="input pl-9" placeholder="Search by match, team or venue..." aria-label="Search matches" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <input className="input pl-9 text-xs sm:text-sm" placeholder="Search by match, team or venue..." aria-label="Search matches" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <div className="sm:w-44">
           <DropdownSelect
@@ -99,13 +99,13 @@ export default function Matches() {
           />
         </div>
       </div>
-      <div className="mb-3"><ErrorBox message={actionError} /></div>
+      <div className="mb-2.5"><ErrorBox message={actionError} /></div>
       {loading && !data ? <SkeletonMatchCard count={4} /> : error ? <ErrorBox message={error} onRetry={reload} /> : data.items.length === 0 ? (
         <Empty icon={Trophy} title={q || status ? 'No matches found' : 'No matches yet'} text={q || status ? 'Try a different search or filter.' : 'Create a match between two teams to start scoring.'}
-          action={!q && !status && data.canCreate && <Link to="/matches/new" className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md">Create Match</Link>} />
+          action={!q && !status && data.canCreate && <Link to="/matches/new" className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md text-xs sm:text-sm">Create Match</Link>} />
       ) : (
         <>
-          <ul className="space-y-3">
+          <ul className="space-y-2.5 sm:space-y-3">
             {data.items.map((m) => {
               const borderAccent =
                 m.status === 'live'
@@ -115,7 +115,7 @@ export default function Matches() {
                   : 'border-l-4 border-l-blue-500 border-slate-200/80';
 
               return (
-                <li key={m.id} className={`card p-3.5 sm:p-4 hover:shadow-md transition ${borderAccent}`}>
+                <li key={m.id} className={`card p-3 sm:p-4 hover:shadow-md transition ${borderAccent}`}>
                   <div className="flex items-start justify-between gap-2">
                     <Link to={`/matches/${m.id}`} className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2 flex-wrap">
