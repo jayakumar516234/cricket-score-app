@@ -156,18 +156,26 @@ router.get('/', wrap(async (req, res) => {
   }
 
   const connectedTeamIds = new Set();
+  const pendingOutgoingTeamIds = new Set();
   let pendingIncomingCount = 0;
   if (myTeamDoc) {
-    const [conns, pendingCount] = await Promise.all([
+    const [conns, pendingOutgoing, pendingCount] = await Promise.all([
       TeamConnection.find({
         $or: [{ fromTeam: myTeamDoc._id }, { toTeam: myTeamDoc._id }],
         status: 'accepted',
       }).select('fromTeam toTeam'),
+      TeamConnection.find({
+        fromTeam: myTeamDoc._id,
+        status: 'pending',
+      }).select('toTeam'),
       TeamConnection.countDocuments({ toTeam: myTeamDoc._id, status: 'pending' }),
     ]);
     for (const c of conns) {
       const oppId = String(c.fromTeam) === String(myTeamDoc._id) ? String(c.toTeam) : String(c.fromTeam);
       connectedTeamIds.add(oppId);
+    }
+    for (const p of pendingOutgoing) {
+      pendingOutgoingTeamIds.add(String(p.toTeam));
     }
     pendingIncomingCount = pendingCount;
   }
@@ -178,6 +186,7 @@ router.get('/', wrap(async (req, res) => {
       canManage: canManageTeam(req.user, t),
       isOwn: String(t.createdBy) === String(req.user._id),
       isConnectedOpponent: connectedTeamIds.has(String(t._id)),
+      isPendingOpponent: pendingOutgoingTeamIds.has(String(t._id)),
     }, req.user)),
     total,
     page,
@@ -193,6 +202,20 @@ router.get('/', wrap(async (req, res) => {
     } : null,
     pendingIncomingCount,
   });
+}));
+
+// Quick lightweight endpoint for global notification count in navbar
+router.get('/pending-requests-count', wrap(async (req, res) => {
+  let myTeamId = null;
+  if (req.user.viewTeam) {
+    myTeamId = req.user.viewTeam;
+  } else {
+    const myTeam = await Team.findOne({ createdBy: req.user._id, isGuest: { $ne: true } }).select('_id');
+    myTeamId = myTeam?._id;
+  }
+  if (!myTeamId) return res.json({ count: 0 });
+  const count = await TeamConnection.countDocuments({ toTeam: myTeamId, status: 'pending' });
+  res.json({ count });
 }));
 
 router.get('/:id', wrap(async (req, res) => {

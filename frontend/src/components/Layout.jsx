@@ -1,18 +1,37 @@
 import { NavLink, Outlet, useNavigate, Link } from 'react-router-dom';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LayoutDashboard, Shield, Trophy, Users, ScrollText, LogOut, Menu, X, Sparkles, Settings as SettingsIcon, Medal, MessageSquare } from 'lucide-react';
+import {
+  LayoutDashboard,
+  Shield,
+  Trophy,
+  Users,
+  ScrollText,
+  LogOut,
+  Menu,
+  X,
+  Sparkles,
+  Settings as SettingsIcon,
+  Medal,
+  MessageSquare,
+  Bell,
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useFetch } from '../useFetch.js';
 import { useMenuConfig } from '../context/MenuConfigContext.jsx';
 import { CricketBallIcon } from './ui.jsx';
 import { APP_VERSION } from '../version.js';
 
 export default function Layout() {
-  const { user, logout, isSuper, isAdmin } = useAuth();
+  const { user, logout, isSuper, isAdmin, isViewer } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const { isVisible } = useMenuConfig() ?? {};
+
+  // Poll for incoming team opponent requests (updates navbar badge in real time)
+  const { data: notifData } = useFetch(user && !isViewer ? '/teams/pending-requests-count' : null, { poll: 20000 });
+  const pendingCount = notifData?.count || 0;
 
   // All possible nav links with visibility keys
   const allAdminLinks = [
@@ -78,7 +97,7 @@ export default function Layout() {
       {userProfileCard}
       <div className="my-1 border-t border-navy-800/80" />
 
-      {links.map(({ to, label, icon: Icon, end }) => (
+      {links.map(({ to, label, icon: Icon, end, key }) => (
         <NavLink
           key={to}
           to={to}
@@ -103,7 +122,12 @@ export default function Layout() {
                 }`}
                 aria-hidden
               />
-              <span className="truncate">{label}</span>
+              <span className="truncate flex-1">{label}</span>
+              {key === 'teams' && pendingCount > 0 && (
+                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-black text-white shadow-xs animate-pulse">
+                  {pendingCount}
+                </span>
+              )}
             </>
           )}
         </NavLink>
@@ -203,6 +227,26 @@ export default function Layout() {
           </div>
 
           <div className="ml-auto flex items-center gap-2">
+            {!isViewer && (
+              <Link
+                to="/teams?tab=opponents"
+                className={`relative flex h-8 w-8 items-center justify-center rounded-xl border transition shadow-2xs ${
+                  pendingCount > 0
+                    ? 'bg-amber-500/20 border-amber-500/40 text-amber-300 hover:bg-amber-500/30'
+                    : 'bg-navy-900/80 border-navy-700/60 text-slate-300 hover:bg-navy-800 hover:text-white'
+                }`}
+                title={pendingCount > 0 ? `${pendingCount} Opponent Request(s) waiting!` : 'Opponent Requests'}
+                aria-label="Opponent notifications"
+              >
+                <Bell className={`h-4 w-4 ${pendingCount > 0 ? 'text-amber-400 animate-pulse' : ''}`} />
+                {pendingCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-black text-white shadow-xs animate-bounce">
+                    {pendingCount}
+                  </span>
+                )}
+              </Link>
+            )}
+
             <Link
               to="/settings"
               className="flex items-center gap-2 rounded-xl bg-navy-900/90 border border-navy-700/70 p-1 pr-3 text-xs shadow-xs hover:border-pitch-500/50 hover:bg-navy-800 transition"
@@ -249,6 +293,11 @@ export default function Layout() {
                     }`}
                   >
                     <Icon className="h-4.5 w-4.5 shrink-0 transition-transform duration-300" aria-hidden />
+                    {to === '/teams' && pendingCount > 0 && (
+                      <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-black text-white shadow-xs animate-bounce">
+                        {pendingCount}
+                      </span>
+                    )}
                     {isActive && (
                       <span className="absolute -top-0.5 right-3 h-1.5 w-1.5 rounded-full bg-pitch-400 shadow-glow-pitch animate-pulse" />
                     )}
