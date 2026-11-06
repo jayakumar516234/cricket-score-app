@@ -218,19 +218,21 @@ function UserHomeView({ data, user, myTeam, t, isViewer }) {
             </div>
 
             {/* Quick Action buttons */}
-            <div className="flex flex-wrap items-center gap-1.5 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/10">
+            <div className="flex flex-wrap items-center gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/10">
               <Link
                 to={`/teams/${myTeam.id}`}
-                className="btn btn-outline text-xs !py-1.5 !px-3 font-bold text-white border-slate-600 hover:bg-navy-800"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-500/60 bg-white/8 hover:bg-white/15 px-3 py-1.5 text-xs font-bold text-slate-200 transition shadow-xs"
               >
-                <Users className="h-3.5 w-3.5 mr-1" /> Squad
+                <Users className="h-3.5 w-3.5 text-slate-300" /> Squad
               </Link>
               {!isViewer && data.can?.createMatch && (
                 <Link
                   to="/matches/new"
-                  className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white text-xs !py-1.5 !px-3 font-bold shadow-xs flex items-center gap-1"
+                  className="relative inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 px-4 py-1.5 text-xs font-black text-white shadow-md shadow-emerald-900/40 transition-all hover:scale-105 active:scale-95 overflow-hidden"
                 >
-                  <Plus className="h-3.5 w-3.5" /> Start Match
+                  <span className="absolute inset-0 bg-white/10 opacity-0 hover:opacity-100 transition" />
+                  <Zap className="h-3.5 w-3.5 drop-shadow" />
+                  <span>Start Match</span>
                 </Link>
               )}
             </div>
@@ -253,18 +255,19 @@ function UserHomeView({ data, user, myTeam, t, isViewer }) {
       )}
 
       {/* 🚀 Quick Action Shortcuts Dock (Mobile-First 4 Pills) */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
         {!isViewer && data.can?.createMatch && (
           <Link
             to="/matches/new"
-            className="card p-2.5 flex items-center gap-2.5 border border-emerald-200/80 bg-gradient-to-r from-emerald-50/60 to-white hover:border-emerald-400 shadow-2xs transition"
+            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-700 p-3 flex flex-col gap-2 shadow-md shadow-emerald-900/30 hover:shadow-lg hover:shadow-emerald-900/40 hover:scale-[1.02] transition-all active:scale-95 border border-emerald-400/30"
           >
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-2xs">
-              <Trophy className="h-4 w-4" />
+            <div className="pointer-events-none absolute -right-3 -bottom-3 h-14 w-14 rounded-full bg-white/10 blur-lg" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 text-white shadow-xs">
+              <Zap className="h-5 w-5 drop-shadow" />
             </div>
-            <div className="min-w-0">
-              <div className="text-xs font-bold text-slate-900 truncate">New Match</div>
-              <div className="text-[9.5px] text-slate-500">Live Scoring</div>
+            <div>
+              <div className="text-sm font-black text-white leading-tight">Start Match</div>
+              <div className="text-[10px] text-emerald-100 font-medium">Live Scoring</div>
             </div>
           </Link>
         )}
@@ -272,41 +275,44 @@ function UserHomeView({ data, user, myTeam, t, isViewer }) {
         {myTeam && (
           <Link
             to={`/teams/${myTeam.id}`}
-            className="card p-2.5 flex items-center gap-2.5 border border-blue-200/80 bg-gradient-to-r from-blue-50/60 to-white hover:border-blue-400 shadow-2xs transition"
+            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 p-3 flex flex-col gap-2 shadow-md shadow-blue-900/30 hover:shadow-lg hover:shadow-blue-900/40 hover:scale-[1.02] transition-all active:scale-95 border border-blue-400/30"
           >
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-white shadow-2xs">
-              <Shield className="h-4 w-4" />
+            <div className="pointer-events-none absolute -right-3 -bottom-3 h-14 w-14 rounded-full bg-white/10 blur-lg" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 text-white shadow-xs">
+              <Shield className="h-5 w-5" />
             </div>
-            <div className="min-w-0">
-              <div className="text-xs font-bold text-slate-900 truncate">My Squad</div>
-              <div className="text-[9.5px] text-slate-500">{record.playerCount || 11} Players</div>
+            <div>
+              <div className="text-sm font-black text-white leading-tight">My Squad</div>
+              <div className="text-[10px] text-blue-100 font-medium">{record.playerCount || 11} Players</div>
             </div>
           </Link>
         )}
 
         <Link
           to="/teams?add=opponent"
-          className="card p-2.5 flex items-center gap-2.5 border border-indigo-200/80 bg-gradient-to-r from-indigo-50/60 to-white hover:border-indigo-400 shadow-2xs transition"
+          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600 via-purple-600 to-purple-700 p-3 flex flex-col gap-2 shadow-md shadow-purple-900/30 hover:shadow-lg hover:shadow-purple-900/40 hover:scale-[1.02] transition-all active:scale-95 border border-violet-400/30"
         >
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-2xs">
-            <Handshake className="h-4 w-4" />
+          <div className="pointer-events-none absolute -right-3 -bottom-3 h-14 w-14 rounded-full bg-white/10 blur-lg" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 text-white shadow-xs">
+            <Handshake className="h-5 w-5" />
           </div>
-          <div className="min-w-0">
-            <div className="text-xs font-bold text-slate-900 truncate">Add Opponent</div>
-            <div className="text-[9.5px] text-slate-500">Team Code</div>
+          <div>
+            <div className="text-sm font-black text-white leading-tight">Add Opponent</div>
+            <div className="text-[10px] text-purple-100 font-medium">Team Code</div>
           </div>
         </Link>
 
         <Link
           to="/tournaments"
-          className="card p-2.5 flex items-center gap-2.5 border border-amber-200/80 bg-gradient-to-r from-amber-50/60 to-white hover:border-amber-400 shadow-2xs transition"
+          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 p-3 flex flex-col gap-2 shadow-md shadow-amber-900/30 hover:shadow-lg hover:shadow-amber-900/40 hover:scale-[1.02] transition-all active:scale-95 border border-amber-400/30"
         >
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500 text-white shadow-2xs">
-            <Medal className="h-4 w-4" />
+          <div className="pointer-events-none absolute -right-3 -bottom-3 h-14 w-14 rounded-full bg-white/10 blur-lg" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 text-white shadow-xs">
+            <Medal className="h-5 w-5" />
           </div>
-          <div className="min-w-0">
-            <div className="text-xs font-bold text-slate-900 truncate">Tournaments</div>
-            <div className="text-[9.5px] text-slate-500">Cups & Brackets</div>
+          <div>
+            <div className="text-sm font-black text-white leading-tight">Tournaments</div>
+            <div className="text-[10px] text-amber-100 font-medium">Cups & Brackets</div>
           </div>
         </Link>
       </div>
@@ -502,15 +508,15 @@ function AdminDashboardView({ data, user, t, myTeam }) {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/10">
+          <div className="flex flex-wrap items-center gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/10">
             {data.can?.createTeam && (
-              <Link to="/teams/new" className="btn btn-outline text-white border-slate-600 hover:bg-navy-800 text-xs !py-1.5 !px-3 font-bold">
+              <Link to="/teams/new" className="inline-flex items-center gap-1.5 rounded-xl border border-slate-500/60 bg-white/8 hover:bg-white/15 px-3 py-1.5 text-xs font-bold text-slate-200 transition shadow-xs">
                 <Plus className="h-3.5 w-3.5" /> {t('dashboard.createTeam')}
               </Link>
             )}
             {data.can?.createMatch && (
-              <Link to="/matches/new" className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white text-xs !py-1.5 !px-3 font-bold shadow-xs flex items-center gap-1">
-                <Trophy className="h-3.5 w-3.5" /> {t('dashboard.createMatch')}
+              <Link to="/matches/new" className="relative inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 px-4 py-1.5 text-xs font-black text-white shadow-md shadow-emerald-900/40 transition-all hover:scale-105 active:scale-95">
+                <Zap className="h-3.5 w-3.5" /> {t('dashboard.createMatch')}
               </Link>
             )}
           </div>
