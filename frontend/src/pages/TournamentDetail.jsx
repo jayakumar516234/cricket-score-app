@@ -22,6 +22,9 @@ import {
   Flame,
   Award,
   ChevronRight,
+  Bell,
+  UserCheck,
+  UserX,
 } from 'lucide-react';
 import { useFetch } from '../useFetch.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -86,6 +89,10 @@ export default function TournamentDetail() {
   const byes = tournament.byes || [];
   const grounds = tournament.grounds || ['Ground 1'];
   const scorers = tournament.scorers || [];
+
+  // Separate pending vs approved teams
+  const pendingTeams = teams.filter((t) => t.status === 'pending');
+  const approvedTeams = teams.filter((t) => t.status !== 'pending');
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(tournament.code);
@@ -563,13 +570,18 @@ export default function TournamentDetail() {
         </button>
         <button
           onClick={() => setTab('teams')}
-          className={`flex-1 flex items-center justify-center gap-1.5 rounded-xl px-2 py-2.5 transition-all ${
+          className={`flex-1 flex items-center justify-center gap-1.5 rounded-xl px-2 py-2.5 transition-all relative ${
             tab === 'teams' ? 'bg-white text-slate-900 shadow font-extrabold' : 'hover:text-slate-800'
           }`}
         >
           <Users className="h-3.5 w-3.5 shrink-0" />
           <span className="hidden sm:inline">Teams ({teams.length})</span>
           <span className="sm:hidden">Teams</span>
+          {isOrganizer && pendingTeams.length > 0 && (
+            <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] font-black text-white animate-bounce shadow-xs">
+              {pendingTeams.length}
+            </span>
+          )}
         </button>
         {isOrganizer && (
           <button
@@ -805,11 +817,71 @@ export default function TournamentDetail() {
       {/* ============================================================== */}
       {tab === 'teams' && (
         <div className="space-y-4">
+
+          {/* 🔔 Pending Join Requests — Organizer only */}
+          {isOrganizer && pendingTeams.length > 0 && (
+            <div className="rounded-2xl border-2 border-amber-300 bg-amber-50 p-4 space-y-3 shadow-sm">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500 text-white shadow-xs">
+                  <Bell className="h-4 w-4" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-amber-900">
+                    {pendingTeams.length} Pending Join Request{pendingTeams.length > 1 ? 's' : ''}
+                  </h4>
+                  <p className="text-[10px] text-amber-700">Teams waiting for your approval to join this tournament</p>
+                </div>
+              </div>
+
+              <ul className="space-y-2">
+                {pendingTeams.map((tm) => (
+                  <li key={tm.id} className="flex items-center justify-between gap-3 rounded-xl bg-white border border-amber-200 px-3 py-2.5 shadow-xs">
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-bold text-slate-900 truncate">{tm.name}</div>
+                      {tm.location && <div className="text-[10px] text-slate-500 truncate">📍 {tm.location}</div>}
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        onClick={async () => {
+                          setActionLoading(true); setActionError('');
+                          try {
+                            await api.patch(`/tournaments/${id}/teams/${tm.id}/status`, { status: 'approved' });
+                            setActionSuccess(`✅ ${tm.name} approved!`);
+                            reload();
+                          } catch (err) { setActionError(err.message); }
+                          finally { setActionLoading(false); }
+                        }}
+                        disabled={actionLoading}
+                        className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 px-2.5 py-1.5 text-[11px] font-black text-white shadow-xs transition"
+                      >
+                        <UserCheck className="h-3.5 w-3.5" /> Accept
+                      </button>
+                      <button
+                        onClick={async () => {
+                          setActionLoading(true); setActionError('');
+                          try {
+                            await api.delete(`/tournaments/${id}/teams/${tm.id}`);
+                            setActionSuccess(`❌ ${tm.name} request rejected`);
+                            reload();
+                          } catch (err) { setActionError(err.message); }
+                          finally { setActionLoading(false); }
+                        }}
+                        disabled={actionLoading}
+                        className="inline-flex items-center gap-1 rounded-lg bg-red-50 border border-red-200 hover:bg-red-100 disabled:opacity-60 px-2.5 py-1.5 text-[11px] font-black text-red-700 transition"
+                      >
+                        <UserX className="h-3.5 w-3.5" /> Reject
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-black text-slate-900 text-base">
-                  🏏 Registered Teams ({teams.length} / {tournament.maxTeams || 16})
+                  🏏 Registered Teams ({approvedTeams.length} / {tournament.maxTeams || 16})
                 </h3>
                 {isOrganizer && (
                   <button

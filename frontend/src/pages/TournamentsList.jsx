@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Medal, Plus, Search, Trophy, KeyRound, MapPin, Users, Clock, Check, Copy, Flame, ChevronRight, Zap, Shield } from 'lucide-react';
+import { Medal, Plus, Search, Trophy, KeyRound, MapPin, Users, Clock, Check, Copy, Flame, ChevronRight, Zap, Shield, LogIn, X } from 'lucide-react';
 import { useFetch } from '../useFetch.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { api } from '../api.js';
 import { Spinner, ErrorBox, SkeletonCard, SkeletonTournamentList } from '../components/ui.jsx';
 import { TournamentCreateModal } from '../components/TournamentCreateModal.jsx';
 import { ScorerLoginModal } from '../components/ScorerLoginModal.jsx';
@@ -15,6 +16,13 @@ export default function TournamentsList() {
   const [createOpen, setCreateOpen] = useState(false);
   const [scorerOpen, setScorerOpen] = useState(false);
   const [copiedCode, setCopiedCode] = useState(null);
+
+  // Join tournament via code
+  const [joinOpen, setJoinOpen] = useState(false);
+  const [joinCode, setJoinCode] = useState('');
+  const [joinLoading, setJoinLoading] = useState(false);
+  const [joinError, setJoinError] = useState('');
+  const [joinSuccess, setJoinSuccess] = useState('');
 
   const { data, loading, error, reload } = useFetch(`/tournaments${search ? `?search=${encodeURIComponent(search)}` : ''}`);
 
@@ -31,6 +39,24 @@ export default function TournamentsList() {
     navigator.clipboard.writeText(code);
     setCopiedCode(code);
     setTimeout(() => setCopiedCode(null), 2000);
+  };
+
+  const handleJoin = async (e) => {
+    e.preventDefault();
+    if (!joinCode.trim()) return;
+    setJoinLoading(true);
+    setJoinError('');
+    setJoinSuccess('');
+    try {
+      const res = await api.post('/tournaments/join', { tournamentCode: joinCode.trim().toUpperCase() });
+      setJoinSuccess(res.message || 'Join request sent! Waiting for organizer approval.');
+      setJoinCode('');
+      reload();
+    } catch (err) {
+      setJoinError(err.message || 'Failed to send join request');
+    } finally {
+      setJoinLoading(false);
+    }
   };
 
   const statusCounts = {
@@ -74,6 +100,17 @@ export default function TournamentsList() {
               <KeyRound className="h-3.5 w-3.5" />
               <span>Scorer PIN</span>
             </button>
+
+            {user && user.role !== 'viewer' && (
+              <button
+                onClick={() => { setJoinOpen(true); setJoinError(''); setJoinSuccess(''); }}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-white/20 hover:bg-white/30 border border-white/30 backdrop-blur-sm px-2.5 py-1.5 text-[10px] font-bold text-white transition"
+                title="Join a tournament with invite code"
+              >
+                <LogIn className="h-3.5 w-3.5" />
+                <span>Join via Code</span>
+              </button>
+            )}
 
             {user && user.role !== 'viewer' && (
               <button
@@ -276,6 +313,72 @@ export default function TournamentsList() {
         open={scorerOpen}
         onClose={() => setScorerOpen(false)}
       />
+
+      {/* Join Tournament via Code Modal */}
+      {joinOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setJoinOpen(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-5 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
+                  <LogIn className="h-4 w-4 text-amber-500" /> Join Tournament
+                </h2>
+                <p className="text-[11px] text-slate-500 mt-0.5">Tournament organizer code enter pannunga</p>
+              </div>
+              <button onClick={() => setJoinOpen(false)} className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100 transition">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {joinSuccess ? (
+              <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-4 text-center space-y-2">
+                <div className="flex h-10 w-10 mx-auto items-center justify-center rounded-full bg-emerald-100">
+                  <Check className="h-5 w-5 text-emerald-600" />
+                </div>
+                <p className="text-sm font-bold text-emerald-800">{joinSuccess}</p>
+                <p className="text-[11px] text-emerald-600">Organizer approve panna uadane neenga tournament-la join aaguveenga!</p>
+                <button
+                  onClick={() => { setJoinOpen(false); setJoinSuccess(''); }}
+                  className="mt-1 inline-flex items-center gap-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 py-2 text-xs font-bold text-white transition"
+                >
+                  Done
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleJoin} className="space-y-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 mb-1 block">Tournament Code</label>
+                  <input
+                    type="text"
+                    value={joinCode}
+                    onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                    placeholder="e.g. TRN-4521"
+                    className="input w-full font-mono font-bold text-sm tracking-widest"
+                    maxLength={10}
+                    autoFocus
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">Tournament organizer kuduttha code enter pannunga</p>
+                </div>
+
+                {joinError && (
+                  <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700 font-medium">
+                    {joinError}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={joinLoading || !joinCode.trim()}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 disabled:opacity-60 px-4 py-2.5 text-sm font-black text-white shadow-md transition"
+                >
+                  {joinLoading ? <Spinner size={16} /> : <LogIn className="h-4 w-4" />}
+                  {joinLoading ? 'Sending Request…' : 'Send Join Request'}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -33,6 +33,10 @@ export default function Layout() {
   const { data: notifData } = useFetch(user && !isViewer ? '/teams/pending-requests-count' : null, { poll: 20000 });
   const pendingCount = notifData?.count || 0;
 
+  // Poll for pending tournament join requests (organizer only)
+  const { data: trnNotifData } = useFetch(user && (isAdmin || user?.role === 'user') ? '/tournaments/pending-join-count' : null, { poll: 25000 });
+  const pendingTrnCount = trnNotifData?.count || 0;
+
   // All possible nav links with visibility keys
   const allAdminLinks = [
     { to: '/', label: t('nav.overview'), icon: LayoutDashboard, end: true, key: 'home' },
@@ -126,6 +130,11 @@ export default function Layout() {
               {key === 'teams' && pendingCount > 0 && (
                 <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-black text-white shadow-xs animate-pulse">
                   {pendingCount}
+                </span>
+              )}
+              {key === 'tournaments' && pendingTrnCount > 0 && (
+                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-[10px] font-black text-white shadow-xs animate-pulse">
+                  {pendingTrnCount}
                 </span>
               )}
             </>

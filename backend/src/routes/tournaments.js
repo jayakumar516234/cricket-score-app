@@ -42,6 +42,10 @@ const addTeamSchema = z.object({
   contact: z.string().trim().max(100).optional(),
 });
 
+const joinTournamentSchema = z.object({
+  tournamentCode: z.string().trim().min(3, 'Tournament code is required'),
+});
+
 const awardByeSchema = z.object({
   teamId: oid,
   round: z.string().trim().optional().default('Round 1'),
@@ -195,6 +199,70 @@ router.post('/scorer-login', wrap(async (req, res) => {
     },
     message: `Signed in as ${scorer.name} for ${tournament.name}`,
   });
+}));
+
+// ========================
+// 3.5 Team Admin: Join Tournament via Code (sends pending request)
+// ========================
+router.post('/join', requireAuth, wrap(async (req, res) => {
+  if (req.user?.role === 'viewer') throw new HttpError(403, 'Viewers cannot join tournaments');
+
+  const { tournamentCode } = parse(joinTournamentSchema, req.body);
+
+  // Find tournament
+  const tournament = await Tournament.findOne({ code: tournamentCode.toUpperCase() });
+  if (!tournament) throw new HttpError(404, 'Tournament not found with this code');
+
+  if (tournament.status === 'completed') throw new HttpError(400, 'This tournament is already completed');
+
+  // Find the requesting team (team admin's own team)
+  let myTeam = null;
+  if (req.user.viewTeam) {
+    myTeam = await Team.findById(req.user.viewTeam).select('_id name code');
+  } else {
+    myTeam = await Team.findOne({ createdBy: req.user._id, isGuest: { $ne: true } }).select('_id name code');
+  }
+  if (!myTeam) throw new HttpError(400, 'You need a team to join a tournament');
+
+  // Check if already joined (any status)
+  const existing = tournament.teams.find((t) => String(t.team) === String(myTeam._id));
+  if (existing) {
+    if (existing.status === 'pending') throw new HttpError(400, 'Your join request is already pending approval');
+    throw new HttpError(400, `${myTeam.name} is already in this tournament (${existing.status})`);
+  }
+
+  if (tournament.teams.filter((t) => t.status !== 'pending').length >= tournament.maxTeams) {
+    throw new HttpError(400, `Tournament is full (${tournament.maxTeams} teams). Cannot join.`);
+  }
+
+  // Add with pending status
+  tournament.teams.push({
+    team: myTeam._id,
+    name: myTeam.name,
+    seed: tournament.teams.length + 1,
+    status: 'pending',
+  });
+  await tournament.save();
+
+  res.json({
+    message: `Join request sent! Waiting for organizer to approve "${myTeam.name}"`,
+    tournamentName: tournament.name,
+    teamName: myTeam.name,
+    status: 'pending',
+  });
+}));
+
+// ========================
+// 3.6 Get pending tournament join requests count (for Navbar badge)
+// ========================
+router.get('/pending-join-count', requireAuth, wrap(async (req, res) => {
+  // Count tournaments I organise that have pending team join requests
+  const tournaments = await Tournament.find({ organizer: req.user._id }).select('teams');
+  let count = 0;
+  for (const t of tournaments) {
+    count += t.teams.filter((tm) => tm.status === 'pending').length;
+  }
+  res.json({ count });
 }));
 
 // ========================
