@@ -256,9 +256,6 @@ export default function Layout() {
                 {userInitials}
               </span>
               <span className="font-bold text-slate-200 hidden sm:inline max-w-[130px] truncate">{user?.name}</span>
-              <span className={`badge border text-[10px] font-bold uppercase tracking-wider py-0.5 px-2 rounded-md ${roleBadgeStyle}`}>
-                {roleLabel}
-              </span>
             </Link>
           </div>
         </header>
