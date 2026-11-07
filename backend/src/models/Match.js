@@ -17,7 +17,7 @@ const matchSchema = new Schema(
   {
     name: { type: String, trim: true, maxlength: 100 },
     format: { type: String, enum: ['T10', 'T20', 'ODI', 'Custom'], required: true },
-    overs: { type: Number, required: true, min: 1, max: 50 },
+    overs: { type: Number, required: true, min: 1, max: 100 },
     date: { type: Date },
     venue: { type: String, trim: true, maxlength: 100, default: '' },
     homeTeam: { type: Schema.Types.ObjectId, ref: 'Team', required: true }, // "Your own team"

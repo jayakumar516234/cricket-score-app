@@ -9,13 +9,11 @@ import {
   Zap,
   ChevronDown,
   ChevronUp,
-  Sparkles,
   Coins,
   Check,
   Edit2,
   MapPin,
   Calendar,
-  AlertCircle,
 } from 'lucide-react';
 import { api } from '../api.js';
 import { useFetch } from '../useFetch.js';
@@ -148,6 +146,14 @@ export default function CreateMatch() {
     }
   }, [home, f.tossWinner]);
 
+  // Precise Toss Winner state tracking
+  const isHomeWinner = f.tossWinner && home && String(f.tossWinner) === String(home.id);
+  const isAwayWinner =
+    f.tossWinner &&
+    effectiveAway &&
+    (f.tossWinner === 'guest' || String(f.tossWinner) === String(effectiveAway.id));
+  const tossWinnerTeam = isHomeWinner ? home : isAwayWinner ? effectiveAway : null;
+
   const handleSelectPreset = (preset) => {
     setSelectedPreset(preset.label);
     if (preset.label === 'Custom') {
@@ -162,12 +168,12 @@ export default function CreateMatch() {
     const raw = e.target.value.replace(/\D/g, '');
     setCustomOversInput(raw);
     const num = Number(raw);
-    if (num >= 1 && num <= 50) {
+    if (num >= 1 && num <= 100) {
       set({ format: 'Custom', overs: num });
     }
   };
 
-  // Fun 3D Interactive Coin Toss Spin!
+  // Fun Interactive Coin Toss Spin
   const spinTossCoin = () => {
     if (!home || !effectiveAway || isSpinningCoin) return;
     setIsSpinningCoin(true);
@@ -194,8 +200,8 @@ export default function CreateMatch() {
       er.awayTeam = 'Opponent must be a different team';
     }
     const finalOvers = Number(f.overs);
-    if (f.format === 'Custom' && (!Number.isInteger(finalOvers) || finalOvers < 1 || finalOvers > 50)) {
-      er.overs = 'Enter overs (1 - 50)';
+    if (f.format === 'Custom' && (!Number.isInteger(finalOvers) || finalOvers < 1 || finalOvers > 100)) {
+      er.overs = 'Enter overs (1 - 100)';
     }
     if (!f.tossWinner) er.tossWinner = 'Select toss winner';
 
@@ -280,7 +286,6 @@ export default function CreateMatch() {
   }
 
   const homeOptions = myTeams.map((t) => ({ value: t.id, label: t.name }));
-  const tossWinnerTeam = f.tossWinner === 'guest' ? effectiveAway : (f.tossWinner === home?.id ? home : effectiveAway);
 
   return (
     <div className="mx-auto max-w-md w-full py-1 sm:py-3 px-2 sm:px-0">
@@ -318,48 +323,53 @@ export default function CreateMatch() {
             </button>
           </div>
 
-          {/* ⚔️ VISUAL VS BATTLE ARENA */}
-          <div className="mt-3.5 rounded-2xl bg-white/5 border border-white/10 p-2.5 backdrop-blur-sm">
-            <div className="flex items-center justify-between gap-2">
+          {/* ⚔️ VISUAL VS BATTLE ARENA (BIGGER & PROMINENT) */}
+          <div className="mt-3.5 rounded-2xl bg-white/5 border border-white/10 p-3 backdrop-blur-sm">
+            <div className="flex items-center justify-between gap-3">
               
-              {/* Home Team Side */}
+              {/* Home Team Side (Big Team Name) */}
               <div className="flex-1 text-center min-w-0">
-                <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-400 shadow-inner">
-                  {home ? <TeamLogo team={home} size={30} /> : <Shield className="h-5 w-5 text-emerald-400" />}
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/20 border-2 border-emerald-400/50 text-emerald-400 shadow-lg">
+                  {home ? <TeamLogo team={home} size={36} /> : <Shield className="h-6 w-6 text-emerald-400" />}
                 </div>
-                <div className="mt-1.5 text-xs font-black truncate text-white">
+                <div className="mt-2 text-sm sm:text-base font-black truncate text-white tracking-tight">
                   {home?.name || 'Your Team'}
                 </div>
-                <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-widest block">
-                  Home XI
+                <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest block mt-0.5">
+                  Home Team
                 </span>
               </div>
 
-              {/* Glowing VS Badge */}
-              <div className="flex flex-col items-center justify-center shrink-0">
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-tr from-amber-500 to-rose-600 text-[10px] font-black text-white shadow-md ring-2 ring-white/20">
+              {/* Glowing VS Badge & Big Overs Display */}
+              <div className="flex flex-col items-center justify-center shrink-0 px-1">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-amber-500 to-rose-600 text-xs font-black text-white shadow-lg ring-2 ring-white/30">
                   VS
                 </span>
-                <span className="text-[8.5px] font-extrabold text-slate-400 uppercase tracking-widest mt-0.5">
-                  {f.overs ? `${f.overs} Ov` : 'Match'}
+                <span className="text-xs sm:text-sm font-black text-amber-300 uppercase tracking-wider mt-1 drop-shadow-sm">
+                  {f.overs ? `${f.overs} Overs` : 'Match'}
                 </span>
+                {tossWinnerTeam && (
+                  <span className="text-[9.5px] font-bold text-slate-300 mt-0.5 max-w-[110px] truncate text-center">
+                    Toss: {tossWinnerTeam.name.slice(0, 10)} ({f.tossDecision === 'bat' ? 'Bat' : 'Bowl'})
+                  </span>
+                )}
               </div>
 
-              {/* Away Team Side */}
+              {/* Away Team Side (Big Team Name) */}
               <div className="flex-1 text-center min-w-0">
-                <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-500/20 border border-blue-400/40 text-blue-400 shadow-inner">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-500/20 border-2 border-blue-400/50 text-blue-400 shadow-lg">
                   {effectiveAway?.isGuest ? (
-                    <Users className="h-5 w-5 text-amber-400" />
+                    <Users className="h-6 w-6 text-amber-400" />
                   ) : effectiveAway ? (
-                    <TeamLogo team={effectiveAway} size={30} />
+                    <TeamLogo team={effectiveAway} size={36} />
                   ) : (
-                    <Shield className="h-5 w-5 text-blue-400" />
+                    <Shield className="h-6 w-6 text-blue-400" />
                   )}
                 </div>
-                <div className="mt-1.5 text-xs font-black truncate text-white">
+                <div className="mt-2 text-sm sm:text-base font-black truncate text-white tracking-tight">
                   {effectiveAway?.name || 'Opponent'}
                 </div>
-                <span className="text-[9px] font-bold text-amber-300 uppercase tracking-widest block">
+                <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest block mt-0.5">
                   {isOpponentGuest ? 'Guest Opponent' : 'Opponent'}
                 </span>
               </div>
@@ -450,7 +460,7 @@ export default function CreateMatch() {
             )}
           </div>
 
-          {/* 2. MATCH OVERS (ONE-TAP CHIPS) */}
+          {/* 2. MATCH OVERS (ONE-TAP CHIPS + UP TO 100 OVERS) */}
           <div className="rounded-2xl border border-slate-200 bg-white p-3 space-y-2 shadow-2xs">
             <div className="flex items-center justify-between">
               <span className="text-[10.5px] font-black uppercase tracking-wider text-slate-700">
@@ -483,37 +493,41 @@ export default function CreateMatch() {
             </div>
 
             {selectedPreset === 'Custom' && (
-              <div className="flex items-center gap-2 pt-1">
-                <span className="text-xs font-bold text-slate-600">Enter Overs (1-50):</span>
+              <div className="flex items-center gap-2 pt-1.5">
+                <span className="text-xs font-bold text-slate-700">Custom Overs (1-100):</span>
                 <input
                   type="number"
                   min="1"
-                  max="50"
+                  max="100"
                   value={customOversInput}
                   onChange={handleCustomOversChange}
-                  placeholder="e.g. 8"
-                  className="input !py-1 !px-2 text-xs font-bold w-20 text-center border-pitch-300"
+                  placeholder="1-100"
+                  className="input !py-1.5 !px-2.5 text-xs font-bold w-24 text-center border-pitch-400 shadow-2xs"
                   autoFocus
                 />
+                <span className="text-xs font-bold text-slate-500">Overs</span>
                 {errors.overs && <span className="text-[10px] text-red-600 font-bold">{errors.overs}</span>}
               </div>
             )}
           </div>
 
-          {/* 3. INTERACTIVE TOSS ARENA */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-3 space-y-2.5 shadow-2xs">
+          {/* 3. ROCK-SOLID INTERACTIVE TOSS SECTION */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-3.5 space-y-3 shadow-2xs">
             <div className="flex items-center justify-between">
-              <span className="text-[10.5px] font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                <span>Who Won The Toss?</span>
-                <span className="text-red-500">*</span>
-              </span>
+              <div>
+                <span className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+                  <span>Who Won The Toss?</span>
+                  <span className="text-red-500">*</span>
+                </span>
+                <p className="text-[10px] text-slate-500">Tap the team that won the toss</p>
+              </div>
 
               {/* Coin Spin Button for fun! */}
               <button
                 type="button"
                 onClick={spinTossCoin}
-                disabled={isSpinningCoin}
-                className="inline-flex items-center gap-1 rounded-xl bg-amber-100 hover:bg-amber-200 border border-amber-300 px-2 py-0.5 text-[10px] font-black text-amber-900 transition active:scale-95"
+                disabled={isSpinningCoin || !home || !effectiveAway}
+                className="inline-flex items-center gap-1 rounded-xl bg-amber-100 hover:bg-amber-200 border border-amber-300 px-2.5 py-1 text-[10.5px] font-black text-amber-900 transition active:scale-95 shadow-2xs"
                 title="Tap to spin coin randomly"
               >
                 <Coins className={`h-3.5 w-3.5 text-amber-600 ${isSpinningCoin ? 'animate-spin' : ''}`} />
@@ -521,38 +535,76 @@ export default function CreateMatch() {
               </button>
             </div>
 
-            {/* Team Toss Winner Selector */}
-            <div className="grid grid-cols-2 gap-2">
-              {[home, effectiveAway].map((t, idx) => {
-                if (!t) return null;
-                const isWinner = f.tossWinner === t.id;
-                return (
-                  <button
-                    key={t.id || idx}
-                    type="button"
-                    onClick={() => set({ tossWinner: t.id })}
-                    className={`flex items-center justify-center gap-1.5 rounded-xl py-2 px-2 text-xs font-bold border transition-all truncate ${
-                      isWinner
-                        ? 'bg-blue-600 text-white border-blue-600 shadow-xs font-black ring-2 ring-blue-400/40'
-                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+            {/* Team Toss Winner Selector (Crystal Clear Distinct Cards) */}
+            <div className="grid grid-cols-2 gap-2.5">
+              {/* Home Team Button */}
+              {home && (
+                <button
+                  type="button"
+                  onClick={() => set({ tossWinner: home.id })}
+                  className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border-2 transition-all gap-1.5 ${
+                    isHomeWinner
+                      ? 'bg-gradient-to-b from-emerald-500 to-emerald-600 text-white border-emerald-500 shadow-md ring-2 ring-emerald-400/50'
+                      : 'bg-emerald-50/50 text-slate-800 border-emerald-200/80 hover:bg-emerald-100/60'
+                  }`}
+                >
+                  <div className="flex items-center gap-1.5 min-w-0 max-w-full">
+                    <TeamLogo team={home} size={22} />
+                    <span className="text-xs font-black truncate">{home.name}</span>
+                  </div>
+                  <span
+                    className={`text-[9.5px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                      isHomeWinner
+                        ? 'bg-white/20 text-white shadow-xs'
+                        : 'bg-emerald-100 text-emerald-800'
                     }`}
                   >
-                    {isWinner && <Check className="h-3.5 w-3.5 shrink-0" />}
-                    <span className="truncate">{t.name}</span>
-                  </button>
-                );
-              })}
+                    {isHomeWinner ? '✓ Won Toss' : 'Home Team'}
+                  </span>
+                </button>
+              )}
+
+              {/* Away / Opponent Team Button */}
+              {effectiveAway && (
+                <button
+                  type="button"
+                  onClick={() => set({ tossWinner: effectiveAway.id })}
+                  className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border-2 transition-all gap-1.5 ${
+                    isAwayWinner
+                      ? 'bg-gradient-to-b from-blue-600 to-indigo-600 text-white border-blue-500 shadow-md ring-2 ring-blue-400/50'
+                      : 'bg-blue-50/50 text-slate-800 border-blue-200/80 hover:bg-blue-100/60'
+                  }`}
+                >
+                  <div className="flex items-center gap-1.5 min-w-0 max-w-full">
+                    {effectiveAway.isGuest ? (
+                      <Users className="h-4.5 w-4.5 text-amber-500 shrink-0" />
+                    ) : (
+                      <TeamLogo team={effectiveAway} size={22} />
+                    )}
+                    <span className="text-xs font-black truncate">{effectiveAway.name}</span>
+                  </div>
+                  <span
+                    className={`text-[9.5px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                      isAwayWinner
+                        ? 'bg-white/20 text-white shadow-xs'
+                        : 'bg-blue-100 text-blue-800'
+                    }`}
+                  >
+                    {isAwayWinner ? '✓ Won Toss' : isOpponentGuest ? 'Guest XI' : 'Opponent'}
+                  </span>
+                </button>
+              )}
             </div>
 
             {/* Toss Decision: Bat or Bowl */}
-            <div className="pt-1 border-t border-slate-100">
-              <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
-                Elected to:
+            <div className="pt-2 border-t border-slate-100 space-y-1.5">
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-600 block">
+                Toss Winner Elected To:
               </span>
               <div className="grid grid-cols-2 gap-2">
                 {[
-                  ['bat', '🏏 Bat First'],
-                  ['bowl', '⚾ Bowl First'],
+                  ['bat', '🏏 Batting First'],
+                  ['bowl', '⚾ Bowling First'],
                 ].map(([v, l]) => {
                   const active = f.tossDecision === v;
                   return (
@@ -560,9 +612,9 @@ export default function CreateMatch() {
                       key={v}
                       type="button"
                       onClick={() => set({ tossDecision: v })}
-                      className={`rounded-xl py-2 px-2 text-xs font-bold border transition-all ${
+                      className={`rounded-xl py-2 px-3 text-xs font-black border transition-all ${
                         active
-                          ? 'bg-slate-900 text-white border-slate-900 shadow-xs font-black'
+                          ? 'bg-slate-900 text-white border-slate-900 shadow-md ring-2 ring-slate-700/50 scale-102'
                           : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                       }`}
                     >
@@ -575,14 +627,16 @@ export default function CreateMatch() {
 
             {/* Live Toss Status Pill */}
             {tossWinnerTeam && (
-              <div className="rounded-xl bg-blue-50/80 border border-blue-200/80 px-2.5 py-1.5 text-center text-[11px] font-bold text-blue-900">
-                🏆 <strong>{tossWinnerTeam.name}</strong> won the toss and elected to{' '}
-                <span className="uppercase text-blue-950 font-black">{f.tossDecision}</span> first
+              <div className="rounded-xl bg-blue-50 border border-blue-200 px-3 py-2 text-center text-xs font-bold text-blue-900 shadow-2xs">
+                🏆 <strong className="font-black text-blue-950">{tossWinnerTeam.name}</strong> won the toss and chose to{' '}
+                <span className="uppercase text-blue-950 font-black underline decoration-2">
+                  {f.tossDecision === 'bat' ? 'Bat First' : 'Bowl First'}
+                </span>
               </div>
             )}
           </div>
 
-          {/* 4. OPTIONAL MATCH DETAILS TOGGLE */}
+          {/* 4. OPTIONAL MATCH DETAILS TOGGLE (WITH CLEAR DATE PLACEHOLDER) */}
           <div className="rounded-2xl border border-slate-200/80 bg-white p-2.5">
             <button
               type="button"
@@ -606,19 +660,31 @@ export default function CreateMatch() {
                   maxLength={100}
                 />
                 <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="datetime-local"
-                    value={f.date}
-                    onChange={(e) => set({ date: e.target.value })}
-                    className="input !py-1.5 text-xs"
-                  />
-                  <input
-                    value={f.venue}
-                    onChange={(e) => set({ venue: e.target.value })}
-                    placeholder="Ground / Venue"
-                    className="input !py-1.5 text-xs"
-                    maxLength={100}
-                  />
+                  {/* Styled Date Picker with visible "Select Date & Time" placeholder */}
+                  <div className="relative">
+                    <input
+                      type="datetime-local"
+                      value={f.date}
+                      onChange={(e) => set({ date: e.target.value })}
+                      className="input !py-1.5 !pl-8 text-xs font-semibold text-slate-800 w-full"
+                    />
+                    <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                    {!f.date && (
+                      <span className="pointer-events-none absolute left-8 top-1/2 -translate-y-1/2 text-[11px] text-slate-400 font-medium select-none">
+                        Select Date & Time
+                      </span>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <input
+                      value={f.venue}
+                      onChange={(e) => set({ venue: e.target.value })}
+                      placeholder="Ground / Venue"
+                      className="input !py-1.5 !pl-8 text-xs font-semibold text-slate-800 w-full"
+                      maxLength={100}
+                    />
+                    <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                  </div>
                 </div>
               </div>
             )}
