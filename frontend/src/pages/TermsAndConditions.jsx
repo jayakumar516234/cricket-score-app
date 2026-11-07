@@ -251,7 +251,6 @@ export default function TermsAndConditions() {
               <li><strong>Email:</strong> <a href="mailto:xxxx@gmail.com" className="text-pitch-600 underline font-medium">xxxx@gmail.com</a></li>
               <li><strong>Organization:</strong> JK Sports, Kanchipuram, Tamil Nadu, India</li>
               <li><strong>In-app:</strong> Go to <em>Support / Feedback</em> in the app menu</li>
-              <li><strong>GitHub:</strong> <a href="https://github.com/jayakumar516234" className="text-pitch-600 underline" target="_blank" rel="noopener noreferrer">github.com/jayakumar516234</a></li>
             </ul>
           </Section>
 

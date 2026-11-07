@@ -1,53 +1,90 @@
-// High-speed PWA Service Worker: Cache-First for shell assets & instant navigation
-const CACHE = 'cricket-shell-v3';
+// High-speed PWA Service Worker: Offline Caching & Background Sync
+const SHELL_CACHE = 'cricket-shell-v4';
+const API_CACHE = 'cricket-api-v1';
 
-self.addEventListener('install', () => {
-  self.skipWaiting();
-});
+const PRECACHE_URLS = [
+  '/',
+  '/index.html',
+  '/manifest.webmanifest',
+  '/icon-192.png',
+  '/favicon.ico',
+];
 
-self.addEventListener('activate', (e) => {
-  e.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
-    ).then(() => self.clients.claim())
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches
+      .open(SHELL_CACHE)
+      .then((cache) => {
+        return cache.addAll(PRECACHE_URLS).catch((err) => {
+          console.warn('Pre-cache warning during install:', err);
+        });
+      })
+      .then(() => self.skipWaiting())
   );
 });
 
-self.addEventListener('fetch', (e) => {
-  const url = new URL(e.request.url);
-  // Do not intercept non-GET requests or backend API requests
-  if (e.request.method !== 'GET' || url.origin !== location.origin || url.pathname.startsWith('/api')) return;
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(
+          keys
+            .filter((k) => k !== SHELL_CACHE && k !== API_CACHE)
+            .map((k) => caches.delete(k))
+        )
+      )
+      .then(() => self.clients.claim())
+  );
+});
 
-  // Navigation (HTML shell): Return cached HTML immediately for instant app open, revalidate in background
-  if (e.request.mode === 'navigate') {
-    e.respondWith(
-      caches.match('/index.html')
+self.addEventListener('fetch', (event) => {
+  const req = event.request;
+  const url = new URL(req.url);
+
+  // Ignore non-GET requests (mutations are handled by application queue)
+  if (req.method !== 'GET') return;
+
+  // 1. Navigation (HTML pages) - Cache-First with Network Revalidation for instant offline load
+  if (req.mode === 'navigate') {
+    event.respondWith(
+      caches
+        .match('/index.html')
         .then((cached) => cached || caches.match('/'))
         .then((cached) => {
-          const networkFetch = fetch(e.request)
+          const networkPromise = fetch(req)
             .then((res) => {
               if (res.ok) {
-                const copy = res.clone();
-                caches.open(CACHE).then((c) => c.put('/index.html', copy));
+                const clone = res.clone();
+                caches.open(SHELL_CACHE).then((cache) => cache.put('/index.html', clone));
               }
               return res;
             })
             .catch(() => cached);
-          return cached || networkFetch;
+          return cached || networkPromise;
         })
     );
     return;
   }
 
-  // Static hashed assets (/assets/, images, icons): Cache-first for lightning speed
-  if (url.pathname.startsWith('/assets/') || url.pathname.endsWith('.png') || url.pathname.endsWith('.svg') || url.pathname.endsWith('.ico')) {
-    e.respondWith(
-      caches.match(e.request).then((cached) => {
+  // 2. Static Assets (JS, CSS, Images, Icons, Fonts)
+  if (
+    url.origin === location.origin &&
+    (url.pathname.startsWith('/assets/') ||
+      url.pathname.endsWith('.png') ||
+      url.pathname.endsWith('.svg') ||
+      url.pathname.endsWith('.ico') ||
+      url.pathname.endsWith('.woff2') ||
+      url.pathname.endsWith('.css') ||
+      url.pathname.endsWith('.js'))
+  ) {
+    event.respondWith(
+      caches.match(req).then((cached) => {
         if (cached) return cached;
-        return fetch(e.request).then((res) => {
+        return fetch(req).then((res) => {
           if (res.ok) {
-            const copy = res.clone();
-            caches.open(CACHE).then((c) => c.put(e.request, copy));
+            const clone = res.clone();
+            caches.open(SHELL_CACHE).then((cache) => cache.put(req, clone));
           }
           return res;
         });
@@ -56,16 +93,35 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // Default fallback for other requests: Network-first with cache fallback
-  e.respondWith(
-    fetch(e.request)
+  // 3. API Requests (/api/...) - Network-First, with Cache Fallback for offline viewing!
+  if (url.pathname.startsWith('/api')) {
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          if (res.ok) {
+            const clone = res.clone();
+            caches.open(API_CACHE).then((cache) => cache.put(req, clone));
+          }
+          return res;
+        })
+        .catch(() => {
+          // If offline / network failed, return cached response if available
+          return caches.match(req);
+        })
+    );
+    return;
+  }
+
+  // 4. Default: Network-First with Cache Fallback
+  event.respondWith(
+    fetch(req)
       .then((res) => {
         if (res.ok) {
-          const copy = res.clone();
-          caches.open(CACHE).then((c) => c.put(e.request, copy));
+          const clone = res.clone();
+          caches.open(SHELL_CACHE).then((cache) => cache.put(req, clone));
         }
         return res;
       })
-      .catch(() => caches.match(e.request))
+      .catch(() => caches.match(req))
   );
 });

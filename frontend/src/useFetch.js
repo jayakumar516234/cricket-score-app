@@ -66,7 +66,19 @@ export function useFetch(path, { poll, useCache = true } = {}) {
       setData(res);
       setError('');
     } catch (e) {
-      if (!quiet) setError(e.message);
+      const isOffline =
+        typeof navigator !== 'undefined' &&
+        (!navigator.onLine ||
+          e.message?.includes('Failed to fetch') ||
+          e.message?.includes('NetworkError') ||
+          e.message?.includes('network'));
+      // If we are offline and have cached or existing data, smoothly serve cached data without showing error
+      if (isOffline && (data || cached || readCache(path))) {
+        // Keep showing cached data
+        setError('');
+      } else {
+        if (!quiet) setError(e.message);
+      }
     } finally {
       setLoading(false);
     }

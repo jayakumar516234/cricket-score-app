@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate, Link } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   LayoutDashboard,
@@ -15,6 +15,7 @@ import {
   Medal,
   MessageSquare,
   Bell,
+  WifiOff,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useFetch } from '../useFetch.js';
@@ -28,6 +29,20 @@ export default function Layout() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const { isVisible } = useMenuConfig() ?? {};
+
+  // Real-time network status tracking for offline mode
+  const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   // Poll for incoming team opponent requests (updates navbar badge in real time)
   const { data: notifData } = useFetch(user && !isViewer ? '/teams/pending-requests-count' : null, { poll: 20000 });
@@ -268,6 +283,13 @@ export default function Layout() {
             </Link>
           </div>
         </header>
+
+        {!isOnline && (
+          <div className="bg-amber-500 text-navy-950 font-bold text-xs px-3 py-1.5 flex items-center justify-center gap-2 shadow-inner border-b border-amber-600/30">
+            <WifiOff className="h-3.5 w-3.5 text-navy-950 shrink-0" />
+            <span>Offline Mode Active — Cached data & local match scoring enabled</span>
+          </div>
+        )}
 
         <main className="mx-auto w-full max-w-5xl flex-1 px-2.5 py-2.5 pb-20 sm:px-6 sm:py-5 lg:pb-8">
           <Outlet />
