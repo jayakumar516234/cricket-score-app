@@ -1,16 +1,28 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Loader2, Handshake, Users, Shield } from 'lucide-react';
+import {
+  ArrowLeft,
+  X,
+  Loader2,
+  Handshake,
+  Users,
+  Shield,
+  Trophy,
+  Zap,
+  ChevronDown,
+  ChevronUp,
+  Settings2,
+} from 'lucide-react';
 import { api } from '../api.js';
 import { useFetch } from '../useFetch.js';
 import { useAuth } from '../context/AuthContext.jsx';
-import { ErrorBox, Field, Spinner, SkeletonForm, TeamLogo, DropdownSelect } from '../components/ui.jsx';
+import { ErrorBox, SkeletonForm, TeamLogo, DropdownSelect, Modal } from '../components/ui.jsx';
 
 const FORMATS = [
-  { v: 'T10', label: 'T10 (10 Overs)', overs: 10 },
-  { v: 'T20', label: 'T20 (20 Overs)', overs: 20 },
-  { v: 'ODI', label: 'ODI (50 Overs)', overs: 50 },
-  { v: 'Custom', label: 'Custom' },
+  { v: 'T10', label: 'T10', overs: 10 },
+  { v: 'T20', label: 'T20', overs: 20 },
+  { v: 'ODI', label: 'ODI', overs: 50 },
+  { v: 'Custom', label: 'Custom', overs: null },
 ];
 
 export default function CreateMatch() {
@@ -41,6 +53,8 @@ export default function CreateMatch() {
     }))
   );
 
+  const [guestModalOpen, setGuestModalOpen] = useState(false);
+  const [showMore, setShowMore] = useState(false);
   const [errors, setErrors] = useState({});
   const [formError, setFormError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -49,7 +63,9 @@ export default function CreateMatch() {
   const myTeams = useMemo(() => (data?.items || []).filter((t) => t.canManage && t.playerCount >= 11), [data]);
 
   // Fetch connections for selected homeTeam if not admin
-  const { data: connData, loading: connLoading } = useFetch(f.homeTeam && !isAdmin ? `/teams/${f.homeTeam}/connections` : null);
+  const { data: connData, loading: connLoading } = useFetch(
+    f.homeTeam && !isAdmin ? `/teams/${f.homeTeam}/connections` : null
+  );
 
   useEffect(() => {
     if (!f.homeTeam && myTeams.length === 1) {
@@ -66,21 +82,20 @@ export default function CreateMatch() {
     return connectedList.filter((t) => (t.playerCount || 11) >= 11);
   }, [isAdmin, data, f.homeTeam, connData]);
 
-  // Options for opponent select dropdown: includes connected opponents AND always Guest Team (Manual 11s)
+  // Options for opponent select dropdown
   const opponentOptions = useMemo(() => {
     const list = opponents.map((t) => ({
       value: t.id,
-      label: `${t.name} (${t.playerCount || 11} players)`,
+      label: `${t.name} (${t.playerCount || 11}p)`,
     }));
     list.push({
       value: 'guest',
       label: '⭐ Guest Team (Manual 11s)',
-      badge: 'Manual Team',
     });
     return list;
   }, [opponents]);
 
-  // If no connected opponents and no awayTeam selected, default to 'guest'
+  // Auto-default awayTeam to guest if no opponents
   useEffect(() => {
     if (f.homeTeam && !connLoading && opponents.length === 0 && !f.awayTeam) {
       set({ awayTeam: 'guest', tossWinner: f.homeTeam });
@@ -88,22 +103,37 @@ export default function CreateMatch() {
   }, [f.homeTeam, connLoading, opponents.length, f.awayTeam]);
 
   const home = data?.items.find((t) => t.id === f.homeTeam);
-  const awayDoc = (data?.items || []).find((t) => t.id === f.awayTeam) || connData?.connected?.map((c) => c.team).find((t) => t.id === f.awayTeam);
-  const effectiveAway = f.awayTeam === 'guest'
-    ? { id: 'guest', name: f.guestTeamName.trim() || 'Guest Team', isGuest: true }
-    : awayDoc;
+  const awayDoc =
+    (data?.items || []).find((t) => t.id === f.awayTeam) ||
+    connData?.connected?.map((c) => c.team).find((t) => t.id === f.awayTeam);
+  const effectiveAway =
+    f.awayTeam === 'guest'
+      ? { id: 'guest', name: f.guestTeamName.trim() || 'Guest Team', isGuest: true }
+      : awayDoc;
 
-  const changeHome = (id) => set({ homeTeam: id, awayTeam: f.awayTeam === id ? '' : f.awayTeam, tossWinner: '' });
-  const changeAway = (id) => set({ awayTeam: id, tossWinner: '' });
+  // Auto-select toss winner to home team if empty
+  useEffect(() => {
+    if (!f.tossWinner && home) {
+      set({ tossWinner: home.id });
+    }
+  }, [home, f.tossWinner]);
+
+  const changeHome = (id) =>
+    set({ homeTeam: id, awayTeam: f.awayTeam === id ? '' : f.awayTeam, tossWinner: id });
+  const changeAway = (id) => set({ awayTeam: id, tossWinner: f.tossWinner || f.homeTeam });
 
   const submit = async (e) => {
     e.preventDefault();
     const er = {};
     if (!f.homeTeam) er.homeTeam = 'Select your team';
-    if (!f.awayTeam) er.awayTeam = 'Select the opponent team';
-    if (f.homeTeam && f.awayTeam !== 'guest' && f.homeTeam === f.awayTeam) er.awayTeam = 'Opponent must be a different team';
-    if (f.format === 'Custom' && !(Number.isInteger(Number(f.overs)) && Number(f.overs) >= 1 && Number(f.overs) <= 50)) er.overs = 'Enter overs between 1 and 50';
-    if (!f.tossWinner) er.tossWinner = 'Select who won the toss';
+    if (!f.awayTeam) er.awayTeam = 'Select opponent';
+    if (f.homeTeam && f.awayTeam !== 'guest' && f.homeTeam === f.awayTeam) {
+      er.awayTeam = 'Opponent must be a different team';
+    }
+    if (f.format === 'Custom' && !(Number.isInteger(Number(f.overs)) && Number(f.overs) >= 1 && Number(f.overs) <= 50)) {
+      er.overs = 'Enter overs (1-50)';
+    }
+    if (!f.tossWinner) er.tossWinner = 'Select toss winner';
     if (f.awayTeam === 'guest') {
       const seenNames = new Set();
       for (let i = 0; i < guestPlayers.length; i++) {
@@ -114,7 +144,7 @@ export default function CreateMatch() {
         }
         const key = pName.toLowerCase();
         if (seenNames.has(key)) {
-          er.guestTeam = `Two players have the same name: "${pName}". Player names must be unique.`;
+          er.guestTeam = `Player names must be unique: "${pName}"`;
           break;
         }
         seenNames.add(key);
@@ -132,13 +162,15 @@ export default function CreateMatch() {
         homeTeam: f.homeTeam,
         awayTeam: isGuest ? 'guest' : f.awayTeam,
         isGuestOpponent: isGuest,
-        guestTeam: isGuest ? {
-          name: f.guestTeamName.trim() || 'Guest Team',
-          players: guestPlayers.map((p, idx) => ({
-            name: p.name.trim() || `Player ${idx + 1}`,
-            role: p.role,
-          })),
-        } : undefined,
+        guestTeam: isGuest
+          ? {
+              name: f.guestTeamName.trim() || 'Guest Team',
+              players: guestPlayers.map((p, idx) => ({
+                name: p.name.trim() || `Player ${idx + 1}`,
+                role: p.role,
+              })),
+            }
+          : undefined,
         format: f.format,
         overs: f.format === 'Custom' ? Number(f.overs) : undefined,
         date: f.date ? new Date(f.date).toISOString() : undefined,
@@ -161,12 +193,18 @@ export default function CreateMatch() {
 
   if (myTeams.length === 0) {
     return (
-      <div className="space-y-3">
-        <Link to="/matches" className="btn btn-ghost"><ArrowLeft className="h-4 w-4" /> Back</Link>
-        <div className="card p-6 text-center">
-          <h1 className="font-bold text-slate-900">Create your team first</h1>
-          <p className="mt-1 text-sm text-slate-500">A match is played between your own team and an opponent. Add your team with at least 11 players to continue.</p>
-          <Link to="/teams/new" className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white font-bold mt-4 shadow-md">Create Team</Link>
+      <div className="mx-auto max-w-md w-full py-4 space-y-3">
+        <Link to="/matches" className="btn btn-ghost text-xs">
+          <ArrowLeft className="h-4 w-4 mr-1" /> Back
+        </Link>
+        <div className="card p-6 text-center shadow-lg border border-slate-200">
+          <h1 className="font-bold text-slate-900 text-base">Create your team first</h1>
+          <p className="mt-1 text-xs text-slate-500">
+            A match needs at least 11 players in your squad to start live scoring.
+          </p>
+          <Link to="/teams/new" className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white font-bold mt-4 shadow-sm text-xs">
+            Create Team
+          </Link>
         </div>
       </div>
     );
@@ -175,291 +213,344 @@ export default function CreateMatch() {
   const homeOptions = myTeams.map((t) => ({ value: t.id, label: t.name }));
 
   return (
-    <form onSubmit={submit} noValidate className="mx-auto max-w-xl space-y-3.5 sm:space-y-5 pb-6">
-      <div className="flex items-center gap-2">
-        <button type="button" onClick={() => nav(-1)} className="btn btn-ghost !p-1.5 sm:!p-2" aria-label="Go back"><ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" /></button>
-        <h1 className="text-lg sm:text-xl font-bold text-slate-900 leading-tight">Create Match</h1>
-      </div>
-      <ErrorBox message={formError} />
-      <p className="rounded-xl bg-blue-50 px-3 py-2 text-xs sm:text-sm text-blue-800">You will choose the playing 11 of each team when you start the match.</p>
+    <div className="mx-auto max-w-md w-full py-1 sm:py-3">
+      {/* Sleek Popup Card Container */}
+      <div className="relative overflow-hidden rounded-2xl bg-white shadow-xl border border-slate-200/90 transition-all">
+        {/* Top Gradient Stripe */}
+        <div className="h-1.5 bg-gradient-to-r from-emerald-500 via-pitch-500 to-blue-500" />
 
-      <section className="card space-y-3 p-3 sm:p-4 border border-slate-200/80 shadow-xs">
-        <Field label="Match Name (optional)" htmlFor="mname">
-          <input
-            id="mname"
-            className="input"
-            value={f.name}
-            onChange={(e) => set({ name: e.target.value })}
-            placeholder="Defaults to Team A vs Team B"
-            maxLength={100}
-          />
-        </Field>
-      </section>
-
-      {/* Team Selection Section - Modern Battle Arena Style */}
-      <section className="card p-3.5 sm:p-5 space-y-3.5 sm:space-y-5 border border-slate-200/80 shadow-xs">
-        <div className="flex items-center justify-between pb-2.5 border-b border-slate-100">
-          <div>
-            <h2 className="text-sm sm:text-base font-bold text-slate-900 leading-tight">Select Match Teams</h2>
-            <p className="text-[11px] sm:text-xs text-slate-500">Pick your own squad and opponent team</p>
+        {/* Modal Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50/50">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500 text-white shadow-xs">
+              <Trophy className="h-4 w-4" />
+            </div>
+            <div>
+              <h1 className="text-sm font-black text-slate-900 leading-tight">Create Match</h1>
+              <p className="text-[10px] text-slate-500">Quick match setup</p>
+            </div>
           </div>
-          <span className="badge bg-pitch-50 text-pitch-700 border border-pitch-200 text-[10px] sm:text-xs">
-            Playing 11
-          </span>
+          <button
+            type="button"
+            onClick={() => nav(-1)}
+            className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-200/60 hover:text-slate-700 transition"
+            aria-label="Close"
+          >
+            <X className="h-4.5 w-4.5" />
+          </button>
         </div>
 
-        {/* VS Battle Matchup Preview Card */}
-        <div className="relative rounded-2xl bg-gradient-to-r from-slate-900 via-navy-950 to-slate-900 p-4 text-white shadow-md overflow-hidden">
-          <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-blue-500/20 blur-2xl pointer-events-none" />
-          <div className="absolute -left-8 -bottom-8 h-28 w-28 rounded-full bg-pitch-500/20 blur-2xl pointer-events-none" />
-          
-          <div className="relative flex items-center justify-between gap-3">
-            {/* Home / Own Team Box */}
-            <div className="flex-1 text-center min-w-0">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 ring-2 ring-pitch-400/50 backdrop-blur-sm">
-                {home ? <TeamLogo team={home} size={36} /> : <Shield className="h-6 w-6 text-pitch-400" />}
-              </div>
-              <div className="mt-2 text-xs font-bold truncate text-white">
-                {home ? home.name : 'Select Your Team'}
-              </div>
-              <span className="inline-block mt-0.5 text-[10px] font-semibold text-pitch-400 uppercase tracking-wider">
-                Home / Own Team
+        <form onSubmit={submit} noValidate className="p-4 space-y-3.5">
+          <ErrorBox message={formError} />
+
+          {/* 1. MATCHUP SECTION: Compact Home vs Opponent */}
+          <div className="rounded-xl border border-slate-200 bg-gradient-to-b from-slate-50/80 to-white p-3 space-y-2.5 shadow-2xs">
+            <div className="flex items-center justify-between">
+              <span className="text-[10.5px] font-black uppercase tracking-wider text-slate-600">
+                1. Select Teams
+              </span>
+              <span className="text-[9.5px] font-bold text-pitch-700 bg-pitch-50 border border-pitch-200 px-1.5 py-0.2 rounded">
+                Playing 11
               </span>
             </div>
 
-            {/* VS Badge */}
-            <div className="flex flex-col items-center justify-center shrink-0">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-red-600 to-amber-500 text-xs font-black text-white shadow-md ring-2 ring-white/20">
+            {/* Home Team */}
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-emerald-800 uppercase tracking-wide flex items-center gap-1" htmlFor="home">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                Your Team
+              </label>
+              <DropdownSelect
+                id="home"
+                value={f.homeTeam}
+                onChange={changeHome}
+                options={homeOptions}
+                placeholder="Choose your team"
+                error={!!errors.homeTeam}
+                buttonClassName="!py-1.5 text-xs font-bold"
+              />
+              {errors.homeTeam && <p className="text-[10px] text-red-600 font-bold">{errors.homeTeam}</p>}
+            </div>
+
+            {/* VS Divider */}
+            <div className="relative flex items-center justify-center my-1">
+              <div className="border-t border-slate-200 w-full" />
+              <span className="absolute bg-white px-2 py-0.5 text-[9px] font-black text-slate-400 uppercase tracking-widest rounded-full border border-slate-200 shadow-2xs">
                 VS
               </span>
-              <span className="mt-1 text-[9px] font-semibold text-slate-400 uppercase tracking-widest">
-                Fixture
-              </span>
             </div>
 
-            {/* Away / Opponent Team Box */}
-            <div className="flex-1 text-center min-w-0">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 ring-2 ring-blue-400/50 backdrop-blur-sm">
-                {effectiveAway ? (
-                  f.awayTeam === 'guest' ? (
-                    <Users className="h-6 w-6 text-amber-400" />
-                  ) : (
-                    <TeamLogo team={effectiveAway} size={36} />
-                  )
-                ) : (
-                  <Shield className="h-6 w-6 text-blue-400" />
+            {/* Opponent Team */}
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-blue-800 uppercase tracking-wide flex items-center gap-1" htmlFor="away">
+                <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+                Opponent Team
+              </label>
+              <DropdownSelect
+                id="away"
+                value={f.awayTeam}
+                onChange={changeAway}
+                options={opponentOptions}
+                placeholder={connLoading ? 'Loading opponents...' : 'Choose opponent'}
+                error={!!errors.awayTeam}
+                buttonClassName="!py-1.5 text-xs font-bold"
+              />
+              {errors.awayTeam && <p className="text-[10px] text-red-600 font-bold">{errors.awayTeam}</p>}
+            </div>
+
+            {/* If Guest XI selected - Compact 1-line configuration */}
+            {f.awayTeam === 'guest' && (
+              <div className="flex items-center justify-between gap-2 rounded-xl bg-amber-50 border border-amber-200/90 p-2 text-xs">
+                <div className="flex-1 min-w-0">
+                  <span className="text-[9.5px] font-bold text-amber-800 uppercase block">Opponent Name</span>
+                  <input
+                    type="text"
+                    className="input !py-1 !px-2 text-xs font-bold text-slate-800 w-full bg-white border-amber-300"
+                    value={f.guestTeamName}
+                    onChange={(e) => set({ guestTeamName: e.target.value })}
+                    placeholder="Guest XI"
+                    maxLength={60}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setGuestModalOpen(true)}
+                  className="inline-flex items-center gap-1 rounded-lg bg-amber-500 hover:bg-amber-600 px-2.5 py-1.5 text-[11px] font-black text-white shadow-xs shrink-0 transition"
+                  title="Customize guest player names"
+                >
+                  <Users className="h-3.5 w-3.5" />
+                  <span>11 Players</span>
+                </button>
+              </div>
+            )}
+
+            {!isAdmin && f.homeTeam && !connLoading && opponents.length === 0 && f.awayTeam !== 'guest' && (
+              <div className="rounded-lg bg-amber-50 border border-amber-200 p-2 text-[11px] text-amber-800 flex items-center justify-between gap-2">
+                <span>No connected opponents.</span>
+                <button
+                  type="button"
+                  onClick={() => set({ awayTeam: 'guest', tossWinner: f.homeTeam })}
+                  className="font-bold text-blue-700 underline shrink-0"
+                >
+                  Use Guest Team XI
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* 2. MATCH FORMAT: Compact Segmented Buttons */}
+          <div className="space-y-1.5">
+            <span className="text-[10.5px] font-black uppercase tracking-wider text-slate-600 block">
+              2. Format & Overs
+            </span>
+            <div className="grid grid-cols-4 gap-1.5">
+              {FORMATS.map((o) => {
+                const active = f.format === o.v;
+                return (
+                  <button
+                    key={o.v}
+                    type="button"
+                    onClick={() => set({ format: o.v })}
+                    className={`flex flex-col items-center justify-center rounded-xl py-1.5 px-1 text-xs font-bold transition-all border ${
+                      active
+                        ? 'bg-pitch-500 text-navy-950 border-pitch-500 shadow-xs font-black scale-102'
+                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    <span>{o.label}</span>
+                    <span className="text-[9px] opacity-75">{o.overs ? `${o.overs} ov` : 'Custom'}</span>
+                  </button>
+                );
+              })}
+            </div>
+            {f.format === 'Custom' && (
+              <div className="flex items-center gap-2 pt-1">
+                <span className="text-xs font-bold text-slate-600">Custom Overs:</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="50"
+                  value={f.overs}
+                  onChange={(e) => set({ overs: e.target.value.replace(/\D/g, '') })}
+                  placeholder="e.g. 8"
+                  className={`input !py-1 !px-2 text-xs font-bold w-20 text-center ${
+                    errors.overs ? 'input-error' : ''
+                  }`}
+                />
+                {errors.overs && <span className="text-[10px] text-red-600 font-bold">{errors.overs}</span>}
+              </div>
+            )}
+          </div>
+
+          {/* 3. TOSS SECTION: Compact Pill Buttons */}
+          <div className="space-y-2">
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[10.5px] font-black uppercase tracking-wider text-slate-600">
+                  3. Toss Winner <span className="text-red-500">*</span>
+                </span>
+                {errors.tossWinner && (
+                  <span className="text-[10px] text-red-600 font-bold">{errors.tossWinner}</span>
                 )}
               </div>
-              <div className="mt-2 text-xs font-bold truncate text-white">
-                {effectiveAway ? effectiveAway.name : 'Select Opponent'}
+              <div className="grid grid-cols-2 gap-2">
+                {[home, effectiveAway].map((t, idx) => {
+                  if (!t) return null;
+                  const isSelected = f.tossWinner === t.id;
+                  return (
+                    <button
+                      key={t.id || idx}
+                      type="button"
+                      onClick={() => set({ tossWinner: t.id })}
+                      className={`flex items-center justify-center gap-1.5 rounded-xl py-2 px-2 text-xs font-bold border transition-all truncate ${
+                        isSelected
+                          ? 'bg-blue-600 text-white border-blue-600 shadow-xs font-black'
+                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      <span className="truncate">{t.name}</span>
+                    </button>
+                  );
+                })}
               </div>
-              <span className="inline-block mt-0.5 text-[10px] font-semibold text-blue-400 uppercase tracking-wider">
-                {f.awayTeam === 'guest' ? 'Manual Opponent' : 'Opponent'}
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-[10.5px] font-black uppercase tracking-wider text-slate-600 block">
+                Toss Decision
               </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Home Team Input Card */}
-        <div className="rounded-xl border border-pitch-200/80 bg-pitch-50/30 p-3.5 space-y-2">
-          <div className="flex items-center justify-between">
-            <label className="text-xs font-bold uppercase tracking-wider text-pitch-900 flex items-center gap-1.5" htmlFor="home">
-              <span className="h-2 w-2 rounded-full bg-pitch-600" />
-              1. Your Own Team <span className="text-red-500">*</span>
-            </label>
-            <span className="badge bg-pitch-100 text-pitch-800 text-[10px]">Verified Squad</span>
-          </div>
-          <DropdownSelect
-            id="home"
-            value={f.homeTeam}
-            onChange={changeHome}
-            options={homeOptions}
-            placeholder="Choose your team"
-            error={!!errors.homeTeam}
-          />
-          {errors.homeTeam && <p className="text-xs text-red-600 font-medium" role="alert">{errors.homeTeam}</p>}
-        </div>
-
-        {/* Opponent Selection Card */}
-        <div className="rounded-xl border border-blue-200/80 bg-blue-50/20 p-3.5 space-y-2">
-          <div className="flex items-center justify-between">
-            <label className="text-xs font-bold uppercase tracking-wider text-blue-900 flex items-center gap-1.5" htmlFor="away">
-              <span className="h-2 w-2 rounded-full bg-blue-600" />
-              2. Opponent Team <span className="text-red-500">*</span>
-            </label>
-            <span className="text-[11px] text-slate-500">Connected or Manual</span>
-          </div>
-          <DropdownSelect
-            id="away"
-            value={f.awayTeam}
-            onChange={changeAway}
-            options={opponentOptions}
-            placeholder={connLoading ? 'Loading opponents...' : 'Choose opponent'}
-            error={!!errors.awayTeam}
-          />
-          {errors.awayTeam && <p className="text-xs text-red-600 font-medium" role="alert">{errors.awayTeam}</p>}
-        </div>
-
-        {/* If Guest Team is selected, show custom name & 11s configuration */}
-        {f.awayTeam === 'guest' && (
-          <div className="rounded-2xl border-2 border-dashed border-amber-300 bg-gradient-to-b from-amber-50/80 to-white p-4 sm:p-5 space-y-4 shadow-xs">
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white shadow-xs">
-                  <Users className="h-5 w-5" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-slate-900 text-sm sm:text-base">Manual Opponent Team (11 Players)</h3>
-                  <p className="text-xs text-slate-500">Name the team & customize the 11 players playing today</p>
-                </div>
-              </div>
-              <span className="badge bg-amber-100 text-amber-800 border border-amber-300 font-bold text-[10px] shrink-0">
-                Manual 11s
-              </span>
-            </div>
-
-            <div>
-              <label className="label text-xs font-bold uppercase text-slate-700" htmlFor="guest-name">
-                Opponent Team Name <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <input
-                  id="guest-name"
-                  className="input font-semibold text-slate-800 pl-3 pr-10 border-amber-200 focus:border-amber-500 focus:ring-amber-400/20"
-                  value={f.guestTeamName}
-                  onChange={(e) => set({ guestTeamName: e.target.value })}
-                  placeholder="e.g. Chennai Super Warriors, Guest XI"
-                  maxLength={60}
-                />
-                <span className="absolute right-3 top-2.5 text-xs font-bold text-amber-600">XI</span>
-              </div>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                  Playing 11 Squad List
-                </span>
-                <span className="text-[11px] font-semibold text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded-full">
-                  11 / 11 Players
-                </span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-72 overflow-y-auto p-2.5 border border-slate-200 rounded-xl bg-slate-50/60 shadow-inner">
-                {guestPlayers.map((player, idx) => (
-                  <div key={idx} className="flex items-center gap-1.5 p-1.5 rounded-lg border border-slate-200 bg-white text-xs shadow-2xs hover:border-blue-300 transition">
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-slate-100 font-mono text-[11px] font-black text-slate-600">
-                      {idx + 1}
-                    </span>
-                    <input
-                      type="text"
-                      className="input !py-1 !px-2 flex-1 text-xs border-slate-200 font-medium"
-                      value={player.name}
-                      onChange={(e) => {
-                        const updated = [...guestPlayers];
-                        updated[idx] = { ...updated[idx], name: e.target.value };
-                        setGuestPlayers(updated);
-                      }}
-                      placeholder={`Player ${idx + 1}`}
-                      maxLength={40}
-                    />
-                    <div className="w-28 shrink-0">
-                      <DropdownSelect
-                        value={player.role}
-                        onChange={(val) => {
-                          const updated = [...guestPlayers];
-                          updated[idx] = { ...updated[idx], role: val };
-                          setGuestPlayers(updated);
-                        }}
-                        options={[
-                          { value: 'Batsman', label: '🏏 Batsman' },
-                          { value: 'Bowler', label: '⚾ Bowler' },
-                          { value: 'All-rounder', label: '⚡ All-rounder' },
-                          { value: 'Wicket Keeper', label: '🧤 Keeper' },
-                        ]}
-                        buttonClassName="!py-1 !px-2 text-xs font-semibold bg-slate-50 border-slate-200"
-                      />
-                    </div>
-                  </div>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  ['bat', '🏏 Bat First'],
+                  ['bowl', '⚾ Bowl First'],
+                ].map(([v, l]) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => set({ tossDecision: v })}
+                    className={`rounded-xl py-2 px-2 text-xs font-bold border transition-all ${
+                      f.tossDecision === v
+                        ? 'bg-slate-900 text-white border-slate-900 shadow-xs font-black'
+                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    {l}
+                  </button>
                 ))}
               </div>
             </div>
           </div>
-        )}
 
-        {!isAdmin && f.homeTeam && !connLoading && opponents.length === 0 && f.awayTeam !== 'guest' && (
-          <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3.5 text-xs text-amber-800 space-y-1.5">
-            <div className="font-bold text-amber-950 flex items-center gap-1.5">
-              <span>⚠️ No connected opponent teams found for {home?.name || 'your team'}</span>
-            </div>
-            <p>You can select <strong>"Guest Team (Manual 11s)"</strong> above to instantly play against a manual team, or connect with opponents using their Team Code.</p>
-            <div className="pt-1">
-              <Link to={`/teams/${f.homeTeam}`} className="inline-flex items-center gap-1 font-bold text-blue-700 underline hover:no-underline">
-                <Handshake className="h-3.5 w-3.5" /> Go to Team Page & Connect Opponent →
-              </Link>
-            </div>
-          </div>
-        )}
-      </section>
-
-
-      <section className="card space-y-4 p-4">
-        <fieldset>
-          <legend className="label">Match Type</legend>
-          <div className="grid grid-cols-2 gap-2">
-            {FORMATS.map((o) => (
-              <label key={o.v} className={`flex cursor-pointer items-center gap-2 rounded-lg border p-2.5 text-sm ${f.format === o.v ? 'border-blue-500 bg-blue-50' : 'border-slate-200'}`}>
-                <input type="radio" name="format" className="accent-blue-600" checked={f.format === o.v} onChange={() => set({ format: o.v })} /> {o.label}
-              </label>
-            ))}
-          </div>
-        </fieldset>
-        {f.format === 'Custom' ? (
-          <Field label="Number of Overs" required error={errors.overs} htmlFor="overs">
-            <input id="overs" inputMode="numeric" className={`input ${errors.overs ? 'input-error' : ''}`} value={f.overs} onChange={(e) => set({ overs: e.target.value.replace(/\D/g, '') })} placeholder="1 to 50" />
-          </Field>
-        ) : (
-          <p className="text-sm text-slate-600">Overs: <span className="font-semibold">{FORMATS.find((o) => o.v === f.format).overs}</span></p>
-        )}
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Match Date (optional)" htmlFor="mdate"><input id="mdate" type="datetime-local" className="input" value={f.date} onChange={(e) => set({ date: e.target.value })} /></Field>
-          <Field label="Venue (optional)" htmlFor="venue"><input id="venue" className="input" value={f.venue} onChange={(e) => set({ venue: e.target.value })} maxLength={100} /></Field>
-        </div>
-      </section>
-
-      <section className="card space-y-4 p-4">
-        <fieldset>
-          <legend className="label">Toss Winner <span className="text-red-500">*</span></legend>
-          {!home || !effectiveAway ? <p className="text-sm text-slate-500">Select both teams first.</p> : (
-            <div className="grid grid-cols-2 gap-2">
-              {[home, effectiveAway].map((t) => (
-                <label key={t.id} className={`flex cursor-pointer items-center gap-2 rounded-lg border p-2.5 text-sm ${f.tossWinner === t.id ? 'border-blue-500 bg-blue-50' : 'border-slate-200'}`}>
+          {/* 4. OPTIONAL INFO: Collapsible Section */}
+          <div className="border-t border-slate-100 pt-1">
+            <button
+              type="button"
+              onClick={() => setShowMore(!showMore)}
+              className="flex items-center justify-between w-full text-[11px] font-bold text-slate-500 hover:text-slate-800 py-1 transition"
+            >
+              <span className="flex items-center gap-1">
+                <Settings2 className="h-3.5 w-3.5" />
+                <span>Match Name, Venue & Date (Optional)</span>
+              </span>
+              {showMore ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+            </button>
+            {showMore && (
+              <div className="mt-2 space-y-2 pt-1 animate-fadeIn">
+                <input
+                  value={f.name}
+                  onChange={(e) => set({ name: e.target.value })}
+                  placeholder="Defaults to Team A vs Team B"
+                  className="input !py-1.5 text-xs w-full"
+                  maxLength={100}
+                />
+                <div className="grid grid-cols-2 gap-2">
                   <input
-                    type="radio"
-                    name="toss"
-                    className="accent-blue-600"
-                    checked={f.tossWinner === t.id}
-                    onChange={() => set({ tossWinner: t.id })}
+                    type="datetime-local"
+                    value={f.date}
+                    onChange={(e) => set({ date: e.target.value })}
+                    className="input !py-1.5 text-xs"
                   />
-                  <TeamLogo team={t} size={24} /> {t.name}
-                </label>
-              ))}
-            </div>
-          )}
-          {errors.tossWinner && <p className="mt-1 text-xs text-red-600" role="alert">{errors.tossWinner}</p>}
-        </fieldset>
-        <fieldset>
-          <legend className="label">Toss Decision</legend>
-          <div className="grid grid-cols-2 gap-2">
-            {[['bat', 'Bat first'], ['bowl', 'Bowl first']].map(([v, l]) => (
-              <label key={v} className={`flex cursor-pointer items-center gap-2 rounded-lg border p-2.5 text-sm ${f.tossDecision === v ? 'border-blue-500 bg-blue-50' : 'border-slate-200'}`}>
-                <input type="radio" name="decision" className="accent-blue-600" checked={f.tossDecision === v} onChange={() => set({ tossDecision: v })} /> {l}
-              </label>
+                  <input
+                    value={f.venue}
+                    onChange={(e) => set({ venue: e.target.value })}
+                    placeholder="Venue / Ground"
+                    className="input !py-1.5 text-xs"
+                    maxLength={100}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* SUBMIT BUTTON */}
+          <button
+            type="submit"
+            disabled={busy}
+            className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 py-2.5 text-xs sm:text-sm font-black text-white shadow-md shadow-emerald-900/20 active:scale-95 transition-all disabled:opacity-60"
+          >
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4 drop-shadow" />}
+            <span>{busy ? 'Setting up match…' : 'Start Live Match'}</span>
+          </button>
+        </form>
+      </div>
+
+      {/* POPUP MODAL FOR CUSTOMIZING GUEST 11 PLAYERS */}
+      <Modal open={guestModalOpen} onClose={() => setGuestModalOpen(false)} title="Guest Team 11 Players">
+        <div className="space-y-3">
+          <p className="text-xs text-slate-500">
+            Customize player names and roles for <strong>{f.guestTeamName || 'Guest Team'}</strong>.
+          </p>
+
+          <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
+            {guestPlayers.map((player, idx) => (
+              <div key={idx} className="flex items-center gap-1.5 p-1 rounded-lg border border-slate-200 bg-slate-50/50">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white border border-slate-200 font-mono text-[10px] font-black text-slate-600">
+                  {idx + 1}
+                </span>
+                <input
+                  type="text"
+                  className="input !py-1 !px-2 flex-1 text-xs border-slate-200 font-medium bg-white"
+                  value={player.name}
+                  onChange={(e) => {
+                    const updated = [...guestPlayers];
+                    updated[idx] = { ...updated[idx], name: e.target.value };
+                    setGuestPlayers(updated);
+                  }}
+                  placeholder={`Player ${idx + 1}`}
+                  maxLength={40}
+                />
+                <div className="w-28 shrink-0">
+                  <DropdownSelect
+                    value={player.role}
+                    onChange={(val) => {
+                      const updated = [...guestPlayers];
+                      updated[idx] = { ...updated[idx], role: val };
+                      setGuestPlayers(updated);
+                    }}
+                    options={[
+                      { value: 'Batsman', label: '🏏 Bat' },
+                      { value: 'Bowler', label: '⚾ Bowl' },
+                      { value: 'All-rounder', label: '⚡ All' },
+                      { value: 'Wicket Keeper', label: '🧤 WK' },
+                    ]}
+                    buttonClassName="!py-1 !px-2 text-[11px] font-semibold bg-white border-slate-200"
+                  />
+                </div>
+              </div>
             ))}
           </div>
-        </fieldset>
-      </section>
 
-      <button className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md w-full py-3 text-base" disabled={busy}>{busy && <Loader2 className="h-4 w-4 animate-spin" />} Create Match</button>
-    </form>
+          <div className="flex justify-end pt-2">
+            <button
+              type="button"
+              onClick={() => setGuestModalOpen(false)}
+              className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-1.5 px-4"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      </Modal>
+    </div>
   );
 }
