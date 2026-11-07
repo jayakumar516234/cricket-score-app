@@ -359,7 +359,7 @@ export default function Settings() {
           </Link>
 
           <a
-            href="https://api.whatsapp.com/send?text=Hello%20Cricket%20Score%20Support,%20I%20need%20help%20with%20my%20app"
+            href="https://wa.me/919363639612?text=Hello%20Cricket%20Score%20Support,%20I%20need%20help%20with%20my%20app"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 p-2.5 rounded-xl border border-emerald-200 bg-emerald-50/40 hover:bg-emerald-50 transition shadow-2xs"

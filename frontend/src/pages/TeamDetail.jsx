@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -39,7 +39,8 @@ export default function TeamDetail() {
 
   if (loading && !data) return <SkeletonTeamDetail />;
   if (error && !data) return <ErrorBox message={error} onRetry={reload} />;
-  const { team, players, record } = data;
+  if (!data?.team) return <ErrorBox message={error || 'Team not found'} onRetry={reload} />;
+  const { team, players = [], record = { played: 0, won: 0, lost: 0, tied: 0 } } = data;
   const canSeeCode = user?.role !== 'viewer' && (user?.role === 'superadmin' || user?.role === 'admin' || team.canManage);
 
   return (
@@ -188,7 +189,7 @@ function PlayerStats({ teamId, teamName, teamLogo }) {
   if (loading && !data) return <SkeletonList count={4} />;
   if (error && !data) return <ErrorBox message={error} onRetry={reload} />;
 
-  const stats = data.stats || [];
+  const stats = data?.stats || [];
   const hasBatting = stats.some((s) => s.innings > 0);
   const hasBowling = stats.some((s) => s.bowlingInnings > 0);
   const hasFielding = stats.some((s) => s.catches > 0 || s.runOuts > 0 || s.stumpings > 0);
@@ -373,18 +374,18 @@ function TeamCredentialsManager({ team }) {
   const teamAdmin = data?.teamAdmin;
 
   const isSuperOrAdmin = user?.role === 'superadmin' || user?.role === 'admin';
-  const isTeamOwner = String(user?._id) === String(team.createdBy);
+  const isTeamOwner = !!user?._id && !!team?.createdBy && String(user._id) === String(team.createdBy);
   const canEditTeamAdmin = isSuperOrAdmin || isTeamOwner;
 
   // Initialize viewer fields when data arrives
-  useState(() => {
+  useEffect(() => {
     if (data?.viewer) {
       setVUsername(data.viewer.username);
       setVPhone(data.viewer.phone || '');
     } else if (data && !data.viewer) {
-      setVUsername(`${slug(team.name)}_view`);
+      setVUsername(`${slug(team?.name || '')}_view`);
     }
-  }, [data, team.name]);
+  }, [data, team?.name]);
 
   const saveViewer = async (e, extra = {}) => {
     e?.preventDefault();
@@ -882,8 +883,8 @@ function OpponentsSection({ team }) {
                 <div className="flex items-center gap-3">
                   <TeamLogo team={inc.fromTeam} size={40} />
                   <div>
-                    <div className="font-semibold text-slate-900">{inc.fromTeam.name}</div>
-                    <div className="text-xs text-slate-500">{inc.fromTeam.ballType}{inc.fromTeam.location ? ` · ${inc.fromTeam.location}` : ''}</div>
+                    <div className="font-semibold text-slate-900">{inc.fromTeam?.name || 'Unknown Team'}</div>
+                    <div className="text-xs text-slate-500">{inc.fromTeam?.ballType || ''}{inc.fromTeam?.location ? ` · ${inc.fromTeam.location}` : ''}</div>
                   </div>
                 </div>
                 {team.canManage && (
@@ -924,7 +925,7 @@ function OpponentsSection({ team }) {
               <div key={out.connectionId} className="flex items-center justify-between py-2">
                 <div className="flex items-center gap-2">
                   <TeamLogo team={out.toTeam} size={32} />
-                  <span className="text-sm font-medium text-slate-800">{out.toTeam.name}</span>
+                  <span className="text-sm font-medium text-slate-800">{out.toTeam?.name || 'Unknown Team'}</span>
                 </div>
                 {team.canManage && (
                   <button

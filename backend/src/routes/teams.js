@@ -219,6 +219,7 @@ router.get('/pending-requests-count', wrap(async (req, res) => {
 }));
 
 router.get('/:id', wrap(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) throw new HttpError(404, 'Team not found');
   const team = await Team.findById(req.params.id);
   if (!team) throw new HttpError(404, 'Team not found');
   if (!viewerMayViewTeam(req.user, team)) throw new HttpError(403, 'You can only view your own team');
@@ -340,6 +341,7 @@ const adminLoginSchema = z.object({
 });
 
 async function ownedTeam(req) {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) throw new HttpError(404, 'Team not found');
   const team = await Team.findById(req.params.id);
   if (!team) throw new HttpError(404, 'Team not found');
   if (!canManageTeam(req.user, team)) throw new HttpError(403, 'Only the team owner or admin can manage team credentials');
@@ -494,6 +496,7 @@ router.post('/:id/connect', wrap(async (req, res) => {
 
 // Get connections (accepted opponent teams, incoming requests, outgoing requests)
 router.get('/:id/connections', wrap(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) throw new HttpError(404, 'Team not found');
   const team = await Team.findById(req.params.id);
   if (!team) throw new HttpError(404, 'Team not found');
 
@@ -592,6 +595,7 @@ router.delete('/:id/connections/:connId', wrap(async (req, res) => {
 
 // ---- player career stats (aggregated from match deliveries) ----
 router.get('/:id/player-stats', wrap(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) throw new HttpError(404, 'Team not found');
   const team = await Team.findById(req.params.id);
   if (!team) throw new HttpError(404, 'Team not found');
   if (!viewerMayViewTeam(req.user, team)) throw new HttpError(403, 'You can only view your own team');

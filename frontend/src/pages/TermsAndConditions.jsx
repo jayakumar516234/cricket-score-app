@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowLeft, FileText, Users, ShieldCheck, AlertTriangle, Scale, Mail } from 'lucide-react';
+import { ArrowLeft, FileText, Users, ShieldCheck, AlertTriangle, Scale, MessageCircle } from 'lucide-react';
 
 const Section = ({ title, icon: Icon, children }) => (
   <div className="space-y-3">
@@ -59,7 +59,7 @@ export default function TermsAndConditions() {
             <ul className="list-disc pl-4 space-y-1">
               <li><strong>Organization / Developer:</strong> JK Sports (Jayakumar)</li>
               <li><strong>Headquarters / Location:</strong> Kanchipuram, Tamil Nadu, India</li>
-              <li><strong>Support Email:</strong> xxxx@gmail.com</li>
+              <li><strong>WhatsApp Support:</strong> <a href="https://wa.me/919363639612" target="_blank" rel="noopener noreferrer" className="text-emerald-700 underline font-semibold">+91 9363639612</a></li>
               <li><strong>Platform:</strong> Progressive Web App (PWA) + Android (Play Store)</li>
               <li><strong>Purpose:</strong> Non-commercial cricket scoring and team management</li>
               <li><strong>Target Users:</strong> Cricket club admins, tournament organizers, scorers, players, and viewers</li>
@@ -243,12 +243,12 @@ export default function TermsAndConditions() {
             </p>
           </Section>
 
-          <Section title="16. Contact Us" icon={Mail}>
+          <Section title="16. Contact Us" icon={MessageCircle}>
             <p>
               If you have any questions about these Terms, or need to report a violation, please contact us:
             </p>
             <ul className="list-disc pl-4 space-y-1">
-              <li><strong>Email:</strong> <a href="mailto:xxxx@gmail.com" className="text-pitch-600 underline font-medium">xxxx@gmail.com</a></li>
+              <li><strong>WhatsApp:</strong> <a href="https://wa.me/919363639612" target="_blank" rel="noopener noreferrer" className="text-emerald-700 underline font-semibold">+91 9363639612</a></li>
               <li><strong>Organization:</strong> JK Sports, Kanchipuram, Tamil Nadu, India</li>
               <li><strong>In-app:</strong> Go to <em>Support / Feedback</em> in the app menu</li>
             </ul>

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Shield, Lock, Eye, Trash2, Mail, Database, Globe, Smartphone } from 'lucide-react';
+import { ArrowLeft, Shield, Lock, Eye, Trash2, MessageCircle, Database, Globe, Smartphone } from 'lucide-react';
 
 const Section = ({ title, icon: Icon, children }) => (
   <div className="space-y-3">
@@ -72,7 +72,7 @@ export default function PrivacyPolicy() {
               <InfoCard label="App Name" value="Cricket Score App" />
               <InfoCard label="Organization / Dev" value="JK Sports (Jayakumar)" />
               <InfoCard label="Location" value="Kanchipuram, Tamil Nadu, India" />
-              <InfoCard label="Official Email" value="xxxx@gmail.com" />
+              <InfoCard label="Official WhatsApp" value="+91 9363639612" />
               <InfoCard label="Support" value="Available via in-app Support & Feedback desk" />
             </div>
           </div>
@@ -218,18 +218,18 @@ export default function PrivacyPolicy() {
             </p>
           </Section>
 
-          <Section title="10. Contact Us" icon={Mail}>
+          <Section title="10. Contact Us" icon={MessageCircle}>
             <p>
               If you have any questions, concerns, or requests regarding this Privacy Policy or your
               personal data, please reach out through:
             </p>
             <ul className="list-disc pl-4 space-y-1">
-              <li><strong>Official Support Email</strong>: <a href="mailto:xxxx@gmail.com" className="text-pitch-600 underline font-medium">xxxx@gmail.com</a></li>
+              <li><strong>Official WhatsApp Support</strong>: <a href="https://wa.me/919363639612" target="_blank" rel="noopener noreferrer" className="text-emerald-700 underline font-semibold">+91 9363639612</a></li>
               <li><strong>Organization</strong>: JK Sports, Kanchipuram, Tamil Nadu, India</li>
               <li><strong>In-app Desk</strong>: Go to <em>Support / Feedback</em> in the app menu</li>
             </ul>
             <p className="text-xs text-slate-500 bg-slate-50 border border-slate-100 rounded-lg px-3 py-2">
-              For data deletion requests, email us at <strong>xxxx@gmail.com</strong> with the subject: <strong>"Data Deletion Request – Cricket Score App"</strong>
+              For data deletion requests, message us on WhatsApp at <strong>+91 9363639612</strong> with the message: <strong>"Data Deletion Request – Cricket Score App"</strong>
             </p>
           </Section>
 
