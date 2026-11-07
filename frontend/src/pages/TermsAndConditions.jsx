@@ -12,8 +12,8 @@ const Section = ({ title, icon: Icon, children }) => (
 );
 
 export default function TermsAndConditions() {
-  const updated = 'October 31, 2026';
-  const effectiveDate = 'November 1, 2026';
+  const updated = 'November 7, 2026';
+  const effectiveDate = 'November 7, 2026';
 
   return (
     <div className="min-h-full bg-slate-50">
@@ -136,16 +136,19 @@ export default function TermsAndConditions() {
               <li>By entering data, you grant us a licence to store and display it within the app</li>
               <li>Team names and match results may be visible to other registered users</li>
               <li>Phone numbers and personal contact details are <strong>never</strong> shown to regular users</li>
-              <li>Live scoreboards may be visible to viewers without a login (public matches)</li>
+              <li>Live scoreboards may be visible to viewers without a login (public matches via live links & QR codes)</li>
+              <li><strong>Guest Opponent Teams:</strong> You may configure matches against guest teams with custom names and guest players; these guest details apply strictly to that specific match record and do not alter official team rosters</li>
+              <li><strong>Match Configurations:</strong> Matches support 1 to 100 overs, toss recordings, super overs, and tie-break decisions according to your league rules</li>
               <li>You are responsible for ensuring player names are entered with their consent</li>
             </ul>
           </Section>
 
-          <Section title="7. Tournaments">
+          <Section title="7. Tournaments & Team Code Invitations">
             <ul className="list-disc pl-4 space-y-1">
               <li>Tournaments can be created by Admins and Super Admins</li>
+              <li><strong>Team Code Verification:</strong> Tournament creators can invite teams using the team's unique team code. Upon entering the code, the team admin receives an in-app notification to review and confirm their participation spot</li>
               <li>Tournament brackets are auto-generated based on the number of participating teams</li>
-              <li>Tournament data (results, brackets, schedules) is visible to all registered users</li>
+              <li>Tournament data (results, brackets, schedules, standings) is visible to all registered users</li>
               <li>Admins can password-protect tournaments for restricted access</li>
               <li>Tournament results are final once submitted by the scorer and approved by the admin</li>
             </ul>
@@ -173,19 +176,24 @@ export default function TermsAndConditions() {
             </p>
           </Section>
 
-          <Section title="10. Service Availability">
+          <Section title="10. Offline Scoring & Service Availability">
             <p>
-              We strive to keep Cricket Score App available at all times. However, we do not guarantee
-              uninterrupted access. We reserve the right to:
+              Cricket Score App supports <strong>offline match scoring</strong>. Scorers can continue scoring
+              without an internet connection; scored balls are preserved locally on your device and automatically
+              synced to the cloud server once connectivity is restored.
+            </p>
+            <p className="mt-2">
+              While we strive to keep Cricket Score App accessible at all times, we do not guarantee uninterrupted
+              access. We reserve the right to:
             </p>
             <ul className="list-disc pl-4 space-y-1">
               <li>Perform scheduled or emergency maintenance without prior notice</li>
-              <li>Update, modify, or discontinue any feature at any time</li>
-              <li>Take the service temporarily offline for technical reasons</li>
+              <li>Update, modify, or enhance app features and scoring rules</li>
+              <li>Take the service temporarily offline for technical or infrastructure upgrades</li>
             </ul>
             <p>
-              We are not liable for any loss (including match data loss) caused by downtime,
-              server errors, or technical failures.
+              We are not liable for any unexpected loss caused by device hardware failure, cache clearing,
+              or external connectivity disruptions.
             </p>
           </Section>
 

@@ -19,8 +19,8 @@ const InfoCard = ({ label, value }) => (
 );
 
 export default function PrivacyPolicy() {
-  const updated = 'October 31, 2026';
-  const effectiveDate = 'November 1, 2026';
+  const updated = 'November 7, 2026';
+  const effectiveDate = 'November 7, 2026';
 
   return (
     <div className="min-h-full bg-slate-50">
@@ -92,17 +92,19 @@ export default function PrivacyPolicy() {
               <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 space-y-1.5">
                 <p className="font-semibold text-slate-700 text-xs uppercase tracking-wide">Cricket Data (User-Created)</p>
                 <ul className="list-disc pl-4 space-y-1">
-                  <li>Team names, logos, and player names you create</li>
-                  <li>Match scores, ball-by-ball entries, and tournament brackets</li>
-                  <li>Ground/venue names and match schedules</li>
+                  <li>Team names, unique team codes, logos, and squad player names</li>
+                  <li>Guest opponent team names and temporary match players (retained only for the specific match)</li>
+                  <li>Match scores, ball-by-ball entries, overs (1–100 overs), toss results, and tournament brackets</li>
+                  <li>Ground/venue names, match dates, and fixtures</li>
                 </ul>
               </div>
               <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 space-y-1.5">
-                <p className="font-semibold text-slate-700 text-xs uppercase tracking-wide">Automatically Collected</p>
+                <p className="font-semibold text-slate-700 text-xs uppercase tracking-wide">Automatically Collected & Offline Sync</p>
                 <ul className="list-disc pl-4 space-y-1">
-                  <li>Login timestamps and session activity (for security)</li>
-                  <li>Device type (mobile/desktop) via browser — not stored permanently</li>
-                  <li>Support tickets and feedback messages you submit</li>
+                  <li>Offline ball scoring queue cached securely on your device and synced to cloud when connected</li>
+                  <li>Login timestamps and active session records (for account security)</li>
+                  <li>In-app notifications for tournament spot confirmation and team invites</li>
+                  <li>Support tickets and feedback submitted via the in-app help desk</li>
                 </ul>
               </div>
             </div>
@@ -162,14 +164,17 @@ export default function PrivacyPolicy() {
             </ul>
           </Section>
 
-          <Section title="5. Cookies & Local Storage" icon={Globe}>
+          <Section title="5. Offline Mode, Caching & Local Storage" icon={Globe}>
             <p>
-              We use <strong>browser localStorage</strong> (not cookies) to store:
+              Our app supports full <strong>offline scoring and PWA capabilities</strong>. We use browser
+              technologies including <strong>localStorage, IndexedDB, and Service Workers</strong> to store:
             </p>
             <ul className="list-disc pl-4 space-y-1">
-              <li>Your login session token (JWT) — to keep you logged in</li>
-              <li>Cached app data — to speed up loading and enable offline access</li>
-              <li>Your preferred settings (e.g. UI preferences)</li>
+              <li>Your login session token (JWT) to keep you signed in</li>
+              <li>Ball-by-ball score queue when scoring offline without an active network connection</li>
+              <li>Auto-sync queue that safely uploads recorded balls to the cloud once network connectivity resumes</li>
+              <li>Cached application shell and match screens for fast, resilient performance in remote cricket grounds</li>
+              <li>Your preferred language (English / தமிழ்) and sound effect preferences</li>
             </ul>
             <p>
               <strong>No third-party cookies, tracking pixels, or advertising SDKs</strong> are used in this app.
