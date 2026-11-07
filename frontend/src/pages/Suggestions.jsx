@@ -186,7 +186,7 @@ export default function Suggestions() {
         <SkeletonList count={4} />
       ) : error ? (
         <ErrorBox message={error} onRetry={reload} />
-      ) : data.items.length === 0 ? (
+      ) : (data?.items?.length ?? 0) === 0 ? (
         <Empty
           icon={Lightbulb}
           title={statusFilter ? 'No tickets match this filter' : 'No feedback or tickets yet'}
@@ -204,7 +204,7 @@ export default function Suggestions() {
       ) : (
         <>
           <ul className="space-y-3.5">
-            {data.items.map((s) => {
+            {(data?.items || []).map((s) => {
               const authorPhone = s.userPhone || s.user?.phone || '';
               const authorUsername = s.userUsername || s.user?.username || '';
               const authorTeam = s.userTeamName || '';
@@ -323,7 +323,7 @@ export default function Suggestions() {
               );
             })}
           </ul>
-          <Pagination page={data.page} pages={data.pages} total={data.total} onPage={setPage} />
+          {data && <Pagination page={data.page} pages={data.pages} total={data.total} onPage={setPage} />}
         </>
       )}
 

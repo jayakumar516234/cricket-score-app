@@ -183,7 +183,7 @@ export default function UsersPage() {
         <SkeletonUsersPage />
       ) : error ? (
         <ErrorBox message={error} onRetry={reload} />
-      ) : data.items.length === 0 ? (
+      ) : (data?.items?.length ?? 0) === 0 ? (
         <Empty
           icon={Users}
           title={filterOnline ? 'No users currently online' : q ? 'No users match your search' : 'No users yet'}
@@ -193,7 +193,7 @@ export default function UsersPage() {
         <>
           {/* Mobile User Cards (< md) */}
           <div className="space-y-3 md:hidden">
-            {data.items.map((u) => {
+            {(data?.items || []).map((u) => {
               const canManage = isSuper || (u.role !== 'superadmin' && u.role !== 'admin');
               const userInit = (u.name || '?').split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
               return (
@@ -345,7 +345,7 @@ export default function UsersPage() {
                 </tr>
               </thead>
               <tbody>
-                {data.items.map((u) => {
+                {(data?.items || []).map((u) => {
                   const canManage = isSuper || (u.role !== 'superadmin' && u.role !== 'admin');
                   return (
                     <tr key={u.id} className="border-t border-slate-100 hover:bg-slate-50/70 transition">
@@ -475,7 +475,7 @@ export default function UsersPage() {
               </tbody>
             </table>
           </div>
-          <Pagination page={data.page} pages={data.pages} total={data.total} onPage={setPage} />
+          {data && <Pagination page={data.page} pages={data.pages} total={data.total} onPage={setPage} />}
         </>
       )}
 

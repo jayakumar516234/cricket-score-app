@@ -36,8 +36,8 @@ export default function MatchPage() {
   const [actError, setActError] = useState('');
 
   useEffect(() => {
-    if (view) setPoll(view.canManage || view.match.status === 'completed' ? 0 : 4000);
-  }, [view?.canManage, view?.match.status]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (view) setPoll(view.canManage || view?.match?.status === 'completed' ? 0 : 4000);
+  }, [view?.canManage, view?.match?.status]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Runs an API action, replaces the view with the server's answer, returns true on success.
   const act = async (fn) => {
@@ -59,6 +59,7 @@ export default function MatchPage() {
 
   if (loading && !view) return <SkeletonScorecard />;
   if (error) return <ErrorBox message={error} onRetry={reload} />;
+  if (!view?.match) return <ErrorBox message="Match data not available" onRetry={reload} />;
   const { match } = view;
 
   let body;

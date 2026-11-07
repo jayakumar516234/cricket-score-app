@@ -248,7 +248,7 @@ export default function Matches() {
         <SkeletonMatchCard count={4} />
       ) : error ? (
         <ErrorBox message={error} onRetry={reload} />
-      ) : data.items.length === 0 ? (
+      ) : (data?.items?.length ?? 0) === 0 ? (
         <Empty
           icon={Trophy}
           title={q || status ? 'No matches match your filter' : 'No matches yet'}
@@ -260,7 +260,7 @@ export default function Matches() {
           action={
             !q &&
             !status &&
-            data.canCreate && (
+            data?.canCreate && (
               <Link
                 to="/matches/new"
                 className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-xs text-xs !py-1.5 !px-3.5 inline-flex items-center gap-1.5"
@@ -273,7 +273,7 @@ export default function Matches() {
       ) : (
         <>
           <ul className="space-y-2.5 sm:space-y-3">
-            {data.items.map((m) => {
+            {(data?.items || []).map((m) => {
               const isLive = m.status === 'live';
               const isCompleted = m.status === 'completed';
               const isScheduled = m.status === 'scheduled';
@@ -395,7 +395,7 @@ export default function Matches() {
             })}
           </ul>
 
-          <Pagination page={data.page} pages={data.pages} total={data.total} onPage={setPage} />
+          {data && <Pagination page={data.page} pages={data.pages} total={data.total} onPage={setPage} />}
         </>
       )}
 

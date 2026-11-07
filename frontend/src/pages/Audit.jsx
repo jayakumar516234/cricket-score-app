@@ -23,12 +23,12 @@ export default function Audit() {
           />
         </div>
       </div>
-      {loading && !data ? <SkeletonAuditPage /> : error ? <ErrorBox message={error} onRetry={reload} /> : data.items.length === 0 ? (
+      {loading && !data ? <SkeletonAuditPage /> : error ? <ErrorBox message={error} onRetry={reload} /> : (data?.items?.length ?? 0) === 0 ? (
         <Empty icon={ScrollText} title="Nothing recorded yet" text="Team, match, user and score-correction changes will appear here." />
       ) : (
         <>
           <ul className="space-y-2">
-            {data.items.map((a) => (
+            {(data?.items || []).map((a) => (
               <li key={a._id} className="card p-3 text-sm">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="font-semibold text-slate-900">{a.action}</span>
@@ -41,7 +41,7 @@ export default function Audit() {
               </li>
             ))}
           </ul>
-          <Pagination page={data.page} pages={data.pages} total={data.total} onPage={setPage} />
+          {data && <Pagination page={data.page} pages={data.pages} total={data.total} onPage={setPage} />}
         </>
       )}
     </div>
