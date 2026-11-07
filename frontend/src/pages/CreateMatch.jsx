@@ -125,10 +125,21 @@ export default function CreateMatch() {
   const awayDoc =
     (data?.items || []).find((t) => t.id === f.awayTeam) ||
     connData?.connected?.map((c) => c.team).find((t) => t.id === f.awayTeam);
-  const effectiveAway =
-    f.awayTeam === 'guest'
-      ? { id: 'guest', name: f.guestTeamName.trim() || 'Guest XI', isGuest: true }
-      : awayDoc;
+  const isOpponentGuest = f.awayTeam === 'guest' || Boolean(awayDoc?.isGuest);
+  const effectiveAway = isOpponentGuest
+    ? {
+        id: f.awayTeam === 'guest' ? 'guest' : awayDoc?.id,
+        name: f.guestTeamName.trim() || awayDoc?.name || 'Guest XI',
+        isGuest: true,
+      }
+    : awayDoc;
+
+  // Auto-sync guest team name if selecting an existing guest team
+  useEffect(() => {
+    if (awayDoc?.isGuest && awayDoc.name) {
+      set({ guestTeamName: awayDoc.name });
+    }
+  }, [awayDoc]);
 
   // Auto-select toss winner to home team if empty
   useEffect(() => {
@@ -217,7 +228,7 @@ export default function CreateMatch() {
         homeTeam: f.homeTeam,
         awayTeam: isGuest ? 'guest' : f.awayTeam,
         isGuestOpponent: isGuest,
-        guestTeam: isGuest
+        guestTeam: (isGuest || isOpponentGuest)
           ? {
               name: f.guestTeamName.trim() || 'Guest XI',
               players: guestPlayers.map((p, idx) => ({
@@ -348,8 +359,8 @@ export default function CreateMatch() {
                 <div className="mt-1.5 text-xs font-black truncate text-white">
                   {effectiveAway?.name || 'Opponent'}
                 </div>
-                <span className="text-[9px] font-bold text-blue-400 uppercase tracking-widest block">
-                  {effectiveAway?.isGuest ? 'Guest XI' : 'Opponent'}
+                <span className="text-[9px] font-bold text-amber-300 uppercase tracking-widest block">
+                  {isOpponentGuest ? 'Guest Opponent' : 'Opponent'}
                 </span>
               </div>
 
@@ -399,31 +410,42 @@ export default function CreateMatch() {
               </div>
             </div>
 
-            {/* If Guest XI is selected: Clean 1-line Team Name + Edit 11 button */}
-            {f.awayTeam === 'guest' && (
-              <div className="flex items-center justify-between gap-2 rounded-xl bg-amber-50/90 border border-amber-200 p-2 text-xs">
-                <div className="flex-1 min-w-0">
-                  <span className="text-[9.5px] font-bold text-amber-900 uppercase block leading-none mb-1">
+            {/* If Guest XI is selected: Clean dynamic Team Name + Edit 11 button */}
+            {isOpponentGuest && (
+              <div className="rounded-xl bg-gradient-to-r from-amber-50 via-orange-50/40 to-amber-50 border border-amber-200/90 p-2.5 space-y-1.5 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-900 flex items-center gap-1">
+                    <Edit2 className="h-3 w-3 text-amber-600" />
                     Opponent Team Name
                   </span>
-                  <input
-                    type="text"
-                    className="input !py-1 !px-2 text-xs font-bold text-slate-800 w-full bg-white border-amber-300"
-                    value={f.guestTeamName}
-                    onChange={(e) => set({ guestTeamName: e.target.value })}
-                    placeholder="Guest XI"
-                    maxLength={60}
-                  />
+                  <span className="badge bg-amber-100 text-amber-800 border border-amber-300 text-[9px] font-bold py-0.2 px-1.5 rounded">
+                    Opponent for {home?.name || 'Your Team'} only
+                  </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setGuestModalOpen(true)}
-                  className="inline-flex items-center gap-1 rounded-xl bg-amber-500 hover:bg-amber-600 px-2.5 py-1.5 text-[11px] font-black text-white shadow-xs shrink-0 transition active:scale-95"
-                  title="Customize 11 players"
-                >
-                  <Users className="h-3.5 w-3.5" />
-                  <span>11 Players</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      type="text"
+                      className="input !py-1.5 !px-2.5 text-xs font-bold text-slate-900 w-full bg-white border-amber-300 focus:border-amber-500 focus:ring-amber-400/20 shadow-2xs"
+                      value={f.guestTeamName}
+                      onChange={(e) => set({ guestTeamName: e.target.value })}
+                      placeholder="e.g. Kovai Kings XI, Red Bulls"
+                      maxLength={60}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setGuestModalOpen(true)}
+                    className="inline-flex items-center gap-1 rounded-xl bg-amber-500 hover:bg-amber-600 px-2.5 py-1.5 text-[11px] font-black text-white shadow-xs shrink-0 transition active:scale-95"
+                    title="Customize 11 players"
+                  >
+                    <Users className="h-3.5 w-3.5" />
+                    <span>11 Players</span>
+                  </button>
+                </div>
+                <p className="text-[9.5px] text-amber-700 font-medium leading-tight">
+                  💡 This name applies only as your opponent and won't affect other teams.
+                </p>
               </div>
             )}
           </div>

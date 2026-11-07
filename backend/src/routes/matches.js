@@ -221,10 +221,35 @@ router.post('/', wrap(async (req, res) => {
         jerseyNumber: i + 1,
       }))
     );
+
+    // Automatically connect this guest team as an accepted opponent ONLY for home team
+    try {
+      await TeamConnection.create({
+        fromTeam: home._id,
+        toTeam: away._id,
+        status: 'accepted',
+      });
+    } catch {
+      // Ignore if connection already exists
+    }
   } else {
     away = await Team.findById(d.awayTeam);
     if (!away) throw new HttpError(404, 'Opponent team not found');
     if (String(home._id) === String(away._id)) throw new HttpError(400, 'Your team and the opponent must be different teams');
+
+    // If opponent is an existing guest team, allow updating its name
+    if (away.isGuest && d.guestTeam?.name && canManageTeam(req.user, away)) {
+      const newName = d.guestTeam.name.trim();
+      if (newName && newName !== away.name) {
+        let uniqueName = newName;
+        let suffix = 1;
+        while (await Team.findOne({ name: uniqueName, _id: { $ne: away._id } }).collation({ locale: 'en', strength: 2 })) {
+          uniqueName = `${newName} (${suffix++})`;
+        }
+        away.name = uniqueName;
+        await away.save();
+      }
+    }
 
     if (req.user.role !== 'superadmin' && req.user.role !== 'admin' && (process.env.NODE_ENV !== 'test' || process.env.STRICT_CONNECTIONS === 'true')) {
       const isConn = await TeamConnection.findOne({
