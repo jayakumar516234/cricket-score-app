@@ -78,7 +78,7 @@ export default function TeamDetail() {
                   {copied ? 'Copied!' : 'Copy'}
                 </button>
               </div>
-              <div className="mt-1 text-[11px] text-pitch-600">Give this code to opponents to connect</div>
+              <div className="mt-1 text-[11px] text-pitch-600">Give this code to tournament organizers or opponents to connect</div>
             </div>
           )}
         </div>

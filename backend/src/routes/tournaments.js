@@ -96,6 +96,38 @@ router.get('/', optionalAuth, wrap(async (req, res) => {
     .sort({ createdAt: -1 })
     .limit(50);
 
+  let myInvitations = [];
+  if (req.user) {
+    const myTeams = await Team.find({ createdBy: req.user._id }).select('_id name code');
+    const myTeamIds = myTeams.map((t) => t._id);
+    if (myTeamIds.length > 0) {
+      const invitedTournaments = await Tournament.find({
+        'teams.team': { $in: myTeamIds },
+        'teams.status': 'pending',
+      }).populate('organizer', 'name username');
+
+      for (const t of invitedTournaments) {
+        const pendingEntries = t.teams.filter(
+          (tm) => myTeamIds.some((id) => String(id) === String(tm.team)) && tm.status === 'pending'
+        );
+        for (const entry of pendingEntries) {
+          const tmDoc = myTeams.find((tm) => String(tm._id) === String(entry.team));
+          myInvitations.push({
+            tournamentId: sid(t._id),
+            tournamentName: t.name,
+            tournamentCode: t.code,
+            venue: t.venue,
+            defaultOvers: t.defaultOvers,
+            organizerName: t.organizer?.name || 'Tournament Admin',
+            teamId: sid(entry.team),
+            teamName: tmDoc ? tmDoc.name : entry.name,
+            joinedAt: entry.joinedAt,
+          });
+        }
+      }
+    }
+  }
+
   res.json({
     tournaments: tournaments.map((t) => ({
       id: sid(t._id),
@@ -113,6 +145,7 @@ router.get('/', optionalAuth, wrap(async (req, res) => {
       organizerName: t.organizer?.name || 'Tournament Admin',
       createdAt: t.createdAt,
     })),
+    myInvitations,
   });
 }));
 
@@ -256,12 +289,27 @@ router.post('/join', requireAuth, wrap(async (req, res) => {
 // 3.6 Get pending tournament join requests count (for Navbar badge)
 // ========================
 router.get('/pending-join-count', requireAuth, wrap(async (req, res) => {
-  // Count tournaments I organise that have pending team join requests
+  // 1. Count tournaments I organise that have pending team join requests
   const tournaments = await Tournament.find({ organizer: req.user._id }).select('teams');
   let count = 0;
   for (const t of tournaments) {
     count += t.teams.filter((tm) => tm.status === 'pending').length;
   }
+
+  // 2. Count tournament invitations for teams owned by req.user where spot confirmation is pending
+  const myTeams = await Team.find({ createdBy: req.user._id }).select('_id');
+  const myTeamIds = myTeams.map((t) => t._id);
+  if (myTeamIds.length > 0) {
+    const invitedTournaments = await Tournament.find({
+      'teams.team': { $in: myTeamIds },
+      'teams.status': 'pending',
+      organizer: { $ne: req.user._id },
+    }).select('teams');
+    for (const t of invitedTournaments) {
+      count += t.teams.filter((tm) => myTeamIds.some((id) => String(id) === String(tm.team)) && tm.status === 'pending').length;
+    }
+  }
+
   res.json({ count });
 }));
 
@@ -335,6 +383,21 @@ router.get('/:id', optionalAuth, wrap(async (req, res) => {
   const upcomingMatches = formattedMatches.filter((m) => m.status === 'scheduled');
   const completedMatches = formattedMatches.filter((m) => m.status === 'completed');
 
+  // Check if req.user owns any team in this tournament
+  let myTeamsInTournament = [];
+  if (req.user) {
+    const myOwnedTeams = await Team.find({ createdBy: req.user._id }).select('_id');
+    const myOwnedIds = myOwnedTeams.map((t) => String(t._id));
+    myTeamsInTournament = tournament.teams
+      .filter((t) => myOwnedIds.includes(String(t.team?._id || t.team)))
+      .map((t) => ({
+        id: sid(t.team?._id || t.team),
+        name: t.name || t.team?.name,
+        status: t.status,
+        canConfirmSpot: t.status === 'pending',
+      }));
+  }
+
   res.json({
     tournament: {
       id: sid(tournament._id),
@@ -384,6 +447,7 @@ router.get('/:id', optionalAuth, wrap(async (req, res) => {
     upcomingMatches,
     completedMatches,
     isOrganizer,
+    myTeamsInTournament,
   });
 }));
 
@@ -433,22 +497,31 @@ router.post('/:id/teams', requireAuth, wrap(async (req, res) => {
   const alreadyJoined = tournament.teams.some((t) => String(t.team) === String(team._id));
   if (alreadyJoined) throw new HttpError(400, `${team.name} is already registered in this tournament`);
 
+  const isOrganizerOwnTeam = String(team.createdBy) === String(req.user._id);
+  // If registered team added via teamCode/teamId by organizer and NOT organizer's own team:
+  // Set to 'pending' so team admin receives notification to confirm their spot!
+  const initialStatus = (team.isGuest || isOrganizerOwnTeam) ? 'approved' : 'pending';
+
   tournament.teams.push({
     team: team._id,
     name: team.name,
     seed: tournament.teams.length + 1,
-    status: 'approved',
+    status: initialStatus,
   });
 
   await tournament.save();
   res.json({
-    message: `${team.name} ${team.isGuest ? '(Guest Team) ' : ''}added to tournament`,
+    message: initialStatus === 'pending'
+      ? `${team.name} added! Notification sent to team admin to confirm spot.`
+      : `${team.name} ${team.isGuest ? '(Guest Team) ' : ''}added to tournament`,
     teamCount: tournament.teams.length,
+    status: initialStatus,
     team: {
       id: sid(team._id),
       name: team.name,
       code: team.code,
       location: team.location,
+      status: initialStatus,
       isGuest: Boolean(team.isGuest),
     },
   });
@@ -487,6 +560,60 @@ router.put('/:id/teams/:teamId', requireAuth, wrap(async (req, res) => {
       location: teamDoc?.location || '',
       isGuest: Boolean(teamDoc?.isGuest),
     },
+  });
+}));
+
+// ========================
+// 6.2 Confirm Tournament Spot (Team Admin)
+// ========================
+router.post('/:id/teams/:teamId/confirm-spot', requireAuth, wrap(async (req, res) => {
+  const tournament = await Tournament.findById(req.params.id);
+  if (!tournament) throw new HttpError(404, 'Tournament not found');
+
+  const team = await Team.findById(req.params.teamId);
+  if (!team) throw new HttpError(404, 'Team not found');
+
+  const isOwner = String(team.createdBy) === String(req.user._id) || req.user.role === 'superadmin';
+  if (!isOwner) throw new HttpError(403, 'Only the team admin can confirm this spot');
+
+  const teamEntry = tournament.teams.find((t) => String(t.team) === String(team._id));
+  if (!teamEntry) throw new HttpError(404, 'Team is not part of this tournament');
+
+  if (teamEntry.status === 'approved') {
+    return res.json({ message: 'Team spot is already confirmed!', status: 'approved' });
+  }
+
+  teamEntry.status = 'approved';
+  await tournament.save();
+
+  res.json({
+    message: `Spot confirmed! ${team.name} is now officially registered in ${tournament.name}.`,
+    status: 'approved',
+    tournamentId: sid(tournament._id),
+    teamId: sid(team._id),
+  });
+}));
+
+// ========================
+// 6.3 Decline Tournament Spot (Team Admin)
+// ========================
+router.post('/:id/teams/:teamId/decline-spot', requireAuth, wrap(async (req, res) => {
+  const tournament = await Tournament.findById(req.params.id);
+  if (!tournament) throw new HttpError(404, 'Tournament not found');
+
+  const team = await Team.findById(req.params.teamId);
+  if (!team) throw new HttpError(404, 'Team not found');
+
+  const isOwner = String(team.createdBy) === String(req.user._id) || req.user.role === 'superadmin';
+  if (!isOwner) throw new HttpError(403, 'Only the team admin can decline this spot');
+
+  tournament.teams = tournament.teams.filter((t) => String(t.team) !== String(team._id));
+  tournament.byes = tournament.byes.filter((b) => String(b.team) !== String(team._id));
+  await tournament.save();
+
+  res.json({
+    message: `Tournament invitation for ${team.name} has been declined.`,
+    tournamentId: sid(tournament._id),
   });
 }));
 

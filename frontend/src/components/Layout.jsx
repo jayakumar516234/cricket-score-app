@@ -253,19 +253,23 @@ export default function Layout() {
           <div className="ml-auto flex items-center gap-2">
             {!isViewer && (
               <Link
-                to="/teams?tab=opponents"
+                to={pendingTrnCount > 0 && pendingCount === 0 ? "/tournaments" : "/teams?tab=opponents"}
                 className={`relative flex h-8 w-8 items-center justify-center rounded-xl border transition shadow-2xs ${
-                  pendingCount > 0
+                  (pendingCount + pendingTrnCount) > 0
                     ? 'bg-amber-500/20 border-amber-500/40 text-amber-300 hover:bg-amber-500/30'
                     : 'bg-navy-900/80 border-navy-700/60 text-slate-300 hover:bg-navy-800 hover:text-white'
                 }`}
-                title={pendingCount > 0 ? `${pendingCount} Opponent Request(s) waiting!` : 'Opponent Requests'}
-                aria-label="Opponent notifications"
+                title={
+                  (pendingCount + pendingTrnCount) > 0
+                    ? `${pendingCount + pendingTrnCount} Notification(s) waiting!`
+                    : 'Notifications'
+                }
+                aria-label="Notifications"
               >
-                <Bell className={`h-4 w-4 ${pendingCount > 0 ? 'text-amber-400 animate-pulse' : ''}`} />
-                {pendingCount > 0 && (
+                <Bell className={`h-4 w-4 ${(pendingCount + pendingTrnCount) > 0 ? 'text-amber-400 animate-pulse' : ''}`} />
+                {(pendingCount + pendingTrnCount) > 0 && (
                   <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-black text-white shadow-xs animate-bounce">
-                    {pendingCount}
+                    {pendingCount + pendingTrnCount}
                   </span>
                 )}
               </Link>

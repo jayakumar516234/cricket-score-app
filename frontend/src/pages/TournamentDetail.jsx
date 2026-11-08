@@ -84,11 +84,14 @@ export default function TournamentDetail() {
   if (error && !data) return <ErrorBox message={error} onRetry={reload} />;
   if (!data?.tournament) return <ErrorBox message="Tournament not found" onRetry={reload} />;
 
-  const { tournament, matches = [], liveMatches = [], upcomingMatches = [], completedMatches = [], isOrganizer } = data;
+  const { tournament, matches = [], liveMatches = [], upcomingMatches = [], completedMatches = [], isOrganizer, myTeamsInTournament = [] } = data;
   const teams = tournament.teams || [];
   const byes = tournament.byes || [];
   const grounds = tournament.grounds || ['Ground 1'];
   const scorers = tournament.scorers || [];
+
+  // Check if current user is admin of a team with pending spot confirmation in this tournament
+  const myPendingSpot = myTeamsInTournament.find((t) => t.canConfirmSpot);
 
   // Separate pending vs approved teams
   const pendingTeams = teams.filter((t) => t.status === 'pending');
@@ -114,6 +117,7 @@ export default function TournamentDetail() {
     e.preventDefault();
     setActionLoading(true);
     setActionError('');
+    let resMsg = 'Team added successfully!';
     try {
       if (addTeamTab === 'code') {
         if (!teamCodeInput.trim()) {
@@ -121,30 +125,68 @@ export default function TournamentDetail() {
           setActionLoading(false);
           return;
         }
-        await api.post(`/tournaments/${id}/teams`, { teamCode: teamCodeInput.trim() });
+        const res = await api.post(`/tournaments/${id}/teams`, { teamCode: teamCodeInput.trim() });
+        if (res?.message) resMsg = res.message;
       } else {
         if (!guestTeamName.trim()) {
           setActionError('Please enter a team name');
           setActionLoading(false);
           return;
         }
-        await api.post(`/tournaments/${id}/teams`, {
+        const res = await api.post(`/tournaments/${id}/teams`, {
           isGuest: true,
           name: guestTeamName.trim(),
           location: guestTeamCity.trim(),
           contact: guestTeamContact.trim(),
         });
+        if (res?.message) resMsg = res.message;
       }
       setTeamCodeInput('');
       setGuestTeamName('');
       setGuestTeamCity('');
       setGuestTeamContact('');
       setAddTeamOpen(false);
-      setActionSuccess('Team added successfully!');
-      setTimeout(() => setActionSuccess(''), 3000);
+      setActionSuccess(resMsg);
+      setTimeout(() => setActionSuccess(''), 4000);
       reload();
     } catch (err) {
       setActionError(err.message || 'Failed to add team');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Team Admin Actions for Confirming Spot
+  const handleConfirmMySpot = async () => {
+    if (!myPendingSpot) return;
+    setActionLoading(true);
+    setActionError('');
+    setActionSuccess('');
+    try {
+      const res = await api.post(`/tournaments/${id}/teams/${myPendingSpot.id}/confirm-spot`);
+      setActionSuccess(res.message || `Spot confirmed for ${myPendingSpot.name}!`);
+      setTimeout(() => setActionSuccess(''), 4000);
+      reload();
+    } catch (err) {
+      setActionError(err.message || 'Failed to confirm spot');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeclineMySpot = async () => {
+    if (!myPendingSpot) return;
+    if (!window.confirm(`Are you sure you want to decline the tournament invitation for ${myPendingSpot.name}?`)) return;
+    setActionLoading(true);
+    setActionError('');
+    setActionSuccess('');
+    try {
+      const res = await api.post(`/tournaments/${id}/teams/${myPendingSpot.id}/decline-spot`);
+      setActionSuccess(res.message || 'Invitation declined');
+      setTimeout(() => setActionSuccess(''), 4000);
+      reload();
+    } catch (err) {
+      setActionError(err.message || 'Failed to decline spot');
     } finally {
       setActionLoading(false);
     }
@@ -480,6 +522,49 @@ export default function TournamentDetail() {
         <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-xs text-red-800 flex items-center gap-2 animate-in fade-in">
           <ShieldAlert className="h-4 w-4 text-red-600 shrink-0" />
           <span>{actionError}</span>
+        </div>
+      )}
+
+      {/* 🔔 Team Admin Spot Confirmation Banner */}
+      {myPendingSpot && (
+        <div className="rounded-2xl border-2 border-amber-400 bg-gradient-to-r from-amber-50 via-orange-50 to-white p-4 space-y-3 shadow-md animate-in fade-in">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-xs text-lg">
+                🏆
+              </div>
+              <div>
+                <h4 className="text-sm sm:text-base font-black text-amber-950">
+                  Spot Confirmation Required: {myPendingSpot.name}
+                </h4>
+                <p className="text-xs text-amber-800 mt-0.5">
+                  The tournament organizer added your team using your Team Code. Please confirm your spot to officially join the tournament draw!
+                </p>
+              </div>
+            </div>
+            <span className="badge bg-amber-500 text-white text-[10px] font-black uppercase tracking-wider py-0.5 px-2 rounded-full shrink-0">
+              Action Required
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 pt-1 border-t border-amber-200">
+            <button
+              type="button"
+              disabled={actionLoading}
+              onClick={handleConfirmMySpot}
+              className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs !py-2 !px-4 shadow-xs inline-flex items-center gap-1.5"
+            >
+              <UserCheck className="h-4 w-4" /> Confirm Spot
+            </button>
+            <button
+              type="button"
+              disabled={actionLoading}
+              onClick={handleDeclineMySpot}
+              className="btn btn-outline border-red-300 text-red-700 hover:bg-red-50 font-bold text-xs !py-2 !px-3 inline-flex items-center gap-1"
+            >
+              <UserX className="h-4 w-4" /> Decline
+            </button>
+          </div>
         </div>
       )}
 

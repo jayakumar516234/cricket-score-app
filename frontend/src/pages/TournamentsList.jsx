@@ -24,9 +24,48 @@ export default function TournamentsList() {
   const [joinError, setJoinError] = useState('');
   const [joinSuccess, setJoinSuccess] = useState('');
 
+  // Spot Confirmation Action State
+  const [spotActionId, setSpotActionId] = useState(null);
+  const [spotActionMsg, setSpotActionMsg] = useState('');
+  const [spotActionError, setSpotActionError] = useState('');
+
   const { data, loading, error, reload } = useFetch(`/tournaments${search ? `?search=${encodeURIComponent(search)}` : ''}`);
 
   const tournaments = data?.tournaments || [];
+  const myInvitations = data?.myInvitations || [];
+
+  const handleConfirmSpot = async (tournamentId, teamId) => {
+    setSpotActionId(`${tournamentId}-${teamId}`);
+    setSpotActionError('');
+    setSpotActionMsg('');
+    try {
+      const res = await api.post(`/tournaments/${tournamentId}/teams/${teamId}/confirm-spot`);
+      setSpotActionMsg(res.message || 'Spot confirmed successfully!');
+      setTimeout(() => setSpotActionMsg(''), 4000);
+      reload();
+    } catch (err) {
+      setSpotActionError(err.message || 'Failed to confirm spot');
+    } finally {
+      setSpotActionId(null);
+    }
+  };
+
+  const handleDeclineSpot = async (tournamentId, teamId, teamName) => {
+    if (!window.confirm(`Are you sure you want to decline the tournament invitation for ${teamName}?`)) return;
+    setSpotActionId(`${tournamentId}-${teamId}`);
+    setSpotActionError('');
+    setSpotActionMsg('');
+    try {
+      const res = await api.post(`/tournaments/${tournamentId}/teams/${teamId}/decline-spot`);
+      setSpotActionMsg(res.message || 'Tournament invitation declined');
+      setTimeout(() => setSpotActionMsg(''), 4000);
+      reload();
+    } catch (err) {
+      setSpotActionError(err.message || 'Failed to decline spot');
+    } finally {
+      setSpotActionId(null);
+    }
+  };
 
   const filteredTournaments = tournaments.filter((t) => {
     if (filter === 'all') return true;
@@ -124,6 +163,97 @@ export default function TournamentsList() {
           </div>
         </div>
       </div>
+
+      {/* ─── Spot Confirmation Invitations (Notifications for Team Admin) ─── */}
+      {myInvitations.length > 0 && (
+        <div className="rounded-2xl border-2 border-amber-400 bg-gradient-to-br from-amber-50 via-orange-50 to-white p-4 space-y-3 shadow-md animate-in fade-in">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500 text-white shadow-xs">
+                <Trophy className="h-4 w-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-black text-amber-950">
+                  🏆 Tournament Invitation: Confirm Your Team Spot ({myInvitations.length})
+                </h3>
+                <p className="text-[11px] text-amber-800">
+                  Your team has been added to a tournament via Team Code. Please confirm your spot to enter the draw!
+                </p>
+              </div>
+            </div>
+            <span className="badge bg-amber-500 text-white text-[10px] font-black uppercase tracking-wider py-0.5 px-2 rounded-full animate-pulse">
+              Action Required
+            </span>
+          </div>
+
+          {spotActionMsg && (
+            <div className="rounded-xl bg-emerald-100/90 border border-emerald-300 p-2.5 text-xs font-bold text-emerald-900">
+              {spotActionMsg}
+            </div>
+          )}
+          {spotActionError && <ErrorBox message={spotActionError} />}
+
+          <div className="grid gap-2.5 sm:grid-cols-2">
+            {myInvitations.map((inv) => {
+              const isBusy = spotActionId === `${inv.tournamentId}-${inv.teamId}`;
+              return (
+                <div
+                  key={`${inv.tournamentId}-${inv.teamId}`}
+                  className="card p-3 rounded-xl border border-amber-300/80 bg-white shadow-xs space-y-2"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-sm font-black text-slate-900 truncate">
+                        {inv.tournamentName}
+                      </h4>
+                      <p className="text-[11px] text-slate-600 mt-0.5 truncate">
+                        Team: <strong className="text-pitch-700 font-bold">{inv.teamName}</strong> · by {inv.organizerName}
+                      </p>
+                      {inv.venue && (
+                        <p className="text-[10px] text-slate-400 truncate mt-0.5">
+                          📍 {inv.venue} {inv.defaultOvers ? `· ${inv.defaultOvers} overs` : ''}
+                        </p>
+                      )}
+                    </div>
+                    <span className="badge bg-amber-100 text-amber-800 text-[9.5px] font-bold py-0.2 px-1.5 shrink-0">
+                      Pending Spot
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-1.5 border-t border-slate-100">
+                    <button
+                      type="button"
+                      disabled={isBusy}
+                      onClick={() => handleConfirmSpot(inv.tournamentId, inv.teamId)}
+                      className="btn btn-green flex-1 !py-1.5 text-xs font-black shadow-xs inline-flex items-center justify-center gap-1"
+                    >
+                      {isBusy ? <Spinner size="sm" /> : <Check className="h-3.5 w-3.5" />}
+                      <span>Confirm Spot</span>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isBusy}
+                      onClick={() => handleDeclineSpot(inv.tournamentId, inv.teamId, inv.teamName)}
+                      className="btn btn-outline !py-1.5 px-2.5 text-xs text-red-600 border-red-200 hover:bg-red-50 inline-flex items-center gap-1"
+                      title="Decline Invitation"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                      <span>Decline</span>
+                    </button>
+                    <Link
+                      to={`/tournaments/${inv.tournamentId}`}
+                      className="btn btn-ghost !py-1.5 px-2.5 text-xs text-slate-600 hover:text-slate-900"
+                      title="View Tournament"
+                    >
+                      View
+                    </Link>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ─── Filters + Search ─── */}
       <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
