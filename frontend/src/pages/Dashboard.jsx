@@ -396,6 +396,15 @@ function UserHomeView({ data, user, myTeam, t, isViewer }) {
                 return (
                   <li key={m.id}>
                     <Link to={`/matches/${m.id}`} className={`card block p-3 transition shadow-2xs hover:shadow-xs rounded-xl ${borderAccent}`}>
+                      {m.tournamentName && (
+                        <div className="flex items-center gap-1.5 text-[10px] font-black text-amber-900 bg-gradient-to-r from-amber-100 via-amber-50 to-transparent px-2 py-0.5 rounded-md border-l-2 border-amber-500 mb-1.5">
+                          <span>🏆 TOURNAMENT:</span>
+                          <span className="truncate">{m.tournamentName}</span>
+                          {m.tournamentRound && (
+                            <span className="text-amber-700 font-bold">· {m.tournamentRound}</span>
+                          )}
+                        </div>
+                      )}
                       <div className="flex items-center justify-between gap-2 mb-1">
                         <span className="text-xs sm:text-sm font-bold text-slate-900 truncate">{m.name}</span>
                         <StatusBadge status={m.status} />
@@ -555,7 +564,16 @@ function AdminDashboardView({ data, user, t, myTeam }) {
                 return (
                   <li key={m.id}>
                     <Link to={`/matches/${m.id}`} className={`card block p-3 transition shadow-2xs hover:shadow-xs rounded-xl ${borderAccent}`}>
-                      <div className="flex items-center justify-between gap-2">
+                      {m.tournamentName && (
+                        <div className="flex items-center gap-1.5 text-[10px] font-black text-amber-900 bg-gradient-to-r from-amber-100 via-amber-50 to-transparent px-2 py-0.5 rounded-md border-l-2 border-amber-500 mb-1.5">
+                          <span>🏆 TOURNAMENT:</span>
+                          <span className="truncate">{m.tournamentName}</span>
+                          {m.tournamentRound && (
+                            <span className="text-amber-700 font-bold">· {m.tournamentRound}</span>
+                          )}
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between gap-2 mb-1">
                         <span className="text-xs sm:text-sm font-bold text-slate-900 truncate">{m.name}</span>
                         <StatusBadge status={m.status} />
                       </div>

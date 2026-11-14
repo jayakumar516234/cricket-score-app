@@ -21,13 +21,32 @@ export const viewerMayViewTeam = (user, teamId) => !isViewer(user) || String(use
 export const viewerMayViewMatch = (user, match) => !isViewer(user) || viewerMayViewTeam(user, match.homeTeam) || viewerMayViewTeam(user, match.awayTeam);
 
 /** Either superadmin, admin, or the team owner/manager of homeTeam OR awayTeam can manage and score a match.
- *  Tournament scorers may also score their tournament's matches. */
+ *  Tournament scorers may also score their tournament's matches.
+ *  NOTE: In tournament matches, only the organizer / creator / home team host can score;
+ *  Team 2 (away team / opponent) is strictly VIEW-ONLY so they cannot alter scores! */
 export function canManageMatch(user, match, homeTeamDoc = null, awayTeamDoc = null) {
   if (!user) return false;
   if (user.role === 'superadmin' || user.role === 'admin') return true;
   if (owns(user, match)) return true;
-  
-  // Either team's owner or manager (homeTeam or awayTeam) can edit and score their match
+
+  // Tournament match permission rule:
+  // Only the match creator, tournament official scorer, or Home Team host can score.
+  // Team 2 (Opponent / Away team) has VIEW-ONLY access!
+  if (match?.tournament) {
+    if (user.role === 'scorer' && String(user.tournamentId) === String(match.tournament)) {
+      return true;
+    }
+    if (homeTeamDoc && (owns(user, homeTeamDoc) || canManageTeam(user, homeTeamDoc))) return true;
+    if (match?.homeTeam && typeof match.homeTeam === 'object' && (owns(user, match.homeTeam) || canManageTeam(user, match.homeTeam))) return true;
+    const userTeamId = user.viewTeam ? String(user.viewTeam) : null;
+    const homeId = String(match?.homeTeam?._id ?? match?.homeTeam ?? '');
+    if (userTeamId && userTeamId === homeId) return true;
+
+    // Team 2 (Away team) CANNOT manage or score tournament matches
+    return false;
+  }
+
+  // Non-tournament matches: either team's owner or manager can edit and score their match
   if (homeTeamDoc && (owns(user, homeTeamDoc) || canManageTeam(user, homeTeamDoc))) return true;
   if (awayTeamDoc && (owns(user, awayTeamDoc) || canManageTeam(user, awayTeamDoc))) return true;
 
@@ -40,8 +59,5 @@ export function canManageMatch(user, match, homeTeamDoc = null, awayTeamDoc = nu
   const awayId = String(match?.awayTeam?._id ?? match?.awayTeam ?? '');
   if (userTeamId && (userTeamId === homeId || userTeamId === awayId)) return true;
 
-  if (user.role === 'scorer' && match?.tournament && String(user.tournamentId) === String(match.tournament)) {
-    return true;
-  }
   return false;
 }

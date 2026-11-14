@@ -288,6 +288,24 @@ export default function Matches() {
                 <li key={m.id} className={`card p-3 sm:p-3.5 rounded-xl transition ${borderAccent}`}>
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
+                      {/* Tournament Match Gold Banner */}
+                      {m.tournamentName && (
+                        <div className="flex items-center gap-1.5 mb-2 px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-amber-500/5 border border-amber-300 text-amber-950 text-[11px] font-bold shadow-2xs">
+                          <Trophy className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                          <span className="truncate">🏆 {m.tournamentName}</span>
+                          {m.tournamentRound && (
+                            <span className="rounded bg-amber-200/90 px-1.5 py-0.2 text-[9.5px] text-amber-950 font-bold shrink-0">
+                              {m.tournamentRound}
+                            </span>
+                          )}
+                          {!m.canManage && (
+                            <span className="ml-auto text-[9.5px] font-semibold text-slate-500 bg-white/80 px-1.5 py-0.2 rounded border border-slate-200 shrink-0">
+                              👁️ Viewer Mode
+                            </span>
+                          )}
+                        </div>
+                      )}
+
                       {/* Top Header: Title, Format & Status */}
                       <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
                         <Link to={`/matches/${m.id}`} className="flex items-center gap-1.5 min-w-0 flex-1 hover:text-emerald-700 transition">
@@ -338,7 +356,7 @@ export default function Matches() {
                               className="btn btn-green text-xs !py-1 !px-2.5 font-black bg-red-600 hover:bg-red-700 text-white shadow-2xs flex items-center gap-1"
                             >
                               <Radio className="h-3.5 w-3.5 animate-pulse text-white" />
-                              <span>Live Scoring</span>
+                              <span>{m.canManage ? 'Live Scoring' : 'Watch Live'}</span>
                             </Link>
                           )}
 
@@ -360,7 +378,7 @@ export default function Matches() {
                               to={`/matches/${m.id}`}
                               className="btn btn-outline text-xs !py-1 !px-2.5 font-bold text-slate-700 hover:text-emerald-700 flex items-center gap-1"
                             >
-                              <span>Enter Match</span> <ArrowRight className="h-3 w-3" />
+                              <span>{m.canManage ? 'Start Scoring' : 'View Match'}</span> <ArrowRight className="h-3 w-3" />
                             </Link>
                           )}
                         </div>

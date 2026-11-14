@@ -1,6 +1,7 @@
 import { Innings } from '../models/Innings.js';
 import { Delivery } from '../models/Delivery.js';
 import { Team } from '../models/Team.js';
+import { Tournament } from '../models/Tournament.js';
 import { Scorecard } from '../models/Scorecard.js';
 import { computeInnings } from '../engine/scoring.js';
 import { canManageMatch, canManageTeam } from '../utils/permissions.js';
@@ -117,6 +118,7 @@ export async function buildView(match, user) {
     views.push(inningsView(inn, state, names));
   }
   const scorecard = match.status === 'completed' ? await Scorecard.findOne({ match: match._id }).lean() : null;
+  const tournamentDoc = match.tournament ? await Tournament.findById(match.tournament).select('name code format').lean() : null;
   const plain = match.toObject();
   const xiOut = (list) => list.map((p) => ({ id: sid(p.player), name: p.name, role: p.role, jerseyNumber: p.jerseyNumber, guest: !!p.guest }));
   const teamDoc = (id) => teams.find((x) => sid(x._id) === sid(id));
@@ -129,6 +131,11 @@ export async function buildView(match, user) {
       date: match.date,
       venue: match.venue,
       status: match.status,
+      tournament: match.tournament ? sid(match.tournament) : null,
+      tournamentName: tournamentDoc?.name || null,
+      tournamentCode: tournamentDoc?.code || null,
+      tournamentRound: match.tournamentRound || null,
+      ground: match.ground || null,
       currentInnings: match.currentInnings,
       tieBreaker: match.tieBreaker,
       homeTeam: teamOut(match.homeTeam),

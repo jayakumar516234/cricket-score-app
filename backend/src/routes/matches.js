@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import mongoose from 'mongoose';
 import { Match } from '../models/Match.js';
+import { Tournament } from '../models/Tournament.js';
 import { Team, generateTeamCode } from '../models/Team.js';
 import { TeamConnection } from '../models/TeamConnection.js';
 import { Player, PLAYER_ROLES } from '../models/Player.js';
@@ -173,12 +174,15 @@ router.get('/', wrap(async (req, res) => {
     Match.countDocuments(filter),
   ]);
   const teamIds = [...new Set(matches.flatMap((m) => [sid(m.homeTeam), sid(m.awayTeam)]))];
-  const [teams, innings] = await Promise.all([
+  const trnIds = [...new Set(matches.map((m) => m.tournament).filter(Boolean).map(sid))];
+  const [teams, innings, trnDocs] = await Promise.all([
     Team.find({ _id: { $in: teamIds } }).select('name logo createdBy'),
     Innings.find({ match: { $in: matches.map((m) => m._id) } }).sort({ number: 1 }),
+    trnIds.length > 0 ? Tournament.find({ _id: { $in: trnIds } }).select('name code format') : [],
   ]);
   const tmDoc = Object.fromEntries(teams.map((t) => [sid(t._id), t]));
   const tm = Object.fromEntries(teams.map((t) => [sid(t._id), { id: sid(t._id), name: t.name, logo: t.logo }]));
+  const trnMap = Object.fromEntries(trnDocs.map((t) => [sid(t._id), t]));
   res.json({
     items: matches.map((m) => ({
       id: sid(m._id),
@@ -189,6 +193,10 @@ router.get('/', wrap(async (req, res) => {
       venue: m.venue,
       status: m.status,
       createdAt: m.createdAt,
+      tournament: m.tournament ? sid(m.tournament) : null,
+      tournamentName: m.tournament && trnMap[sid(m.tournament)] ? trnMap[sid(m.tournament)].name : null,
+      tournamentCode: m.tournament && trnMap[sid(m.tournament)] ? trnMap[sid(m.tournament)].code : null,
+      tournamentRound: m.tournamentRound || null,
       homeTeam: tm[sid(m.homeTeam)] || { id: sid(m.homeTeam), name: 'Deleted team' },
       awayTeam: tm[sid(m.awayTeam)] || { id: sid(m.awayTeam), name: 'Deleted team' },
       scores: innings.filter((i) => sid(i.match) === sid(m._id)).map((i) => ({ team: sid(i.battingTeam), runs: i.summary.runs, wickets: i.summary.wickets, overs: `${Math.floor(i.summary.legalBalls / 6)}.${i.summary.legalBalls % 6}` })),
@@ -626,6 +634,38 @@ router.post('/:id/finish', wrap(async (req, res) => {
     { match: match._id, innings: snapshot, result: match.toObject().result, playerOfMatch: match.toObject().playerOfMatch },
     { upsert: true, new: true }
   );
+
+  // If this match belongs to a tournament, automatically update team elimination / winner
+  if (match.tournament && result.winner) {
+    try {
+      const tournament = await Tournament.findById(match.tournament);
+      if (tournament) {
+        const winnerId = sid(result.winner);
+        const loserId = sid(match.homeTeam) === winnerId ? sid(match.awayTeam) : sid(match.homeTeam);
+
+        const loserEntry = tournament.teams.find((t) => sid(t.team) === loserId);
+        if (loserEntry && loserEntry.status === 'approved') {
+          loserEntry.status = 'eliminated';
+        }
+
+        // If this is the Final match, mark winner as 'winner'
+        const isFinal = (match.tournamentRound || '').toLowerCase().includes('final') &&
+          !(match.tournamentRound || '').toLowerCase().includes('semi') &&
+          !(match.tournamentRound || '').toLowerCase().includes('quarter');
+        if (isFinal) {
+          const winnerEntry = tournament.teams.find((t) => sid(t.team) === winnerId);
+          if (winnerEntry) winnerEntry.status = 'winner';
+          tournament.status = 'completed';
+        } else if (tournament.status === 'upcoming') {
+          tournament.status = 'live';
+        }
+        await tournament.save();
+      }
+    } catch (e) {
+      console.warn('Could not auto-update tournament teams:', e);
+    }
+  }
+
   await audit(req.user, 'match.finish', 'Match', match._id, { summary: result.summary, forced: !!body.force && !s2.completed });
   res.json(await buildView(match, req.user));
 }));
