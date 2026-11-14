@@ -13,6 +13,7 @@ import { downloadScorecardImage } from '../utils/scorecardImage.js';
 import { downloadScorecardPDF } from '../utils/scorecardPDF.js';
 import { downloadMatchPoster } from '../utils/matchPoster.js';
 import { QRCodeModal } from '../components/QRCodeModal.jsx';
+import { LiveMatchChat } from '../components/LiveMatchChat.jsx';
 
 const WICKET_LABELS = { bowled: 'Bowled', caught: 'Caught', lbw: 'LBW', runout: 'Run out', stumped: 'Stumped', hitwicket: 'Hit wicket' };
 const ALLOWED = {
@@ -68,7 +69,7 @@ export default function MatchPage() {
   else if (match.status === 'scheduled') body = <SetupView view={view} act={act} busy={busy} id={id} />;
   else {
     const inn = view.innings[match.currentInnings - 1];
-    if (match.currentInnings === 1 && inn?.state.completed) body = <TargetView view={view} act={act} busy={busy} id={id} />;
+    if (match.currentInnings === 1 && inn?.state.completed) body = <TargetView view={view} act={act} busy={busy} id={id} queueProps={queueProps} />;
     else body = <LiveView view={view} act={act} busy={busy} id={id} queueProps={queueProps} />;
   }
 
@@ -249,7 +250,7 @@ function AddPlayerModal({ open, onClose, teamName, onAdd }) {
 }
 
 // ---------------------------------------------------------------- target page
-function TargetView({ view, act, busy, id }) {
+function TargetView({ view, act, busy, id, queueProps }) {
   const { match } = view;
   const first = view.innings[0];
   const s = first.state;
@@ -279,7 +280,15 @@ function TargetView({ view, act, busy, id }) {
         ) : <p className="mt-4 text-sm text-slate-500">Waiting for the second innings to start.</p>}
       </div>
       <ConfirmDialog open={undoOpen} title="Undo last ball?" message="The last ball of the first innings will be removed. This is recorded in the audit log." confirmLabel="Undo last ball" busy={busy}
-        onCancel={() => setUndoOpen(false)} onConfirm={async () => { await act(() => api(`/matches/${id}/balls/last`, { method: 'DELETE' })); setUndoOpen(false); }} />
+        onCancel={() => setUndoOpen(false)} onConfirm={async () => {
+          setUndoOpen(false);
+          playUndoSound();
+          if (queueProps?.undoBall) {
+            await queueProps.undoBall();
+          } else {
+            await act(() => api(`/matches/${id}/balls/last`, { method: 'DELETE' }));
+          }
+        }} />
       <ScorecardTabs view={view} />
     </div>
   );
@@ -679,6 +688,9 @@ function LiveView({ view, act, busy, id, queueProps }) {
 
       <button className="btn btn-outline w-full" onClick={() => setShowCard(!showCard)}>{showCard ? 'Hide' : 'Show'} full scorecard and commentary</button>
       {showCard && <ScorecardTabs view={view} />}
+
+      {/* Live Fan Chat & Reactions */}
+      <LiveMatchChat matchId={id} isLive={match.status === 'live'} defaultCollapsed={true} />
 
       <WicketModal open={wicketOpen} onClose={() => setWicketOpen(false)} initialExtra={extra} initialRuns={extra ? extraRuns : 0} initialType={wicketType} busy={busy}
         names={{ striker: nameOf(st.battingCard, striker) || nameOf(st.availableBatters, striker), nonStriker: nameOf(st.battingCard, nonStriker) || nameOf(st.availableBatters, nonStriker) }}

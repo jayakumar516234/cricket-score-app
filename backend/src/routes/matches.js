@@ -8,6 +8,8 @@ import { Player, PLAYER_ROLES } from '../models/Player.js';
 import { Innings } from '../models/Innings.js';
 import { Delivery } from '../models/Delivery.js';
 import { Scorecard } from '../models/Scorecard.js';
+import { MatchMessage } from '../models/MatchMessage.js';
+import { AppConfig, DEFAULT_FEATURE_FLAGS } from '../models/AppConfig.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { HttpError, parse, wrap, escapeRegex, pageParams } from '../utils/http.js';
 import { audit } from '../utils/audit.js';
@@ -23,6 +25,44 @@ router.get('/public/:id', wrap(async (req, res) => {
   const match = await Match.findById(req.params.id);
   if (!match) throw new HttpError(404, 'Match not found');
   res.json(await buildView(match, null));
+}));
+
+// Public endpoint for match live chat & fan cheers (no login required)
+router.get('/public/:id/messages', wrap(async (req, res) => {
+  const cfgDoc = await AppConfig.findOne({ configKey: 'feature_flags' }).lean();
+  const features = { ...DEFAULT_FEATURE_FLAGS, ...(cfgDoc?.value || {}) };
+  if (!features.liveChatEnabled) {
+    return res.json({ enabled: false, messages: [] });
+  }
+  const messages = await MatchMessage.find({ match: req.params.id })
+    .sort({ createdAt: -1 })
+    .limit(50)
+    .lean();
+  res.json({ enabled: true, messages: messages.reverse() });
+}));
+
+router.post('/public/:id/messages', wrap(async (req, res) => {
+  const cfgDoc = await AppConfig.findOne({ configKey: 'feature_flags' }).lean();
+  const features = { ...DEFAULT_FEATURE_FLAGS, ...(cfgDoc?.value || {}) };
+  if (!features.liveChatEnabled) {
+    throw new HttpError(403, 'Live chat is currently disabled by administrator');
+  }
+  const match = await Match.findById(req.params.id);
+  if (!match) throw new HttpError(404, 'Match not found');
+
+  const text = (req.body.message || '').trim();
+  if (!text) throw new HttpError(400, 'Message cannot be empty');
+  if (text.length > 300) throw new HttpError(400, 'Message cannot exceed 300 characters');
+
+  const senderName = (req.body.senderName || 'Cricket Fan').trim().slice(0, 60);
+  const msg = await MatchMessage.create({
+    match: match._id,
+    user: null,
+    senderName,
+    senderRole: 'viewer',
+    message: text,
+  });
+  res.status(201).json({ ok: true, message: msg });
 }));
 
 router.use(requireAuth);
@@ -166,6 +206,41 @@ router.get('/:id', wrap(async (req, res) => {
   const match = await getMatch(req.params.id);
   if (!viewerMayViewMatch(req.user, match)) throw new HttpError(403, 'You can only view matches played by your team');
   res.json(await buildView(match, req.user));
+}));
+
+router.get('/:id/messages', wrap(async (req, res) => {
+  const cfgDoc = await AppConfig.findOne({ configKey: 'feature_flags' }).lean();
+  const features = { ...DEFAULT_FEATURE_FLAGS, ...(cfgDoc?.value || {}) };
+  if (!features.liveChatEnabled) {
+    return res.json({ enabled: false, messages: [] });
+  }
+  const messages = await MatchMessage.find({ match: req.params.id })
+    .sort({ createdAt: -1 })
+    .limit(50)
+    .lean();
+  res.json({ enabled: true, messages: messages.reverse() });
+}));
+
+router.post('/:id/messages', wrap(async (req, res) => {
+  const cfgDoc = await AppConfig.findOne({ configKey: 'feature_flags' }).lean();
+  const features = { ...DEFAULT_FEATURE_FLAGS, ...(cfgDoc?.value || {}) };
+  if (!features.liveChatEnabled) {
+    throw new HttpError(403, 'Live chat is currently disabled by administrator');
+  }
+  const match = await getMatch(req.params.id);
+  const text = (req.body.message || '').trim();
+  if (!text) throw new HttpError(400, 'Message cannot be empty');
+  if (text.length > 300) throw new HttpError(400, 'Message cannot exceed 300 characters');
+
+  const senderName = req.user.name || 'Cricket Fan';
+  const msg = await MatchMessage.create({
+    match: match._id,
+    user: req.user._id,
+    senderName,
+    senderRole: req.user.role || 'viewer',
+    message: text,
+  });
+  res.status(201).json({ ok: true, message: msg });
 }));
 
 // ---------- create / update / delete ----------

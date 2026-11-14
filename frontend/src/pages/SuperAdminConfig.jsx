@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Shield, Eye, EyeOff, Save, RotateCcw, Loader2, CheckCircle2, Info } from 'lucide-react';
+import { Shield, Eye, EyeOff, Save, RotateCcw, Loader2, CheckCircle2, Info, Radio, MessageSquare, Zap } from 'lucide-react';
 import { api } from '../api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 
@@ -34,6 +34,7 @@ export default function SuperAdminConfig() {
   const { isSuper } = useAuth();
   const [allKeys, setAllKeys] = useState([]);
   const [visibility, setVisibility] = useState(null);
+  const [features, setFeatures] = useState({ liveMatchEnabled: true, liveChatEnabled: true });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -41,10 +42,16 @@ export default function SuperAdminConfig() {
 
   useEffect(() => {
     if (!isSuper) return;
-    api('/config/menu-visibility')
-      .then((d) => {
-        setVisibility(d.visibility);
-        setAllKeys(d.allKeys || Object.keys(MENU_LABELS));
+    Promise.all([
+      api('/config/menu-visibility'),
+      api('/config/features').catch(() => ({ features: { liveMatchEnabled: true, liveChatEnabled: true } })),
+    ])
+      .then(([menuData, featData]) => {
+        setVisibility(menuData.visibility);
+        setAllKeys(menuData.allKeys || Object.keys(MENU_LABELS));
+        if (featData?.features) {
+          setFeatures(featData.features);
+        }
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -66,7 +73,10 @@ export default function SuperAdminConfig() {
     setSaving(true);
     setError('');
     try {
-      await api('/config/menu-visibility', { method: 'PUT', body: { visibility } });
+      await Promise.all([
+        api('/config/menu-visibility', { method: 'PUT', body: { visibility } }),
+        api('/config/features', { method: 'PUT', body: features }),
+      ]);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (e) {
@@ -136,6 +146,81 @@ export default function SuperAdminConfig() {
       {error && (
         <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-xs text-red-700">{error}</div>
       )}
+
+      {/* ─── Global Live & Live Chat Master Controls ─── */}
+      <div className="card p-4 space-y-3 bg-gradient-to-br from-slate-900 to-navy-950 text-white rounded-2xl border border-navy-800 shadow-md">
+        <div className="flex items-center justify-between border-b border-white/10 pb-2">
+          <div className="flex items-center gap-2">
+            <Radio className="h-4 w-4 text-emerald-400" />
+            <h3 className="text-sm font-black tracking-tight text-white uppercase">
+              Global Live & Chat Master Controls (Super Admin)
+            </h3>
+          </div>
+          <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-300">
+            System Control
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+          {/* Live Score Broadcasting */}
+          <div className="rounded-xl bg-white/5 border border-white/10 p-3 flex items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <Zap className="h-4 w-4 text-emerald-400" />
+                <span className="text-xs sm:text-sm font-bold text-white">Live Score Broadcasting</span>
+              </div>
+              <p className="text-[10px] text-slate-300 mt-0.5">
+                {features.liveMatchEnabled ? 'Active: All users can watch live score updates' : 'Disabled: Live broadcast paused globally'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setFeatures((prev) => ({ ...prev, liveMatchEnabled: !prev.liveMatchEnabled }));
+                setSaved(false);
+              }}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                features.liveMatchEnabled ? 'bg-emerald-500' : 'bg-slate-700'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                  features.liveMatchEnabled ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* Live Fan Chat & Reactions */}
+          <div className="rounded-xl bg-white/5 border border-white/10 p-3 flex items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4 text-pitch-400" />
+                <span className="text-xs sm:text-sm font-bold text-white">Live Fan Chat & Reactions</span>
+              </div>
+              <p className="text-[10px] text-slate-300 mt-0.5">
+                {features.liveChatEnabled ? 'Active: Live chat is enabled on match pages' : 'Disabled: Live chat is turned off globally'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setFeatures((prev) => ({ ...prev, liveChatEnabled: !prev.liveChatEnabled }));
+                setSaved(false);
+              }}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                features.liveChatEnabled ? 'bg-pitch-500' : 'bg-slate-700'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                  features.liveChatEnabled ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* Info note */}
       <div className="flex items-start gap-2 rounded-xl bg-blue-50 border border-blue-200 p-3">

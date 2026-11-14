@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { api } from './api.js';
-import { applyQueueToView } from './engine/scoring.js';
+import { applyQueueToView, applyUndoToView } from './engine/scoring.js';
 
 export function useBallQueue({ matchId, view, setData, setActError, act }) {
   const [queue, setQueue] = useState(() => {
@@ -131,7 +131,7 @@ export function useBallQueue({ matchId, view, setData, setActError, act }) {
     return true;
   };
 
-  // User clicks undo
+  // User clicks undo — optimistic instantaneous rollback!
   const undoBall = async () => {
     if (queueRef.current.length > 0) {
       // Cancel the most recently queued ball locally
@@ -142,12 +142,38 @@ export function useBallQueue({ matchId, view, setData, setActError, act }) {
       return { ok: true };
     }
 
-    // Queue is empty, call server undo
-    return act(async () => {
+    // Queue is empty: optimistically pop the last ball from current view state immediately!
+    const prevView = serverViewRef.current || view;
+    const optimisticView = applyUndoToView(prevView);
+    if (optimisticView && optimisticView !== prevView) {
+      // INSTANT UI UPDATE (<1ms)
+      setData(optimisticView);
+      serverViewRef.current = optimisticView;
+    }
+
+    // Call server undo in background / async
+    setSyncStatus('syncing');
+    try {
       const res = await api(`/matches/${matchId}/balls/last`, { method: 'DELETE' });
       serverViewRef.current = res;
-      return res;
-    });
+      // If no new balls were queued while deleting, apply confirmed server view
+      if (queueRef.current.length === 0) {
+        setData(res);
+      }
+      setSyncStatus('synced');
+      if (setActError) setActError('');
+      return { ok: true, data: res };
+    } catch (err) {
+      console.error('Server undo error:', err);
+      // Rollback to previous view if delete failed on server
+      if (prevView) {
+        setData(prevView);
+        serverViewRef.current = prevView;
+      }
+      setSyncStatus('error');
+      if (setActError) setActError(`Undo failed: ${err.message}`);
+      return { ok: false, error: err.message };
+    }
   };
 
   return {

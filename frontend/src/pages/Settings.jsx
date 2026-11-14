@@ -23,6 +23,8 @@ import {
   ChevronRight,
   KeyRound,
   Check,
+  Radio,
+  Zap,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { api } from '../api.js';
@@ -63,6 +65,12 @@ export default function Settings() {
   // Preferences State
   const [soundEnabled, setSoundEnabled] = useState(
     localStorage.getItem('cricket_sound_effects') !== 'false'
+  );
+  const [liveUpdatesEnabled, setLiveUpdatesEnabled] = useState(
+    localStorage.getItem('cricket_live_updates') !== 'false'
+  );
+  const [liveChatEnabled, setLiveChatEnabled] = useState(
+    localStorage.getItem('cricket_live_chat') !== 'false'
   );
 
   // Danger Zone / Delete Account State
@@ -157,6 +165,20 @@ export default function Settings() {
     const next = !soundEnabled;
     setSoundEnabled(next);
     localStorage.setItem('cricket_sound_effects', String(next));
+  };
+
+  // Toggle Live Updates
+  const toggleLiveUpdates = () => {
+    const next = !liveUpdatesEnabled;
+    setLiveUpdatesEnabled(next);
+    localStorage.setItem('cricket_live_updates', String(next));
+  };
+
+  // Toggle Live Chat
+  const toggleLiveChat = () => {
+    const next = !liveChatEnabled;
+    setLiveChatEnabled(next);
+    localStorage.setItem('cricket_live_chat', String(next));
   };
 
   // Handle Account Deletion
@@ -332,6 +354,62 @@ export default function Settings() {
               <span
                 className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
                   soundEnabled ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* Live Score Auto-Updates Toggle */}
+          <div className="pt-2.5 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Zap className={`h-4 w-4 ${liveUpdatesEnabled ? 'text-emerald-600' : 'text-slate-400'}`} />
+              <div>
+                <span className="text-xs sm:text-sm font-bold text-slate-800 block leading-tight">
+                  Live Match Score Updates
+                </span>
+                <span className="text-[10px] text-slate-400">Auto-refresh ball-by-ball score and animations</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={toggleLiveUpdates}
+              className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                liveUpdatesEnabled ? 'bg-emerald-600' : 'bg-slate-300'
+              }`}
+              role="switch"
+              aria-checked={liveUpdatesEnabled}
+            >
+              <span
+                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                  liveUpdatesEnabled ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* Live Fan Chat Toggle */}
+          <div className="pt-2.5 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <MessageSquare className={`h-4 w-4 ${liveChatEnabled ? 'text-pitch-600' : 'text-slate-400'}`} />
+              <div>
+                <span className="text-xs sm:text-sm font-bold text-slate-800 block leading-tight">
+                  Live Fan Chat & Cheers
+                </span>
+                <span className="text-[10px] text-slate-400">Show fan chat and quick cheers on match pages</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={toggleLiveChat}
+              className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                liveChatEnabled ? 'bg-pitch-600' : 'bg-slate-300'
+              }`}
+              role="switch"
+              aria-checked={liveChatEnabled}
+            >
+              <span
+                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                  liveChatEnabled ? 'translate-x-5' : 'translate-x-0'
                 }`}
               />
             </button>

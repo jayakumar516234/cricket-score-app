@@ -1,15 +1,28 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Trophy, Radio, Share2, Crown, ArrowRight, Shield } from 'lucide-react';
+import { Trophy, Radio, Share2, Crown, ArrowRight, Shield, RefreshCw } from 'lucide-react';
 import { useFetch } from '../useFetch.js';
+import { api } from '../api.js';
 import { ErrorBox, Spinner, SkeletonScorecard, StatusBadge, TeamLogo } from '../components/ui.jsx';
 import { BatTable, BowlTable, ExtrasLine, OverByOver, ScorecardTabs, teamOf } from '../components/ScoreParts.jsx';
 import { WhatsAppShareButton } from '../components/WhatsAppShare.jsx';
 import { OverBarChart } from '../components/OverBarChart.jsx';
+import { LiveMatchChat } from '../components/LiveMatchChat.jsx';
 
 export default function PublicLiveMatch() {
   const { id } = useParams();
-  const [poll, setPoll] = useState(3000);
+  const userLivePref = localStorage.getItem('cricket_live_updates') !== 'false';
+  const [poll, setPoll] = useState(userLivePref ? 3000 : 0);
+  const [features, setFeatures] = useState({ liveMatchEnabled: true, liveChatEnabled: true });
+
+  useEffect(() => {
+    api('/config/features/public')
+      .then((d) => {
+        if (d?.features) setFeatures(d.features);
+      })
+      .catch(() => {});
+  }, []);
+
   // Unauthenticated fetch from public endpoint!
   const { data: view, error, loading, reload } = useFetch(`/matches/public/${id}`, { poll });
 
@@ -73,6 +86,32 @@ export default function PublicLiveMatch() {
           </div>
           <StatusBadge status={match.status} />
         </section>
+
+        {/* Broadcast Status Notice if Super Admin paused it */}
+        {!features.liveMatchEnabled && match.status === 'live' && (
+          <div className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-center space-y-1 text-amber-900 shadow-xs">
+            <Radio className="h-6 w-6 mx-auto text-amber-600 animate-pulse" />
+            <p className="font-bold text-sm">Live Score Broadcast Paused</p>
+            <p className="text-xs text-amber-800">
+              Live match broadcasting has been temporarily paused by administrator. Scores will refresh once the match is finalized.
+            </p>
+          </div>
+        )}
+
+        {/* Manual refresh button if user turned off live auto-updates */}
+        {!userLivePref && match.status === 'live' && (
+          <div className="flex items-center justify-between rounded-xl bg-slate-200/80 px-3 py-2 text-xs">
+            <span className="text-slate-600">Auto-refresh is off (User Settings)</span>
+            <button
+              type="button"
+              onClick={() => reload()}
+              className="btn btn-outline text-xs !py-1 !px-2.5 flex items-center gap-1 font-bold"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              <span>Refresh Now</span>
+            </button>
+          </div>
+        )}
 
         {/* Live Score Stadium Card */}
         {st && match.status === 'live' && (
@@ -164,6 +203,9 @@ export default function PublicLiveMatch() {
 
         {/* WhatsApp Share Button */}
         <WhatsAppShareButton view={view} label="Share Live Score on WhatsApp" />
+
+        {/* Live Fan Chat & Reactions */}
+        <LiveMatchChat matchId={id} isLive={match.status === 'live'} />
 
         {/* Full Scorecard Tabs */}
         <section className="card p-4 space-y-3">

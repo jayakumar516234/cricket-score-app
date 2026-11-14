@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { wrap } from '../utils/http.js';
-import { AppConfig, DEFAULT_MENU_VISIBILITY, ALL_MENU_KEYS } from '../models/AppConfig.js';
+import { AppConfig, DEFAULT_MENU_VISIBILITY, ALL_MENU_KEYS, DEFAULT_FEATURE_FLAGS } from '../models/AppConfig.js';
 import { audit } from '../utils/audit.js';
 
 const router = Router();
@@ -54,6 +54,37 @@ router.get('/menu-visibility/public', requireAuth, wrap(async (req, res) => {
   const effectiveRole = role === 'scorer' ? 'viewer' : role;
   const visibleKeys = all[effectiveRole] ?? all['user'] ?? ALL_MENU_KEYS;
   res.json({ visibleKeys });
+}));
+
+// GET /api/config/features — get feature flags (Super Admin)
+router.get('/features', requireAuth, requireRole('superadmin'), wrap(async (req, res) => {
+  const doc = await AppConfig.findOne({ configKey: 'feature_flags' }).lean();
+  const features = { ...DEFAULT_FEATURE_FLAGS, ...(doc?.value || {}) };
+  res.json({ features });
+}));
+
+// PUT /api/config/features — update feature flags (Super Admin only)
+router.put('/features', requireAuth, requireRole('superadmin'), wrap(async (req, res) => {
+  const { liveMatchEnabled, liveChatEnabled } = req.body;
+  const current = (await AppConfig.findOne({ configKey: 'feature_flags' }).lean())?.value || DEFAULT_FEATURE_FLAGS;
+  const updated = {
+    liveMatchEnabled: typeof liveMatchEnabled === 'boolean' ? liveMatchEnabled : current.liveMatchEnabled,
+    liveChatEnabled: typeof liveChatEnabled === 'boolean' ? liveChatEnabled : current.liveChatEnabled,
+  };
+  await AppConfig.findOneAndUpdate(
+    { configKey: 'feature_flags' },
+    { $set: { value: updated, updatedBy: req.user._id } },
+    { upsert: true, new: true }
+  );
+  await audit(req.user, 'config.features.update', 'AppConfig', null, { features: updated });
+  res.json({ ok: true, features: updated });
+}));
+
+// GET /api/config/features/public — any user or spectator (no login required)
+router.get('/features/public', wrap(async (req, res) => {
+  const doc = await AppConfig.findOne({ configKey: 'feature_flags' }).lean();
+  const features = { ...DEFAULT_FEATURE_FLAGS, ...(doc?.value || {}) };
+  res.json({ features });
 }));
 
 export default router;

@@ -363,3 +363,49 @@ export function applyQueueToView(serverView, queue) {
   };
 }
 
+export function applyUndoToView(serverView) {
+  if (!serverView || !serverView.match) return serverView;
+  const match = serverView.match;
+  const innIndex = (match.currentInnings || 1) - 1;
+  const inn = serverView.innings?.[innIndex];
+  if (!inn || !inn.state?.balls || inn.state.balls.length === 0) return serverView;
+
+  const names = {};
+  [...(match.xi?.home || []), ...(match.xi?.away || [])].forEach((p) => {
+    names[p.id] = p.name;
+  });
+
+  const isHomeBatting = inn.battingTeam === match.homeTeam.id;
+  const battingXI = ((isHomeBatting ? match.xi?.home : match.xi?.away) || []).map((p) => p.id);
+  const bowlingXI = ((isHomeBatting ? match.xi?.away : match.xi?.home) || []).map((p) => p.id);
+  const cfg = {
+    maxOvers: match.overs,
+    battingXI,
+    bowlingXI,
+    target: inn.target ?? null,
+  };
+
+  const remainingDeliveries = inn.state.balls.slice(0, -1).map((b) => ({
+    striker: b.striker,
+    nonStriker: b.nonStriker,
+    bowler: b.bowler,
+    runs: b.runs,
+    extra: b.extra,
+    wicket: b.wicket ? { type: b.wicket.type, dismissed: b.wicket.dismissed, fielder: b.wicket.fielder } : null,
+  }));
+
+  const newState = computeDecoratedInnings(remainingDeliveries, cfg, names);
+
+  const newInnings = [...serverView.innings];
+  newInnings[innIndex] = {
+    ...inn,
+    state: newState,
+  };
+
+  return {
+    ...serverView,
+    innings: newInnings,
+  };
+}
+
+
