@@ -119,19 +119,7 @@ export default function TournamentDetail() {
     setActionError('');
     let resMsg = 'Team added successfully!';
     try {
-      if (addTeamTab === 'myteam') {
-        // Add organizer's own team by their team ID directly
-        const myTeamId = e.target?.dataset?.teamid || e.currentTarget?.dataset?.teamid;
-        // We use a hidden input to pass teamId for 'myteam' tab
-        const hiddenId = document.getElementById('myteam-selected-id')?.value;
-        if (!hiddenId) {
-          setActionError('Please select your team to add');
-          setActionLoading(false);
-          return;
-        }
-        const res = await api.post(`/tournaments/${id}/teams`, { teamId: hiddenId });
-        if (res?.message) resMsg = res.message;
-      } else if (addTeamTab === 'code') {
+      if (addTeamTab === 'code') {
         if (!teamCodeInput.trim()) {
           setActionError('Please enter a Team Code');
           setActionLoading(false);
@@ -1225,6 +1213,57 @@ export default function TournamentDetail() {
                         )}
                       </div>
                     )}
+
+                    {/* This team's matches */}
+                    {(() => {
+                      const teamMatches = matches.filter(
+                        (m) => m.homeTeam?.id === t.id || m.awayTeam?.id === t.id
+                      );
+                      if (teamMatches.length === 0) return null;
+                      return (
+                        <div className="mt-3 pt-2.5 border-t border-slate-100">
+                          <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Matches</p>
+                          <div className="space-y-1.5">
+                            {teamMatches.map((m, mi) => {
+                              const isHome = m.homeTeam?.id === t.id;
+                              const opp = isHome ? m.awayTeam : m.homeTeam;
+                              const isLive = m.status === 'live';
+                              const isDone = m.status === 'completed';
+                              return (
+                                <Link
+                                  key={m.id}
+                                  to={`/matches/${m.id}`}
+                                  className={`flex items-center justify-between gap-2 rounded-xl px-2.5 py-1.5 text-xs transition ${
+                                    isLive
+                                      ? 'bg-red-50 border border-red-200 hover:bg-red-100'
+                                      : isDone
+                                      ? 'bg-slate-50 border border-slate-200 hover:bg-slate-100'
+                                      : 'bg-blue-50 border border-blue-100 hover:bg-blue-100'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-1.5 min-w-0">
+                                    {isLive && (
+                                      <span className="flex h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse shrink-0" />
+                                    )}
+                                    <span className="font-bold text-slate-700 truncate">
+                                      vs {opp?.name || 'TBD'}
+                                    </span>
+                                    <span className="text-[10px] text-slate-400 shrink-0">{m.round}</span>
+                                  </div>
+                                  <span className={`shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-lg ${
+                                    isLive ? 'text-red-700 bg-red-100' :
+                                    isDone ? 'text-slate-600 bg-slate-200' :
+                                    'text-blue-700 bg-blue-100'
+                                  }`}>
+                                    {isLive ? '🔴 LIVE' : isDone ? '✓ Done' : '📅 Upcoming'}
+                                  </span>
+                                </Link>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 );
               })}
