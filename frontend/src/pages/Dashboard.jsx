@@ -246,8 +246,8 @@ function UserHomeView({ data, user, myTeam, t, isViewer }) {
               Create your club squad, connect with opponent teams and start live scoring matches.
             </p>
             {data.can?.createTeam && (
-              <Link to="/teams/new" className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white mt-1.5 !py-1.5 !px-3.5 font-bold shadow-xs inline-flex items-center gap-1.5 text-xs">
-                <Plus className="h-3.5 w-3.5" /> Create Your Team
+              <Link to="/teams/new" className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white mt-1.5 min-h-[40px] !py-2 !px-4 font-bold shadow-xs inline-flex items-center gap-2 text-xs sm:text-sm rounded-xl">
+                <Plus className="h-4 w-4" /> Create Your Team
               </Link>
             )}
           </div>
@@ -418,7 +418,7 @@ function UserHomeView({ data, user, myTeam, t, isViewer }) {
             </h2>
             <div className="flex items-center gap-2">
               {myTeam && !isViewer && (
-                <Link to="/teams?add=opponent" className="btn btn-primary text-xs !py-1 !px-2 font-bold shadow-2xs">
+                <Link to="/teams?add=opponent" className="btn btn-primary min-h-[36px] text-xs sm:text-sm !py-1.5 !px-3 font-bold shadow-2xs rounded-xl">
                   <Plus className="h-3.5 w-3.5" /> Add
                 </Link>
               )}
@@ -435,8 +435,8 @@ function UserHomeView({ data, user, myTeam, t, isViewer }) {
               text={myTeam ? "Connect with rival clubs using their 6-character team code to play matches." : "Create your team first to connect with opponents."}
               action={
                 myTeam && !isViewer ? (
-                  <Link to="/teams?add=opponent" className="btn btn-primary text-xs !py-1.5 !px-3 font-bold">
-                    <Handshake className="h-3.5 w-3.5 mr-1" /> Add Opponent
+                  <Link to="/teams?add=opponent" className="btn btn-primary min-h-[40px] text-xs sm:text-sm !py-2 !px-4 font-bold rounded-xl">
+                    <Handshake className="h-4 w-4 mr-1" /> Add Opponent
                   </Link>
                 ) : null
               }
@@ -462,10 +462,10 @@ function UserHomeView({ data, user, myTeam, t, isViewer }) {
                     {myTeam && !isViewer && (
                       <Link
                         to={`/matches/new?home=${myTeam.id}&away=${tm.id}`}
-                        className="btn btn-green text-[10px] sm:text-xs !py-1 !px-2.5 font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs shrink-0 flex items-center gap-1"
+                        className="btn btn-green text-xs sm:text-sm min-h-[38px] !py-2 !px-3.5 font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs shrink-0 flex items-center gap-1.5 rounded-xl"
                         title="Play Match with this Opponent"
                       >
-                        <Trophy className="h-3 w-3" /> Play
+                        <Trophy className="h-3.5 w-3.5" /> Play
                       </Link>
                     )}
                   </div>
@@ -574,7 +574,7 @@ function AdminDashboardView({ data, user, t, myTeam }) {
             <h2 className="text-xs sm:text-sm font-extrabold text-slate-900">{t('dashboard.recentTeams')}</h2>
             <div className="flex items-center gap-2">
               {data.can?.createTeam && (
-                <Link to="/teams/new" className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white text-xs !py-1 !px-2 font-bold shadow-2xs">
+                <Link to="/teams/new" className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm min-h-[36px] !py-1.5 !px-3 font-bold shadow-2xs rounded-xl">
                   <Plus className="h-3.5 w-3.5" /> {t('dashboard.createTeam')}
                 </Link>
               )}

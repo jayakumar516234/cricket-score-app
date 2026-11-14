@@ -902,17 +902,17 @@ export default function TournamentDetail() {
                     {isOrganizer && m.status === 'completed' && (
                       <div className="px-4 pb-3 pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-1 text-[11px] bg-slate-50/70">
                         <span className="text-slate-500 font-semibold">Mark Out:</span>
-                        <div className="flex gap-1">
+                        <div className="flex gap-1.5">
                           <button
                             onClick={() => handleUpdateTeamStatus(m.homeTeam.id, 'eliminated')}
-                            className="px-2 py-0.5 rounded-md bg-red-50 hover:bg-red-100 text-red-700 font-bold border border-red-200 text-[10px] transition"
+                            className="min-h-[34px] px-2.5 py-1 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 font-bold border border-red-200 text-xs transition"
                             title={`Eliminate ${m.homeTeam.name}`}
                           >
                             🔴 {m.homeTeam.name.slice(0, 10)}
                           </button>
                           <button
                             onClick={() => handleUpdateTeamStatus(m.awayTeam.id, 'eliminated')}
-                            className="px-2 py-0.5 rounded-md bg-red-50 hover:bg-red-100 text-red-700 font-bold border border-red-200 text-[10px] transition"
+                            className="min-h-[34px] px-2.5 py-1 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 font-bold border border-red-200 text-xs transition"
                             title={`Eliminate ${m.awayTeam.name}`}
                           >
                             🔴 {m.awayTeam.name.slice(0, 10)}
@@ -1184,18 +1184,18 @@ export default function TournamentDetail() {
 
                     {/* Organizer Elimination & Status Control Buttons */}
                     {isOrganizer && (
-                      <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-1.5">
+                      <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
                         {isEliminated ? (
                           <button
                             onClick={() => handleUpdateTeamStatus(t.id, 'approved')}
-                            className="flex-1 py-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold text-xs transition"
+                            className="flex-1 min-h-[40px] py-2 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold text-xs sm:text-sm transition"
                           >
                             🟢 Reactivate Team
                           </button>
                         ) : isPending ? (
                           <button
                             onClick={() => handleUpdateTeamStatus(t.id, 'approved')}
-                            className="flex-1 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-xs"
+                            className="flex-1 min-h-[40px] py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm transition shadow-xs"
                           >
                             ✓ Approve Spot
                           </button>
@@ -1203,14 +1203,14 @@ export default function TournamentDetail() {
                           <>
                             <button
                               onClick={() => handleUpdateTeamStatus(t.id, 'eliminated')}
-                              className="flex-1 py-1 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-bold text-xs transition"
+                              className="flex-1 min-h-[40px] py-2 px-3 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-bold text-xs sm:text-sm transition"
                               title="Eliminate team after match"
                             >
                               🔴 Eliminate
                             </button>
                             <button
                               onClick={() => handleUpdateTeamStatus(t.id, 'winner')}
-                              className="py-1 px-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 font-bold text-xs transition"
+                              className="min-h-[40px] py-2 px-3.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 font-bold text-xs sm:text-sm transition"
                               title="Crown as Winner"
                             >
                               🏆 Winner
@@ -1817,14 +1817,14 @@ export default function TournamentDetail() {
                 className="input font-bold text-center w-28"
                 required
               />
-              <div className="flex flex-wrap gap-1">
+              <div className="flex flex-wrap gap-1.5">
                 {[8, 9, 10, 12, 14, 16, 24, 32].map((n) => (
                   <button
                     key={n}
                     type="button"
                     onClick={() => setCustomMaxTeams(n)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${
-                      customMaxTeams === n ? 'bg-pitch-600 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                    className={`min-h-[38px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition ${
+                      customMaxTeams === n ? 'bg-pitch-600 text-white shadow-2xs' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
                     }`}
                   >
                     {n}
@@ -1833,8 +1833,8 @@ export default function TournamentDetail() {
                 <button
                   type="button"
                   onClick={() => setCustomMaxTeams(64)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${
-                    customMaxTeams >= 64 ? 'bg-pitch-600 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                  className={`min-h-[38px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition ${
+                    customMaxTeams >= 64 ? 'bg-pitch-600 text-white shadow-2xs' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
                   }`}
                 >
                   Open (64)

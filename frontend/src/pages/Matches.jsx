@@ -335,9 +335,9 @@ export default function Matches() {
                           {isLive && (
                             <Link
                               to={`/matches/${m.id}`}
-                              className="btn btn-green text-xs !py-1 !px-2.5 font-black bg-red-600 hover:bg-red-700 text-white shadow-2xs flex items-center gap-1"
+                              className="btn btn-green min-h-[38px] text-xs sm:text-sm !py-2 !px-3.5 font-black bg-red-600 hover:bg-red-700 text-white shadow-2xs flex items-center gap-1.5 rounded-xl"
                             >
-                              <Radio className="h-3.5 w-3.5 animate-pulse text-white" />
+                              <Radio className="h-4 w-4 animate-pulse text-white" />
                               <span>Live Scoring</span>
                             </Link>
                           )}
@@ -347,9 +347,9 @@ export default function Matches() {
                             <button
                               type="button"
                               onClick={() => nav(`/matches/${m.id}/scorecard`)}
-                              className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200/60 px-2 py-1 rounded-md transition"
+                              className="min-h-[38px] inline-flex items-center gap-1.5 text-xs sm:text-sm font-black text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200/80 px-3.5 py-2 rounded-xl transition"
                             >
-                              <FileText className="h-3 w-3 text-rose-600" />
+                              <FileText className="h-4 w-4 text-rose-600" />
                               <span>Scorecard & PDF</span>
                             </button>
                           )}
@@ -358,32 +358,32 @@ export default function Matches() {
                           {isScheduled && (
                             <Link
                               to={`/matches/${m.id}`}
-                              className="btn btn-outline text-xs !py-1 !px-2.5 font-bold text-slate-700 hover:text-emerald-700 flex items-center gap-1"
+                              className="btn btn-outline min-h-[38px] text-xs sm:text-sm !py-2 !px-3.5 font-black text-slate-700 hover:text-emerald-700 flex items-center gap-1.5 rounded-xl"
                             >
-                              <span>Enter Match</span> <ArrowRight className="h-3 w-3" />
+                              <span>Enter Match</span> <ArrowRight className="h-3.5 w-3.5" />
                             </Link>
                           )}
                         </div>
 
                         {/* Share and Admin controls */}
-                        <div className="flex items-center gap-1.5 ml-auto">
+                        <div className="flex items-center gap-2 ml-auto">
                           <button
                             type="button"
                             onClick={(e) => shareMatchWhatsApp(m, e)}
-                            className="btn btn-ghost !p-1.5 text-emerald-700 hover:bg-emerald-50 rounded-lg text-xs"
+                            className="min-h-[38px] min-w-[38px] flex items-center justify-center p-2 text-emerald-700 hover:bg-emerald-50 rounded-xl transition border border-emerald-200/60"
                             title="Share Match on WhatsApp"
                           >
-                            <Share2 className="h-3.5 w-3.5" />
+                            <Share2 className="h-4 w-4" />
                           </button>
 
                           {m.canManage && (
                             <button
-                              className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600 transition"
+                              className="min-h-[38px] min-w-[38px] flex items-center justify-center rounded-xl text-slate-400 hover:bg-red-50 hover:text-red-600 transition border border-slate-200/60 hover:border-red-200"
                               onClick={() => setDel(m)}
                               aria-label={`Delete ${m.name}`}
                               title="Delete Match"
                             >
-                              <Trash2 className="h-3.5 w-3.5" />
+                              <Trash2 className="h-4 w-4" />
                             </button>
                           )}
                         </div>

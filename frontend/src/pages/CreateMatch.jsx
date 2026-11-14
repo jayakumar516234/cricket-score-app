@@ -385,7 +385,7 @@ export default function CreateMatch() {
                   options={homeOptions}
                   placeholder="Select squad"
                   error={!!errors.homeTeam}
-                  buttonClassName="!py-1.5 text-xs font-bold"
+                  buttonClassName="!py-2.5 !px-3 text-sm font-bold min-h-[44px]"
                 />
               </div>
 
@@ -402,7 +402,7 @@ export default function CreateMatch() {
                   options={opponentOptions}
                   placeholder={connLoading ? 'Loading...' : 'Opponent'}
                   error={!!errors.awayTeam}
-                  buttonClassName="!py-1.5 text-xs font-bold"
+                  buttonClassName="!py-2.5 !px-3 text-sm font-bold min-h-[44px]"
                 />
               </div>
             </div>
@@ -423,7 +423,7 @@ export default function CreateMatch() {
                   <div className="relative flex-1">
                     <input
                       type="text"
-                      className="input !py-1.5 !px-2.5 text-xs font-bold text-slate-900 w-full bg-white border-amber-300 focus:border-amber-500 focus:ring-amber-400/20 shadow-2xs"
+                      className="input !py-2 !px-3 text-sm font-bold text-slate-900 w-full bg-white border-amber-300 focus:border-amber-500 focus:ring-amber-400/20 shadow-2xs"
                       value={f.guestTeamName}
                       onChange={(e) => set({ guestTeamName: e.target.value })}
                       placeholder="e.g. Kovai Kings XI, Red Bulls"
@@ -433,10 +433,10 @@ export default function CreateMatch() {
                   <button
                     type="button"
                     onClick={() => setGuestModalOpen(true)}
-                    className="inline-flex items-center gap-1 rounded-xl bg-amber-500 hover:bg-amber-600 px-2.5 py-1.5 text-[11px] font-black text-white shadow-xs shrink-0 transition active:scale-95"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 px-3.5 py-2 text-xs sm:text-sm font-black text-white shadow-xs shrink-0 transition active:scale-95 min-h-[40px]"
                     title="Customize 11 players"
                   >
-                    <Users className="h-3.5 w-3.5" />
+                    <Users className="h-4 w-4" />
                     <span>11 Players</span>
                   </button>
                 </div>
@@ -448,19 +448,19 @@ export default function CreateMatch() {
           </div>
 
           {/* 2. MATCH OVERS (INPUT WITH DEFAULT 20 + QUICK PRESET CHIPS) */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-3 space-y-2 shadow-2xs">
+          <div className="rounded-2xl border border-slate-200 bg-white p-3 sm:p-3.5 space-y-2.5 shadow-2xs">
             <div className="flex items-center justify-between">
-              <span className="text-[10.5px] font-black uppercase tracking-wider text-slate-700">
+              <span className="text-xs font-black uppercase tracking-wider text-slate-700">
                 Match Overs
               </span>
-              <span className="text-[10px] font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+              <span className="text-xs font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
                 {f.overs ? `${f.overs} Overs Per Side` : 'Enter overs'}
               </span>
             </div>
 
             {/* Direct Input (Default 20) + Quick Preset Chips */}
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5 bg-slate-50 border-2 border-emerald-500/60 rounded-xl px-2.5 py-1.5 focus-within:border-emerald-600 focus-within:ring-2 focus-within:ring-emerald-500/20 transition shadow-2xs">
+              <div className="flex items-center gap-1.5 bg-slate-50 border-2 border-emerald-500/70 rounded-xl px-3 py-2 min-h-[44px] focus-within:border-emerald-600 focus-within:ring-2 focus-within:ring-emerald-500/20 transition shadow-2xs">
                 <input
                   type="number"
                   min="1"
@@ -468,13 +468,13 @@ export default function CreateMatch() {
                   value={f.overs}
                   onChange={handleOversChange}
                   placeholder="20"
-                  className="w-12 text-center font-black text-sm text-slate-900 bg-transparent focus:outline-none"
+                  className="w-14 text-center font-black text-base text-slate-900 bg-transparent focus:outline-none"
                 />
                 <span className="text-xs font-bold text-slate-500">ov</span>
               </div>
 
               {/* Quick Chips */}
-              <div className="flex flex-wrap items-center gap-1 flex-1">
+              <div className="flex flex-wrap items-center gap-1.5 flex-1">
                 {QUICK_OVERS.map((ov) => {
                   const isActive = Number(f.overs) === ov;
                   return (
@@ -482,7 +482,7 @@ export default function CreateMatch() {
                       key={ov}
                       type="button"
                       onClick={() => handlePresetClick(ov)}
-                      className={`rounded-xl py-1 px-2.5 text-xs font-bold transition-all border ${
+                      className={`rounded-xl py-2 px-3 text-xs sm:text-sm font-black transition-all border min-h-[42px] ${
                         isActive
                           ? 'bg-gradient-to-r from-emerald-500 to-pitch-500 text-navy-950 border-pitch-400 font-black shadow-xs scale-105'
                           : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
@@ -494,13 +494,13 @@ export default function CreateMatch() {
                 })}
               </div>
             </div>
-            {errors.overs && <span className="text-[10px] text-red-600 font-bold block">{errors.overs}</span>}
+            {errors.overs && <span className="text-xs text-red-600 font-bold block">{errors.overs}</span>}
           </div>
 
           {/* 3. COMPACT WHO WON THE TOSS SECTION */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-2.5 sm:p-3 space-y-2 shadow-2xs">
+          <div className="rounded-2xl border border-slate-200 bg-white p-3 sm:p-3.5 space-y-2.5 shadow-2xs">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-black uppercase tracking-wider text-slate-800 flex items-center gap-1">
+              <span className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-1">
                 <span>Who Won The Toss?</span>
                 <span className="text-red-500">*</span>
               </span>
@@ -510,33 +510,33 @@ export default function CreateMatch() {
                 type="button"
                 onClick={spinTossCoin}
                 disabled={isSpinningCoin || !home || !effectiveAway}
-                className="inline-flex items-center gap-1 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2 py-0.5 text-[10px] font-bold text-amber-800 transition active:scale-95 shadow-2xs"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-300 px-3 py-1.5 text-xs font-black text-amber-900 transition active:scale-95 shadow-2xs min-h-[34px]"
                 title="Tap to spin coin randomly"
               >
-                <Coins className={`h-3 w-3 text-amber-600 ${isSpinningCoin ? 'animate-spin' : ''}`} />
+                <Coins className={`h-3.5 w-3.5 text-amber-600 ${isSpinningCoin ? 'animate-spin' : ''}`} />
                 <span>{isSpinningCoin ? 'Flipping…' : 'Flip Coin 🪙'}</span>
               </button>
             </div>
 
             {/* Team Toss Winner Selector - Compact Horizontal Cards */}
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
               {/* Home Team Button */}
               {home && (
                 <button
                   type="button"
                   onClick={() => set({ tossWinner: home.id })}
-                  className={`flex items-center justify-between gap-1.5 p-2 rounded-xl border-2 transition-all ${
+                  className={`flex items-center justify-between gap-2 p-2.5 sm:p-3 rounded-2xl border-2 transition-all min-h-[48px] ${
                     isHomeWinner
-                      ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white border-emerald-500 shadow-xs'
-                      : 'bg-emerald-50/40 text-slate-800 border-emerald-200/70 hover:bg-emerald-50'
+                      ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white border-emerald-500 shadow-sm'
+                      : 'bg-emerald-50/40 text-slate-800 border-emerald-200/80 hover:bg-emerald-50'
                   }`}
                 >
-                  <div className="flex items-center gap-1.5 min-w-0 flex-1 text-left">
-                    <TeamLogo team={home} size={20} />
-                    <span className="text-xs font-bold truncate">{home.name}</span>
+                  <div className="flex items-center gap-2 min-w-0 flex-1 text-left">
+                    <TeamLogo team={home} size={22} />
+                    <span className="text-xs sm:text-sm font-black truncate">{home.name}</span>
                   </div>
                   <span
-                    className={`text-[9px] font-black uppercase px-1.5 py-0.2 rounded-md shrink-0 ${
+                    className={`text-[9.5px] sm:text-[10px] font-black uppercase px-2 py-0.5 rounded-md shrink-0 ${
                       isHomeWinner
                         ? 'bg-white/20 text-white'
                         : 'bg-emerald-100 text-emerald-800'
@@ -552,22 +552,22 @@ export default function CreateMatch() {
                 <button
                   type="button"
                   onClick={() => set({ tossWinner: effectiveAway.id })}
-                  className={`flex items-center justify-between gap-1.5 p-2 rounded-xl border-2 transition-all ${
+                  className={`flex items-center justify-between gap-2 p-2.5 sm:p-3 rounded-2xl border-2 transition-all min-h-[48px] ${
                     isAwayWinner
-                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-blue-500 shadow-xs'
-                      : 'bg-blue-50/40 text-slate-800 border-blue-200/70 hover:bg-blue-50'
+                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-blue-500 shadow-sm'
+                      : 'bg-blue-50/40 text-slate-800 border-blue-200/80 hover:bg-blue-50'
                   }`}
                 >
-                  <div className="flex items-center gap-1.5 min-w-0 flex-1 text-left">
+                  <div className="flex items-center gap-2 min-w-0 flex-1 text-left">
                     {effectiveAway.isGuest ? (
-                      <Users className="h-4 w-4 text-amber-500 shrink-0" />
+                      <Users className="h-4.5 w-4.5 text-amber-500 shrink-0" />
                     ) : (
-                      <TeamLogo team={effectiveAway} size={20} />
+                      <TeamLogo team={effectiveAway} size={22} />
                     )}
-                    <span className="text-xs font-bold truncate">{effectiveAway.name}</span>
+                    <span className="text-xs sm:text-sm font-black truncate">{effectiveAway.name}</span>
                   </div>
                   <span
-                    className={`text-[9px] font-black uppercase px-1.5 py-0.2 rounded-md shrink-0 ${
+                    className={`text-[9.5px] sm:text-[10px] font-black uppercase px-2 py-0.5 rounded-md shrink-0 ${
                       isAwayWinner
                         ? 'bg-white/20 text-white'
                         : 'bg-blue-100 text-blue-800'
@@ -580,11 +580,11 @@ export default function CreateMatch() {
             </div>
 
             {/* Toss Decision: Bat or Bowl - Compact */}
-            <div className="pt-1.5 border-t border-slate-100 flex items-center gap-2">
-              <span className="text-[10px] font-bold text-slate-500 shrink-0">
+            <div className="pt-2 border-t border-slate-100 flex items-center gap-2">
+              <span className="text-xs font-black text-slate-600 shrink-0">
                 Elected to:
               </span>
-              <div className="grid grid-cols-2 gap-1.5 flex-1">
+              <div className="grid grid-cols-2 gap-2 flex-1">
                 {[
                   ['bat', '🏏 Bat First'],
                   ['bowl', '⚾ Bowl First'],
@@ -595,9 +595,9 @@ export default function CreateMatch() {
                       key={v}
                       type="button"
                       onClick={() => set({ tossDecision: v })}
-                      className={`rounded-lg py-1 px-2 text-xs font-bold border transition-all ${
+                      className={`rounded-xl py-2 px-3 text-xs sm:text-sm font-black border transition-all min-h-[42px] ${
                         active
-                          ? 'bg-slate-900 text-white border-slate-900 shadow-2xs font-black'
+                          ? 'bg-slate-900 text-white border-slate-900 shadow-sm font-black'
                           : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                       }`}
                     >
@@ -610,7 +610,7 @@ export default function CreateMatch() {
 
             {/* Compact Live Toss Status Note */}
             {tossWinnerTeam && (
-              <div className="text-[10px] text-center font-bold text-blue-900 bg-blue-50/80 border border-blue-200/80 rounded-lg py-0.5 px-2">
+              <div className="text-[11px] text-center font-bold text-blue-900 bg-blue-50/80 border border-blue-200/80 rounded-xl py-1 px-3">
                 🏆 <strong className="font-black text-blue-950">{tossWinnerTeam.name}</strong> won toss & chose to{' '}
                 <span className="font-black text-emerald-800 underline uppercase">
                   {f.tossDecision === 'bat' ? 'Bat First' : 'Bowl First'}
@@ -620,26 +620,26 @@ export default function CreateMatch() {
           </div>
 
           {/* 4. OPTIONAL MATCH DETAILS TOGGLE (WITH CLEAR DATE PLACEHOLDER) */}
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-2.5">
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-3">
             <button
               type="button"
               onClick={() => setShowMoreSettings(!showMoreSettings)}
-              className="flex items-center justify-between w-full text-xs font-bold text-slate-600 hover:text-slate-900 transition py-0.5"
+              className="flex items-center justify-between w-full text-xs sm:text-sm font-bold text-slate-700 hover:text-slate-900 transition py-1 px-0.5"
             >
-              <span className="flex items-center gap-1.5">
-                <MapPin className="h-3.5 w-3.5 text-slate-400" />
+              <span className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-slate-400" />
                 <span>Venue, Date & Match Name (Optional)</span>
               </span>
               {showMoreSettings ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </button>
 
             {showMoreSettings && (
-              <div className="mt-2.5 space-y-2 pt-2 border-t border-slate-100 animate-fadeIn">
+              <div className="mt-3 space-y-2.5 pt-2.5 border-t border-slate-100 animate-fadeIn">
                 <input
                   value={f.name}
                   onChange={(e) => set({ name: e.target.value })}
                   placeholder="Match Title (defaults to Team A vs Team B)"
-                  className="input !py-1.5 text-xs w-full"
+                  className="input !py-2.5 text-sm w-full font-medium"
                   maxLength={100}
                 />
                 <div className="grid grid-cols-2 gap-2">
@@ -649,12 +649,12 @@ export default function CreateMatch() {
                       type="datetime-local"
                       value={f.date}
                       onChange={(e) => set({ date: e.target.value })}
-                      className="input !py-1.5 !pl-8 text-xs font-semibold text-slate-800 w-full"
+                      className="input !py-2.5 !pl-9 text-xs sm:text-sm font-semibold text-slate-800 w-full"
                     />
-                    <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                    <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
                     {!f.date && (
-                      <span className="pointer-events-none absolute left-8 top-1/2 -translate-y-1/2 text-[11px] text-slate-400 font-medium select-none">
-                        Select Date & Time
+                      <span className="pointer-events-none absolute left-9 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-medium select-none">
+                        Date & Time
                       </span>
                     )}
                   </div>
@@ -663,10 +663,10 @@ export default function CreateMatch() {
                       value={f.venue}
                       onChange={(e) => set({ venue: e.target.value })}
                       placeholder="Ground / Venue"
-                      className="input !py-1.5 !pl-8 text-xs font-semibold text-slate-800 w-full"
+                      className="input !py-2.5 !pl-9 text-xs sm:text-sm font-semibold text-slate-800 w-full"
                       maxLength={100}
                     />
-                    <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                    <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
                   </div>
                 </div>
               </div>
@@ -677,7 +677,7 @@ export default function CreateMatch() {
           <button
             type="submit"
             disabled={busy}
-            className="w-full relative overflow-hidden inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-600 hover:from-emerald-400 hover:to-teal-500 py-3 text-sm font-black text-white shadow-lg shadow-emerald-900/30 active:scale-98 transition-all disabled:opacity-60"
+            className="w-full relative overflow-hidden inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-600 hover:from-emerald-400 hover:to-teal-500 py-3.5 sm:py-4 text-sm sm:text-base font-black text-white shadow-lg shadow-emerald-900/30 active:scale-98 transition-all disabled:opacity-60 min-h-[52px]"
           >
             {busy ? (
               <Loader2 className="h-4.5 w-4.5 animate-spin" />

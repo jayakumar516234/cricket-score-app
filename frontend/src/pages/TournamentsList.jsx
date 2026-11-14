@@ -130,23 +130,23 @@ export default function TournamentsList() {
             )}
           </div>
 
-          <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => setScorerOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-white/20 hover:bg-white/30 border border-white/30 backdrop-blur-sm px-2.5 py-1.5 text-[10px] font-bold text-white transition"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-white/20 hover:bg-white/30 border border-white/30 backdrop-blur-sm min-h-[38px] px-3.5 py-2 text-xs sm:text-sm font-bold text-white transition shadow-2xs"
               title="Log in to score a match"
             >
-              <KeyRound className="h-3.5 w-3.5" />
+              <KeyRound className="h-4 w-4" />
               <span>Scorer PIN</span>
             </button>
 
             {user && user.role !== 'viewer' && (
               <button
                 onClick={() => { setJoinOpen(true); setJoinError(''); setJoinSuccess(''); }}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-white/20 hover:bg-white/30 border border-white/30 backdrop-blur-sm px-2.5 py-1.5 text-[10px] font-bold text-white transition"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-white/20 hover:bg-white/30 border border-white/30 backdrop-blur-sm min-h-[38px] px-3.5 py-2 text-xs sm:text-sm font-bold text-white transition shadow-2xs"
                 title="Join a tournament with invite code"
               >
-                <LogIn className="h-3.5 w-3.5" />
+                <LogIn className="h-4 w-4" />
                 <span>Join via Code</span>
               </button>
             )}
@@ -154,9 +154,9 @@ export default function TournamentsList() {
             {user && user.role !== 'viewer' && (
               <button
                 onClick={() => setCreateOpen(true)}
-                className="inline-flex items-center gap-1 rounded-xl bg-white text-orange-600 hover:bg-orange-50 px-3 py-1.5 text-[10px] font-black shadow-md transition"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-white text-orange-600 hover:bg-orange-50 min-h-[38px] px-4 py-2 text-xs sm:text-sm font-black shadow-md transition"
               >
-                <Plus className="h-3.5 w-3.5" />
+                <Plus className="h-4 w-4" />
                 <span>New Tournament</span>
               </button>
             )}
@@ -225,24 +225,24 @@ export default function TournamentsList() {
                       type="button"
                       disabled={isBusy}
                       onClick={() => handleConfirmSpot(inv.tournamentId, inv.teamId)}
-                      className="btn btn-green flex-1 !py-1.5 text-xs font-black shadow-xs inline-flex items-center justify-center gap-1"
+                      className="btn btn-green flex-1 min-h-[40px] !py-2 text-xs sm:text-sm font-black shadow-xs inline-flex items-center justify-center gap-1.5 rounded-xl"
                     >
-                      {isBusy ? <Spinner size="sm" /> : <Check className="h-3.5 w-3.5" />}
+                      {isBusy ? <Spinner size="sm" /> : <Check className="h-4 w-4" />}
                       <span>Confirm Spot</span>
                     </button>
                     <button
                       type="button"
                       disabled={isBusy}
                       onClick={() => handleDeclineSpot(inv.tournamentId, inv.teamId, inv.teamName)}
-                      className="btn btn-outline !py-1.5 px-2.5 text-xs text-red-600 border-red-200 hover:bg-red-50 inline-flex items-center gap-1"
+                      className="btn btn-outline min-h-[40px] !py-2 px-3 text-xs sm:text-sm font-bold text-red-600 border-red-200 hover:bg-red-50 inline-flex items-center gap-1.5 rounded-xl"
                       title="Decline Invitation"
                     >
-                      <X className="h-3.5 w-3.5" />
+                      <X className="h-4 w-4" />
                       <span>Decline</span>
                     </button>
                     <Link
                       to={`/tournaments/${inv.tournamentId}`}
-                      className="btn btn-ghost !py-1.5 px-2.5 text-xs text-slate-600 hover:text-slate-900"
+                      className="btn btn-ghost min-h-[40px] !py-2 px-3 text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 rounded-xl inline-flex items-center"
                       title="View Tournament"
                     >
                       View
