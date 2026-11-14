@@ -457,9 +457,15 @@ export default function TournamentDetail() {
                     )}
                     {tournament.status === 'live' ? 'LIVE' : tournament.status}
                   </span>
-                  <span className="inline-flex items-center gap-1 text-[10.5px] font-bold px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-100 border border-emerald-400/30">
-                    🌐 Published (All Users)
-                  </span>
+                  {tournament.visibility === 'invited' ? (
+                    <span className="inline-flex items-center gap-1 text-[10.5px] font-bold px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-100 border border-amber-400/30">
+                      🔒 Invited Only (அணிகளுக்கு மட்டும்)
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-[10.5px] font-bold px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-100 border border-emerald-400/30">
+                      🌐 Public (அனைவருக்கும்)
+                    </span>
+                  )}
                 </div>
                 <p className="text-sm text-white/80 mt-0.5">
                   By <strong className="text-white">{tournament.organizer?.name || 'Tournament Admin'}</strong>

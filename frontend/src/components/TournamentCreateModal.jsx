@@ -9,6 +9,7 @@ export function TournamentCreateModal({ open, onClose, onCreated }) {
   const [maxTeams, setMaxTeams] = useState(16);
   const [defaultOvers, setDefaultOvers] = useState(8);
   const [format, setFormat] = useState('knockout');
+  const [visibility, setVisibility] = useState('public'); // 'public' | 'invited'
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [rules, setRules] = useState('');
@@ -39,6 +40,7 @@ export function TournamentCreateModal({ open, onClose, onCreated }) {
         maxTeams: Number(maxTeams) || 16,
         defaultOvers: Number(defaultOvers) || 8,
         format,
+        visibility,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
         rules: rules.trim(),
@@ -215,7 +217,49 @@ export function TournamentCreateModal({ open, onClose, onCreated }) {
               </div>
             </div>
 
-            {/* 4. Venue & Grounds */}
+            {/* 4. Visibility Control */}
+            <div className="rounded-2xl bg-slate-50 border border-slate-200/80 p-4 space-y-2.5">
+              <label className="label font-black text-slate-800 text-xs sm:text-sm mb-0">
+                👁️ Tournament Visibility (யாருக்கு தெரிய வேண்டும்?)
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setVisibility('public')}
+                  className={`p-3 rounded-xl border text-left transition ${
+                    visibility === 'public'
+                      ? 'bg-emerald-50 border-emerald-400 ring-2 ring-emerald-500/20'
+                      : 'bg-white border-slate-200 hover:border-slate-300'
+                  }`}
+                >
+                  <div className="font-bold text-xs sm:text-sm text-slate-900 flex items-center gap-1.5">
+                    <span>🌐 Public (அனைவருக்கும்)</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    எல்லா பயனர்களுக்கும் டோர்னமென்ட் லிஸ்ட்டில் காட்டப்படும்.
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setVisibility('invited')}
+                  className={`p-3 rounded-xl border text-left transition ${
+                    visibility === 'invited'
+                      ? 'bg-amber-50 border-amber-400 ring-2 ring-amber-500/20'
+                      : 'bg-white border-slate-200 hover:border-slate-300'
+                  }`}
+                >
+                  <div className="font-bold text-xs sm:text-sm text-slate-900 flex items-center gap-1.5">
+                    <span>🔒 Invited Only (அணிகளுக்கு மட்டும்)</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    அமைப்பாளர் மற்றும் சேர்க்கப்பட்ட எதிரணி அணிகளுக்கு மட்டுமே தெரியும்.
+                  </p>
+                </button>
+              </div>
+            </div>
+
+            {/* 5. Venue & Grounds */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="label font-black text-slate-800 text-xs sm:text-sm flex items-center gap-1">
@@ -259,12 +303,12 @@ export function TournamentCreateModal({ open, onClose, onCreated }) {
               </div>
             </div>
 
-            {/* 5. Tournament Dates */}
+            {/* 6. Tournament Dates (Optional) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="label font-black text-slate-800 text-xs sm:text-sm flex items-center gap-1">
                   <Calendar className="h-4 w-4 text-slate-400" />
-                  <span>Start Date</span>
+                  <span>Start Date (Optional)</span>
                 </label>
                 <input
                   type="date"
@@ -276,7 +320,7 @@ export function TournamentCreateModal({ open, onClose, onCreated }) {
               <div>
                 <label className="label font-black text-slate-800 text-xs sm:text-sm flex items-center gap-1">
                   <Calendar className="h-4 w-4 text-slate-400" />
-                  <span>End Date</span>
+                  <span>End Date (Optional)</span>
                 </label>
                 <input
                   type="date"

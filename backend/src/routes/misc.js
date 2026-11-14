@@ -71,9 +71,6 @@ router.get('/stats', requireAuth, wrap(async (req, res) => {
         .filter((i) => sid(i.match) === sid(m._id))
         .map((i) => ({ team: sid(i.battingTeam), runs: i.summary.runs, wickets: i.summary.wickets })),
       resultSummary: m.status === 'completed' ? m.result?.summary : null,
-      tournament: m.tournament ? sid(m.tournament) : null,
-      tournamentName: m.tournamentName || null,
-      tournamentRound: m.tournamentRound || null,
     }));
 
     return res.json({
@@ -206,9 +203,6 @@ router.get('/stats', requireAuth, wrap(async (req, res) => {
       .filter((i) => sid(i.match) === sid(m._id))
       .map((i) => ({ team: sid(i.battingTeam), runs: i.summary.runs, wickets: i.summary.wickets })),
     resultSummary: m.status === 'completed' ? m.result?.summary : null,
-    tournament: m.tournament ? sid(m.tournament) : null,
-    tournamentName: m.tournamentName || null,
-    tournamentRound: m.tournamentRound || null,
   });
 
   const recentMatches = recentMatchDocs.map(formatMatch);

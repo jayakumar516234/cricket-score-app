@@ -26,6 +26,7 @@ export const ALL_MENU_KEYS = ['home', 'teams', 'matches', 'tournaments', 'users'
 
 // Default global feature flags controlled by Super Admin
 export const DEFAULT_FEATURE_FLAGS = {
-  liveMatchEnabled: true, // Master switch for live score broadcasting
-  liveChatEnabled: true,  // Master switch for live match fan chat & reactions
+  liveMatchEnabled: true,   // Master switch for live score broadcasting
+  liveChatEnabled: true,    // Master switch for live match fan chat & reactions
+  tournamentsEnabled: true, // Master switch for Tournaments module
 };

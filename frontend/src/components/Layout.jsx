@@ -52,6 +52,10 @@ export default function Layout() {
   const { data: trnNotifData } = useFetch(user && (isAdmin || user?.role === 'user') ? '/tournaments/pending-join-count' : null, { poll: 25000 });
   const pendingTrnCount = trnNotifData?.count || 0;
 
+  // Poll for global feature flags (e.g. tournamentsEnabled)
+  const { data: featData } = useFetch('/config/features/public', { poll: 30000 });
+  const tournamentsEnabled = featData?.features?.tournamentsEnabled !== false;
+
   // All possible nav links with visibility keys
   const allAdminLinks = [
     { to: '/', label: t('nav.overview'), icon: LayoutDashboard, end: true, key: 'home' },
@@ -77,6 +81,7 @@ export default function Layout() {
   // Filter by menu visibility config (home + settings always shown)
   const links = rawLinks.filter(({ key }) => {
     if (key === 'home' || key === 'settings') return true;
+    if (key === 'tournaments' && !tournamentsEnabled && !isSuper) return false;
     if (!isVisible) return true; // config not yet loaded → show all
     return isVisible(key);
   });

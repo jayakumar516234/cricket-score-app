@@ -24,6 +24,7 @@ const createTournamentSchema = z.object({
   format: z.enum(['knockout', 'league', 'flexible']).optional().default('knockout'),
   maxTeams: z.coerce.number().int().min(2).max(128).optional().default(16),
   defaultOvers: z.coerce.number().int().min(1).max(50).optional().default(8),
+  visibility: z.enum(['public', 'invited']).optional().default('public'),
   startDate: z.string().nullable().optional().refine((v) => !v || !Number.isNaN(Date.parse(v)), 'Invalid start date'),
   endDate: z.string().nullable().optional().refine((v) => !v || !Number.isNaN(Date.parse(v)), 'Invalid end date'),
   rules: z.string().trim().max(1000).optional().default(''),
@@ -97,9 +98,10 @@ router.get('/', optionalAuth, wrap(async (req, res) => {
     .limit(50);
 
   let myInvitations = [];
+  let myTeamIds = [];
   if (req.user) {
     const myTeams = await Team.find({ createdBy: req.user._id }).select('_id name code');
-    const myTeamIds = myTeams.map((t) => t._id);
+    myTeamIds = myTeams.map((t) => String(t._id));
     if (myTeamIds.length > 0) {
       const invitedTournaments = await Tournament.find({
         'teams.team': { $in: myTeamIds },
@@ -128,8 +130,23 @@ router.get('/', optionalAuth, wrap(async (req, res) => {
     }
   }
 
+  const isSuperOrAdmin = req.user && (req.user.role === 'superadmin' || req.user.role === 'admin');
+
+  // Filter by visibility: 'invited' tournaments are only visible to organizer and invited teams
+  const visibleTournaments = tournaments.filter((t) => {
+    if (t.visibility === 'invited') {
+      if (isSuperOrAdmin) return true;
+      if (!req.user) return false;
+      const isOrganizer = String(t.organizer?._id || t.organizer) === String(req.user._id);
+      if (isOrganizer) return true;
+      const hasTeam = t.teams.some((entry) => myTeamIds.includes(String(entry.team)));
+      return hasTeam;
+    }
+    return true; // public
+  });
+
   res.json({
-    tournaments: tournaments.map((t) => ({
+    tournaments: visibleTournaments.map((t) => ({
       id: sid(t._id),
       name: t.name,
       code: t.code,
@@ -139,6 +156,7 @@ router.get('/', optionalAuth, wrap(async (req, res) => {
       maxTeams: t.maxTeams,
       teamCount: t.teams.length,
       defaultOvers: t.defaultOvers,
+      visibility: t.visibility || 'public',
       startDate: t.startDate,
       endDate: t.endDate,
       status: t.status,
@@ -166,6 +184,7 @@ router.post('/', requireAuth, wrap(async (req, res) => {
     format: d.format,
     maxTeams: d.maxTeams,
     defaultOvers: d.defaultOvers,
+    visibility: d.visibility || 'public',
     startDate: d.startDate && !Number.isNaN(Date.parse(d.startDate)) ? new Date(d.startDate) : undefined,
     endDate: d.endDate && !Number.isNaN(Date.parse(d.endDate)) ? new Date(d.endDate) : undefined,
     rules: d.rules,
@@ -427,6 +446,7 @@ router.get('/:id', optionalAuth, wrap(async (req, res) => {
       format: tournament.format,
       maxTeams: tournament.maxTeams,
       defaultOvers: tournament.defaultOvers,
+      visibility: tournament.visibility || 'public',
       startDate: tournament.startDate,
       endDate: tournament.endDate,
       status: tournament.status,
@@ -508,6 +528,21 @@ router.post('/:id/teams', requireAuth, wrap(async (req, res) => {
   }
 
   if (!team) throw new HttpError(404, 'Team not found. Please provide a valid Team Code or Guest Team Name.');
+
+  // Auto-populate 11 ready players for guest teams so matches can be scheduled immediately
+  if (team.isGuest) {
+    const pCount = await Player.countDocuments({ team: team._id });
+    if (pCount === 0) {
+      const defaultPlayers = Array.from({ length: 11 }, (_, i) => ({
+        name: `${team.name} Player ${i + 1}`,
+        team: team._id,
+        role: i < 4 ? 'batsman' : i < 6 ? 'allrounder' : 'bowler',
+        battingStyle: 'right',
+        bowlingStyle: 'right_medium',
+      }));
+      await Player.insertMany(defaultPlayers);
+    }
+  }
 
   if (tournament.teams.length >= tournament.maxTeams) {
     throw new HttpError(400, `Tournament is full (Maximum ${tournament.maxTeams} teams allowed). Please increase team limit first.`);

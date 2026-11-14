@@ -46,6 +46,7 @@ const tournamentSchema = new Schema(
     defaultOvers: { type: Number, default: 8, min: 1, max: 50 },
     startDate: { type: Date },
     endDate: { type: Date },
+    visibility: { type: String, enum: ['public', 'invited'], default: 'public', index: true },
     status: { type: String, enum: ['upcoming', 'live', 'completed'], default: 'upcoming', index: true },
     organizer: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     teams: [tournamentTeamSchema],

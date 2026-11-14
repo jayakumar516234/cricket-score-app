@@ -349,20 +349,32 @@ export default function TournamentsList() {
 
                     <div className="p-3 sm:p-4">
                       <div className="flex items-center justify-between gap-2 mb-2">
-                        <span
-                          className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border capitalize ${
-                            isLive
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
-                              : isCompleted
-                              ? 'bg-slate-100 text-slate-500 border-slate-200'
-                              : 'bg-amber-50 text-amber-700 border-amber-300'
-                          }`}
-                        >
-                          {isLive && (
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping" />
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span
+                            className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border capitalize ${
+                              isLive
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                                : isCompleted
+                                ? 'bg-slate-100 text-slate-500 border-slate-200'
+                                : 'bg-amber-50 text-amber-700 border-amber-300'
+                            }`}
+                          >
+                            {isLive && (
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping" />
+                            )}
+                            {isLive ? 'LIVE' : t.status}
+                          </span>
+
+                          {t.visibility === 'invited' ? (
+                            <span className="inline-flex items-center gap-0.5 text-[9.5px] font-bold px-1.5 py-0.2 rounded-full bg-amber-50 text-amber-800 border border-amber-300" title="Only organizer and participating teams can see">
+                              🔒 Invited Only
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-0.5 text-[9.5px] font-bold px-1.5 py-0.2 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                              🌐 Public
+                            </span>
                           )}
-                          {isLive ? 'LIVE' : t.status}
-                        </span>
+                        </div>
 
                         <button
                           onClick={(e) => handleCopyCode(t.code, e)}

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Shield, Eye, EyeOff, Save, RotateCcw, Loader2, CheckCircle2, Info, Radio, MessageSquare, Zap } from 'lucide-react';
+import { Shield, Eye, EyeOff, Save, RotateCcw, Loader2, CheckCircle2, Info, Radio, MessageSquare, Zap, Trophy } from 'lucide-react';
 import { api } from '../api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 
@@ -34,7 +34,7 @@ export default function SuperAdminConfig() {
   const { isSuper } = useAuth();
   const [allKeys, setAllKeys] = useState([]);
   const [visibility, setVisibility] = useState(null);
-  const [features, setFeatures] = useState({ liveMatchEnabled: true, liveChatEnabled: true });
+  const [features, setFeatures] = useState({ liveMatchEnabled: true, liveChatEnabled: true, tournamentsEnabled: true });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -44,7 +44,7 @@ export default function SuperAdminConfig() {
     if (!isSuper) return;
     Promise.all([
       api('/config/menu-visibility'),
-      api('/config/features').catch(() => ({ features: { liveMatchEnabled: true, liveChatEnabled: true } })),
+      api('/config/features').catch(() => ({ features: { liveMatchEnabled: true, liveChatEnabled: true, tournamentsEnabled: true } })),
     ])
       .then(([menuData, featData]) => {
         setVisibility(menuData.visibility);
@@ -161,16 +161,16 @@ export default function SuperAdminConfig() {
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
           {/* Live Score Broadcasting */}
           <div className="rounded-xl bg-white/5 border border-white/10 p-3 flex items-center justify-between gap-3">
             <div>
               <div className="flex items-center gap-2">
                 <Zap className="h-4 w-4 text-emerald-400" />
-                <span className="text-xs sm:text-sm font-bold text-white">Live Score Broadcasting</span>
+                <span className="text-xs sm:text-sm font-bold text-white">Live Broadcast</span>
               </div>
               <p className="text-[10px] text-slate-300 mt-0.5">
-                {features.liveMatchEnabled ? 'Active: All users can watch live score updates' : 'Disabled: Live broadcast paused globally'}
+                {features.liveMatchEnabled ? 'Active: Live score updates' : 'Disabled: Live broadcast paused'}
               </p>
             </div>
             <button
@@ -196,10 +196,10 @@ export default function SuperAdminConfig() {
             <div>
               <div className="flex items-center gap-2">
                 <MessageSquare className="h-4 w-4 text-pitch-400" />
-                <span className="text-xs sm:text-sm font-bold text-white">Live Fan Chat & Reactions</span>
+                <span className="text-xs sm:text-sm font-bold text-white">Live Fan Chat</span>
               </div>
               <p className="text-[10px] text-slate-300 mt-0.5">
-                {features.liveChatEnabled ? 'Active: Live chat is enabled on match pages' : 'Disabled: Live chat is turned off globally'}
+                {features.liveChatEnabled ? 'Active: Fan chat enabled' : 'Disabled: Fan chat off'}
               </p>
             </div>
             <button
@@ -215,6 +215,35 @@ export default function SuperAdminConfig() {
               <span
                 className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
                   features.liveChatEnabled ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* Tournaments Module Master Switch */}
+          <div className="rounded-xl bg-white/5 border border-white/10 p-3 flex items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <Trophy className="h-4 w-4 text-amber-400" />
+                <span className="text-xs sm:text-sm font-bold text-white">Tournaments</span>
+              </div>
+              <p className="text-[10px] text-slate-300 mt-0.5">
+                {features.tournamentsEnabled !== false ? 'Active: Module enabled' : 'Disabled: Module paused'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setFeatures((prev) => ({ ...prev, tournamentsEnabled: prev.tournamentsEnabled === false }));
+                setSaved(false);
+              }}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                features.tournamentsEnabled !== false ? 'bg-amber-500' : 'bg-slate-700'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                  features.tournamentsEnabled !== false ? 'translate-x-5' : 'translate-x-0'
                 }`}
               />
             </button>
