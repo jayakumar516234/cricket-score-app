@@ -385,9 +385,14 @@ router.get('/:id', optionalAuth, wrap(async (req, res) => {
 
   // Check if req.user owns any team in this tournament
   let myTeamsInTournament = [];
+  let myOwnTeams = []; // organizer's own teams NOT yet in tournament
   if (req.user) {
-    const myOwnedTeams = await Team.find({ createdBy: req.user._id }).select('_id');
+    const myOwnedTeams = await Team.find({ createdBy: req.user._id, isGuest: { $ne: true } })
+      .select('_id name code logo location')
+      .sort({ createdAt: -1 });
     const myOwnedIds = myOwnedTeams.map((t) => String(t._id));
+    const tournamentTeamIds = new Set(tournament.teams.map((t) => String(t.team?._id || t.team)));
+
     myTeamsInTournament = tournament.teams
       .filter((t) => myOwnedIds.includes(String(t.team?._id || t.team)))
       .map((t) => ({
@@ -396,6 +401,19 @@ router.get('/:id', optionalAuth, wrap(async (req, res) => {
         status: t.status,
         canConfirmSpot: t.status === 'pending',
       }));
+
+    // For organizer: return their own teams not yet added to this tournament
+    if (canManageTournament(req.user, tournament)) {
+      myOwnTeams = myOwnedTeams
+        .filter((t) => !tournamentTeamIds.has(String(t._id)))
+        .map((t) => ({
+          id: sid(t._id),
+          name: t.name,
+          code: t.code,
+          logo: t.logo,
+          location: t.location || '',
+        }));
+    }
   }
 
   res.json({
@@ -448,6 +466,7 @@ router.get('/:id', optionalAuth, wrap(async (req, res) => {
     completedMatches,
     isOrganizer,
     myTeamsInTournament,
+    myOwnTeams, // Organizer's own teams not yet in tournament (for quick-add)
   });
 }));
 

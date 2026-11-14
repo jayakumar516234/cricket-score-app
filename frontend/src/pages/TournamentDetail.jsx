@@ -41,7 +41,7 @@ export default function TournamentDetail() {
 
   // Sub-modals for Organizer
   const [addTeamOpen, setAddTeamOpen] = useState(false);
-  const [addTeamTab, setAddTeamTab] = useState('code'); // 'code' | 'guest'
+  const [addTeamTab, setAddTeamTab] = useState('myteam'); // 'myteam' | 'code' | 'guest'
   const [teamCodeInput, setTeamCodeInput] = useState('');
   const [guestTeamName, setGuestTeamName] = useState('');
   const [guestTeamCity, setGuestTeamCity] = useState('');
@@ -84,7 +84,7 @@ export default function TournamentDetail() {
   if (error && !data) return <ErrorBox message={error} onRetry={reload} />;
   if (!data?.tournament) return <ErrorBox message="Tournament not found" onRetry={reload} />;
 
-  const { tournament, matches = [], liveMatches = [], upcomingMatches = [], completedMatches = [], isOrganizer, myTeamsInTournament = [] } = data;
+  const { tournament, matches = [], liveMatches = [], upcomingMatches = [], completedMatches = [], isOrganizer, myTeamsInTournament = [], myOwnTeams: apiMyOwnTeams = [] } = data;
   const teams = tournament.teams || [];
   const byes = tournament.byes || [];
   const grounds = tournament.grounds || ['Ground 1'];
@@ -119,7 +119,19 @@ export default function TournamentDetail() {
     setActionError('');
     let resMsg = 'Team added successfully!';
     try {
-      if (addTeamTab === 'code') {
+      if (addTeamTab === 'myteam') {
+        // Add organizer's own team by their team ID directly
+        const myTeamId = e.target?.dataset?.teamid || e.currentTarget?.dataset?.teamid;
+        // We use a hidden input to pass teamId for 'myteam' tab
+        const hiddenId = document.getElementById('myteam-selected-id')?.value;
+        if (!hiddenId) {
+          setActionError('Please select your team to add');
+          setActionLoading(false);
+          return;
+        }
+        const res = await api.post(`/tournaments/${id}/teams`, { teamId: hiddenId });
+        if (res?.message) resMsg = res.message;
+      } else if (addTeamTab === 'code') {
         if (!teamCodeInput.trim()) {
           setActionError('Please enter a Team Code');
           setActionLoading(false);
@@ -147,6 +159,23 @@ export default function TournamentDetail() {
       setGuestTeamContact('');
       setAddTeamOpen(false);
       setActionSuccess(resMsg);
+      setTimeout(() => setActionSuccess(''), 4000);
+      reload();
+    } catch (err) {
+      setActionError(err.message || 'Failed to add team');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Quick add: organizer adds their own team by id directly (button click, no form submit)
+  const handleAddMyOwnTeam = async (teamId, teamName) => {
+    setActionLoading(true);
+    setActionError('');
+    try {
+      const res = await api.post(`/tournaments/${id}/teams`, { teamId });
+      setAddTeamOpen(false);
+      setActionSuccess(res?.message || `${teamName} added to tournament!`);
       setTimeout(() => setActionSuccess(''), 4000);
       reload();
     } catch (err) {
@@ -995,7 +1024,12 @@ export default function TournamentDetail() {
             {isOrganizer && (
               <div className="flex items-center gap-2 flex-wrap">
                 <button
-                  onClick={() => setAddTeamOpen(true)}
+                  onClick={() => {
+                    // Auto-select "My Team" tab if organizer has own teams not yet added
+                    setAddTeamTab(apiMyOwnTeams.length > 0 ? 'myteam' : 'code');
+                    setActionError('');
+                    setAddTeamOpen(true);
+                  }}
                   className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-black text-xs px-3 py-2 shadow-md transition"
                 >
                   <Plus className="h-3.5 w-3.5" />
@@ -1305,11 +1339,23 @@ export default function TournamentDetail() {
         defaultCode={tournament.code}
       />
 
-      {/* Add Team Modal (Registered Code OR Guest Team) */}
-      <Modal open={addTeamOpen} onClose={() => setAddTeamOpen(false)} title="Add Team to Tournament">
+      {/* Add Team Modal - 3 ways: My Team | Team Code | Guest Team */}
+      <Modal open={addTeamOpen} onClose={() => { setAddTeamOpen(false); setActionError(''); }} title="Add Team to Tournament">
         <div className="space-y-4">
+
           {/* Mode Switcher Tabs */}
-          <div className="flex rounded-xl bg-slate-100 p-1 text-xs font-bold text-slate-600">
+          <div className="flex rounded-xl bg-slate-100 p-1 text-xs font-bold text-slate-600 gap-0.5">
+            {apiMyOwnTeams.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setAddTeamTab('myteam')}
+                className={`flex-1 py-2 rounded-lg text-center transition ${
+                  addTeamTab === 'myteam' ? 'bg-white text-slate-900 shadow-xs font-black' : 'hover:text-slate-900'
+                }`}
+              >
+                🏏 My Team
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setAddTeamTab('code')}
@@ -1326,14 +1372,57 @@ export default function TournamentDetail() {
                 addTeamTab === 'guest' ? 'bg-white text-slate-900 shadow-xs font-black' : 'hover:text-slate-900'
               }`}
             >
-              ➕ Guest Team (நேரடி பதிவு)
+              ➕ Guest Team
             </button>
           </div>
 
-          <form onSubmit={handleAddTeam} className="space-y-4 text-sm">
-            {addTeamTab === 'code' ? (
+          {actionError && (
+            <div className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-xl px-3 py-2 font-semibold">
+              ⚠️ {actionError}
+            </div>
+          )}
+
+          {/* MY TEAM TAB: organizer's own registered teams not yet in this tournament */}
+          {addTeamTab === 'myteam' && (
+            <div className="space-y-2">
+              <p className="text-xs text-slate-500 font-medium">உங்களுடைய டீம்கள் – ஒரு கிளிக்கில் டோர்னமென்டில் சேர்க்கலாம்:</p>
+              {apiMyOwnTeams.length === 0 ? (
+                <p className="text-sm text-slate-500 text-center py-4 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                  உங்கள் அனைத்து டீம்களும் ஏற்கனவே டோர்னமென்டில் சேர்க்கப்பட்டுவிட்டன.
+                </p>
+              ) : (
+                <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                  {apiMyOwnTeams.map((t) => (
+                    <div key={t.id} className="flex items-center justify-between gap-3 bg-slate-50 border border-slate-200 hover:border-pitch-300 rounded-xl px-3 py-2.5 transition">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-pitch-100 text-pitch-700 font-black text-sm">
+                          {(t.name || '?')[0].toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-bold text-sm text-slate-900 truncate">{t.name}</div>
+                          <div className="text-[10px] text-slate-400 font-mono">{t.code}{t.location ? ` · ${t.location}` : ''}</div>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={actionLoading}
+                        onClick={() => handleAddMyOwnTeam(t.id, t.name)}
+                        className="shrink-0 inline-flex items-center gap-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs px-3 py-1.5 shadow-sm transition disabled:opacity-50"
+                      >
+                        {actionLoading ? '...' : '+ Add'}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TEAM CODE TAB: add registered team by their code */}
+          {addTeamTab === 'code' && (
+            <form onSubmit={handleAddTeam} className="space-y-4 text-sm">
               <div className="space-y-2">
-                <label className="label font-bold text-slate-700">6-Character Team Code</label>
+                <label className="label font-bold text-slate-700">Team Code (6 எழுத்து கோட்)</label>
                 <input
                   type="text"
                   placeholder="e.g. TM-4892"
@@ -1344,68 +1433,67 @@ export default function TournamentDetail() {
                   autoFocus
                 />
                 <p className="text-xs text-slate-500">
-                  Ask the team captain for their Team Code. If they are not registered on the app, click <strong>"Guest Team"</strong> tab above.
+                  எதிரணி கேப்டனிடம் அவர்களின் Team Code கேளுங்கள். ஆப்பில் பதிவு இல்லாத அணிகளுக்கு <strong>"Guest Team"</strong> tab பயன்படுத்துங்கள்.
                 </p>
               </div>
-            ) : (
-              <div className="space-y-3">
+              <div className="flex gap-2 justify-end pt-1">
+                <button type="button" onClick={() => setAddTeamOpen(false)} className="btn btn-outline flex-1 sm:flex-initial py-2.5">Cancel</button>
+                <button type="submit" disabled={actionLoading} className="btn btn-green flex-1 sm:flex-initial py-2.5 font-bold shadow-md">
+                  {actionLoading ? 'Adding...' : 'Add by Code'}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* GUEST TEAM TAB: for teams without app account */}
+          {addTeamTab === 'guest' && (
+            <form onSubmit={handleAddTeam} className="space-y-3 text-sm">
+              <div>
+                <label className="label font-bold text-slate-700">அணி பெயர் *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Kanchipuram Super Kings"
+                  value={guestTeamName}
+                  onChange={(e) => setGuestTeamName(e.target.value)}
+                  className="input font-bold py-3 text-base sm:text-sm"
+                  required
+                  autoFocus
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="label font-bold text-slate-700">Team Name *</label>
+                  <label className="label font-bold text-slate-700">ஊர் / நகரம் (Optional)</label>
                   <input
                     type="text"
-                    placeholder="e.g. Kanchipuram Super Kings"
-                    value={guestTeamName}
-                    onChange={(e) => setGuestTeamName(e.target.value)}
-                    className="input font-bold py-3 text-base sm:text-sm"
-                    required
-                    autoFocus
+                    placeholder="e.g. Kanchipuram"
+                    value={guestTeamCity}
+                    onChange={(e) => setGuestTeamCity(e.target.value)}
+                    className="input py-2.5 text-sm"
                   />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="label font-bold text-slate-700">City / Village (Optional)</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Kanchipuram"
-                      value={guestTeamCity}
-                      onChange={(e) => setGuestTeamCity(e.target.value)}
-                      className="input py-2.5 text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="label font-bold text-slate-700">Captain / Contact (Optional)</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Kumar - 9876543210"
-                      value={guestTeamContact}
-                      onChange={(e) => setGuestTeamContact(e.target.value)}
-                      className="input py-2.5 text-sm"
-                    />
-                  </div>
+                <div>
+                  <label className="label font-bold text-slate-700">கேப்டன் / தொடர்பு (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Kumar - 9876543210"
+                    value={guestTeamContact}
+                    onChange={(e) => setGuestTeamContact(e.target.value)}
+                    className="input py-2.5 text-sm"
+                  />
                 </div>
-                <p className="text-xs text-slate-500 bg-amber-50 border border-amber-200/60 p-2.5 rounded-xl">
-                  💡 Guest team will be created immediately and added to the tournament. You can edit their name or details later.
-                </p>
               </div>
-            )}
+              <p className="text-xs text-slate-500 bg-amber-50 border border-amber-200/60 p-2.5 rounded-xl">
+                💡 ஆப்பில் அக்கவுண்ட் இல்லாத அணிகளை இப்படி நேரடியாக சேர்க்கலாம். பிறகு பெயர் அல்லது விவரங்களை திருத்தலாம்.
+              </p>
+              <div className="flex gap-2 justify-end pt-1">
+                <button type="button" onClick={() => setAddTeamOpen(false)} className="btn btn-outline flex-1 sm:flex-initial py-2.5">Cancel</button>
+                <button type="submit" disabled={actionLoading} className="btn btn-green flex-1 sm:flex-initial py-2.5 font-bold shadow-md">
+                  {actionLoading ? 'Adding...' : 'Create Guest Team'}
+                </button>
+              </div>
+            </form>
+          )}
 
-            <div className="flex gap-2 justify-end pt-3">
-              <button
-                type="button"
-                onClick={() => setAddTeamOpen(false)}
-                className="btn btn-outline flex-1 sm:flex-initial py-2.5"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={actionLoading}
-                className="btn btn-green flex-1 sm:flex-initial py-2.5 font-bold shadow-md"
-              >
-                {actionLoading ? 'Adding...' : addTeamTab === 'code' ? 'Add by Code' : 'Create Guest Team'}
-              </button>
-            </div>
-          </form>
         </div>
       </Modal>
 
