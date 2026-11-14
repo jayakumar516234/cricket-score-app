@@ -447,8 +447,8 @@ export default function CreateMatch() {
             )}
           </div>
 
-          {/* 2. MATCH OVERS (INPUT WITH DEFAULT 20 + QUICK PRESET CHIPS) */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-3 sm:p-3.5 space-y-2.5 shadow-2xs">
+          {/* 2. MATCH OVERS (INPUT WITH DEFAULT 20 + PRESETS DROPDOWN) */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-3 sm:p-3.5 space-y-2 shadow-2xs">
             <div className="flex items-center justify-between">
               <span className="text-xs font-black uppercase tracking-wider text-slate-700">
                 Match Overs
@@ -458,8 +458,9 @@ export default function CreateMatch() {
               </span>
             </div>
 
-            {/* Direct Input (Default 20) + Quick Preset Chips */}
-            <div className="flex items-center gap-2">
+            {/* Direct Input (Default 20) + Presets Dropdown */}
+            <div className="grid grid-cols-2 gap-2">
+              {/* Overs Input Box */}
               <div className="flex items-center gap-1.5 bg-slate-50 border-2 border-emerald-500/70 rounded-xl px-3 py-2 min-h-[44px] focus-within:border-emerald-600 focus-within:ring-2 focus-within:ring-emerald-500/20 transition shadow-2xs">
                 <input
                   type="number"
@@ -468,30 +469,33 @@ export default function CreateMatch() {
                   value={f.overs}
                   onChange={handleOversChange}
                   placeholder="20"
-                  className="w-14 text-center font-black text-base text-slate-900 bg-transparent focus:outline-none"
+                  className="w-full font-black text-base text-slate-900 bg-transparent focus:outline-none"
                 />
-                <span className="text-xs font-bold text-slate-500">ov</span>
+                <span className="text-xs font-bold text-slate-500 shrink-0">Overs</span>
               </div>
 
-              {/* Quick Chips */}
-              <div className="flex flex-wrap items-center gap-1.5 flex-1">
-                {QUICK_OVERS.map((ov) => {
-                  const isActive = Number(f.overs) === ov;
-                  return (
-                    <button
-                      key={ov}
-                      type="button"
-                      onClick={() => handlePresetClick(ov)}
-                      className={`rounded-xl py-2 px-3 text-xs sm:text-sm font-black transition-all border min-h-[42px] ${
-                        isActive
-                          ? 'bg-gradient-to-r from-emerald-500 to-pitch-500 text-navy-950 border-pitch-400 font-black shadow-xs scale-105'
-                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
-                      }`}
-                    >
-                      {ov} ov
-                    </button>
-                  );
-                })}
+              {/* Presets Dropdown */}
+              <div className="relative">
+                <select
+                  value={QUICK_OVERS.includes(Number(f.overs)) ? Number(f.overs) : 'custom'}
+                  aria-label="Preset overs selection"
+                  onChange={(e) => {
+                    if (e.target.value !== 'custom') {
+                      handlePresetClick(Number(e.target.value));
+                    }
+                  }}
+                  className="w-full min-h-[44px] pl-3 pr-8 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs sm:text-sm font-bold text-slate-700 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 cursor-pointer shadow-2xs appearance-none"
+                >
+                  <option value={20}>20 ov (T20)</option>
+                  <option value={10}>10 ov (T10)</option>
+                  <option value={6}>6 ov</option>
+                  <option value={8}>8 ov</option>
+                  <option value={12}>12 ov</option>
+                  <option value={15}>15 ov</option>
+                  <option value={50}>50 ov (ODI)</option>
+                  <option value="custom">Custom ov</option>
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
               </div>
             </div>
             {errors.overs && <span className="text-xs text-red-600 font-bold block">{errors.overs}</span>}
