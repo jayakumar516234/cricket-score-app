@@ -192,22 +192,36 @@ export function PreviousOversList({ state, dark = false }) {
   );
 }
 
+// Adaptive grid: pick cols so overs fit in 1–4 rows based on total count
+function overGridCols(count) {
+  if (count <= 8) {
+    // Single row: exact column count
+    const map = { 1: 'grid-cols-1', 2: 'grid-cols-2', 3: 'grid-cols-3', 4: 'grid-cols-4', 5: 'grid-cols-5', 6: 'grid-cols-6', 7: 'grid-cols-7', 8: 'grid-cols-8' };
+    return map[count] || 'grid-cols-8';
+  }
+  if (count <= 16) return 'grid-cols-8';   // 2 rows of up to 8
+  if (count <= 24) return 'grid-cols-8';   // 3 rows of up to 8
+  return 'grid-cols-8';                    // 4+ rows of 8
+}
+
 /**
- * Over by over: the over being bowled now is shown big and separate, finished overs are listed
- * below it in a smaller size (most recent first).
+ * Compact grid of previous overs — each over is a small card showing number, bowler, runs and ball chips.
+ * Rows grow automatically: 1 row for ≤8 overs, 2 rows for 9–16, 3 rows for 17–24, 4+ rows for 25+.
  */
 export function OverByOver({ state, dark = false }) {
-  const [showAll, setShowAll] = useState(false);
   const muted = dark ? 'text-slate-400' : 'text-slate-500';
   const idx = state.currentOver;
   const overs = state.overSummary;
   const current = state.completed ? null : overs[idx] || { number: idx + 1, bowlerName: state.bowlerName, runs: 0, wickets: 0, legalBalls: 0, balls: [] };
-  const previous = overs.filter((o) => (state.completed ? true : o.over < idx)).slice().reverse();
-  const shown = showAll ? previous : previous.slice(0, 3);
+  // For the grid we show ALL previous overs (chronological order, oldest first so grid reads L→R)
+  const previous = overs.filter((o) => (state.completed ? true : o.over < idx));
   const empties = current ? Math.max(0, 6 - current.legalBalls) : 0;
+
+  const gridCols = overGridCols(previous.length);
 
   return (
     <div className="space-y-3">
+      {/* Current over — big card */}
       {current && (
         <div className={`rounded-xl p-3 ${dark ? 'bg-white/10 ring-1 ring-pitch-400/60' : 'bg-green-50 ring-1 ring-green-300'}`} aria-label={`Over ${current.number}, in progress`}>
           <div className="mb-2 flex items-center justify-between gap-2">
@@ -223,28 +237,41 @@ export function OverByOver({ state, dark = false }) {
         </div>
       )}
 
+      {/* Previous overs — adaptive grid */}
       {previous.length > 0 && (
         <div>
-          <p className={`mb-1 text-xs font-semibold uppercase tracking-wide ${muted}`}>Previous overs</p>
-          <ul>
-            {shown.map((o) => (
-              <li key={o.over} className={`flex flex-wrap items-center gap-x-3 gap-y-1 py-2 text-sm ${dark ? 'border-t border-white/10' : 'border-t border-slate-100'}`}>
-                <span className="w-14 shrink-0 font-semibold">Over {o.number}</span>
-                <span className={`min-w-0 flex-1 truncate text-xs ${muted}`}>{o.bowlerName}</span>
-                <span className="text-xs font-semibold">{o.runs} run{o.runs === 1 ? '' : 's'}{o.wickets ? `, ${o.wickets} wkt` : ''}</span>
-                <ul className="flex w-full flex-wrap gap-1 sm:w-auto">
-                  {o.balls.map((l, i) => <li key={i} className={`flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-[11px] font-bold ${chipTone(l, dark)}`}>{l}</li>)}
-                </ul>
-              </li>
+          <p className={`mb-2 text-xs font-semibold uppercase tracking-wide ${muted}`}>
+            Previous overs <span className={`ml-1 font-normal ${muted}`}>({previous.length})</span>
+          </p>
+          <div className={`grid ${gridCols} gap-1.5`}>
+            {previous.map((o) => (
+              <div
+                key={o.over}
+                className={`rounded-lg p-1.5 ${dark ? 'bg-white/8 ring-1 ring-white/15' : 'bg-slate-50 ring-1 ring-slate-200'}`}
+              >
+                {/* Over number + score */}
+                <div className="flex items-baseline justify-between gap-1 mb-1">
+                  <span className={`text-[10px] font-bold leading-none ${dark ? 'text-slate-300' : 'text-slate-700'}`}>Ov {o.number}</span>
+                  <span className={`text-[10px] font-semibold leading-none ${o.wickets ? 'text-red-500' : dark ? 'text-pitch-400' : 'text-emerald-600'}`}>
+                    {o.runs}R{o.wickets ? `·${o.wickets}W` : ''}
+                  </span>
+                </div>
+                {/* Bowler name — truncated */}
+                {o.bowlerName && (
+                  <p className={`truncate text-[9px] leading-none mb-1 ${muted}`}>{o.bowlerName}</p>
+                )}
+                {/* Ball chips */}
+                <div className="flex flex-wrap gap-[2px]">
+                  {(o.balls || []).map((l, i) => (
+                    <span key={i} className={`flex h-4 min-w-4 items-center justify-center rounded-full px-0.5 text-[8px] font-bold leading-none ${chipTone(l, dark)}`}>{l}</span>
+                  ))}
+                </div>
+              </div>
             ))}
-          </ul>
-          {previous.length > 3 && (
-            <button type="button" onClick={() => setShowAll(!showAll)} className={`mt-1 text-xs font-semibold ${dark ? 'text-pitch-400' : 'text-blue-600'} hover:underline`}>
-              {showAll ? 'Show fewer overs' : `Show all ${previous.length} overs`}
-            </button>
-          )}
+          </div>
         </div>
       )}
+
       {!current && previous.length === 0 && <p className={`text-sm ${muted}`}>No balls yet</p>}
     </div>
   );
