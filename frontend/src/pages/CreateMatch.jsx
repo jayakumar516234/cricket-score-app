@@ -20,15 +20,7 @@ import { useFetch } from '../useFetch.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { ErrorBox, SkeletonForm, TeamLogo, DropdownSelect, Modal } from '../components/ui.jsx';
 
-const OVERS_PRESETS = [
-  { label: '6 ov', overs: 6, format: 'Custom' },
-  { label: '8 ov', overs: 8, format: 'Custom' },
-  { label: '10 ov', overs: 10, format: 'T10' },
-  { label: '12 ov', overs: 12, format: 'Custom' },
-  { label: '15 ov', overs: 15, format: 'Custom' },
-  { label: '20 ov', overs: 20, format: 'T20' },
-  { label: 'Custom', overs: null, format: 'Custom' },
-];
+const QUICK_OVERS = [6, 8, 10, 12, 15, 20, 50];
 
 export default function CreateMatch() {
   const nav = useNavigate();
@@ -59,8 +51,6 @@ export default function CreateMatch() {
     }))
   );
 
-  const [selectedPreset, setSelectedPreset] = useState('20 ov');
-  const [customOversInput, setCustomOversInput] = useState('');
   const [isSpinningCoin, setIsSpinningCoin] = useState(false);
   const [guestModalOpen, setGuestModalOpen] = useState(false);
   const [showMoreSettings, setShowMoreSettings] = useState(false);
@@ -154,23 +144,20 @@ export default function CreateMatch() {
     (f.tossWinner === 'guest' || String(f.tossWinner) === String(effectiveAway.id));
   const tossWinnerTeam = isHomeWinner ? home : isAwayWinner ? effectiveAway : null;
 
-  const handleSelectPreset = (preset) => {
-    setSelectedPreset(preset.label);
-    if (preset.label === 'Custom') {
-      const val = Number(customOversInput) || 8;
-      set({ format: 'Custom', overs: val });
-    } else {
-      set({ format: preset.format, overs: preset.overs });
-    }
+  const handleOversChange = (e) => {
+    const raw = e.target.value.replace(/\D/g, '');
+    const num = raw === '' ? '' : Math.min(100, Math.max(1, Number(raw)));
+    set({
+      overs: num,
+      format: num === 20 ? 'T20' : num === 10 ? 'T10' : num === 50 ? 'ODI' : 'Custom',
+    });
   };
 
-  const handleCustomOversChange = (e) => {
-    const raw = e.target.value.replace(/\D/g, '');
-    setCustomOversInput(raw);
-    const num = Number(raw);
-    if (num >= 1 && num <= 100) {
-      set({ format: 'Custom', overs: num });
-    }
+  const handlePresetClick = (ov) => {
+    set({
+      overs: ov,
+      format: ov === 20 ? 'T20' : ov === 10 ? 'T10' : ov === 50 ? 'ODI' : 'Custom',
+    });
   };
 
   // Fun Interactive Coin Toss Spin
@@ -243,8 +230,8 @@ export default function CreateMatch() {
               })),
             }
           : undefined,
-        format: f.format,
-        overs: f.format === 'Custom' ? Number(f.overs) : undefined,
+        format: Number(f.overs) === 20 ? 'T20' : Number(f.overs) === 10 ? 'T10' : Number(f.overs) === 50 ? 'ODI' : 'Custom',
+        overs: Number(f.overs) || 20,
         date: f.date ? new Date(f.date).toISOString() : undefined,
         venue: f.venue,
         tossWinner: f.tossWinner === 'guest' ? 'guest' : f.tossWinner,
@@ -460,106 +447,102 @@ export default function CreateMatch() {
             )}
           </div>
 
-          {/* 2. MATCH OVERS (ONE-TAP CHIPS + UP TO 100 OVERS) */}
+          {/* 2. MATCH OVERS (INPUT WITH DEFAULT 20 + QUICK PRESET CHIPS) */}
           <div className="rounded-2xl border border-slate-200 bg-white p-3 space-y-2 shadow-2xs">
             <div className="flex items-center justify-between">
               <span className="text-[10.5px] font-black uppercase tracking-wider text-slate-700">
                 Match Overs
               </span>
               <span className="text-[10px] font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                {f.overs ? `${f.overs} Overs Per Side` : 'Pick overs'}
+                {f.overs ? `${f.overs} Overs Per Side` : 'Enter overs'}
               </span>
             </div>
 
-            {/* Quick Chips */}
-            <div className="flex flex-wrap items-center gap-1.5">
-              {OVERS_PRESETS.map((preset) => {
-                const isActive = selectedPreset === preset.label;
-                return (
-                  <button
-                    key={preset.label}
-                    type="button"
-                    onClick={() => handleSelectPreset(preset)}
-                    className={`rounded-xl py-1.5 px-2.5 text-xs font-bold transition-all border ${
-                      isActive
-                        ? 'bg-gradient-to-r from-emerald-500 to-pitch-500 text-navy-950 border-pitch-400 font-black shadow-xs scale-105'
-                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
-                    }`}
-                  >
-                    {preset.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            {selectedPreset === 'Custom' && (
-              <div className="flex items-center gap-2 pt-1.5">
-                <span className="text-xs font-bold text-slate-700">Custom Overs (1-100):</span>
+            {/* Direct Input (Default 20) + Quick Preset Chips */}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 bg-slate-50 border-2 border-emerald-500/60 rounded-xl px-2.5 py-1.5 focus-within:border-emerald-600 focus-within:ring-2 focus-within:ring-emerald-500/20 transition shadow-2xs">
                 <input
                   type="number"
                   min="1"
                   max="100"
-                  value={customOversInput}
-                  onChange={handleCustomOversChange}
-                  placeholder="1-100"
-                  className="input !py-1.5 !px-2.5 text-xs font-bold w-24 text-center border-pitch-400 shadow-2xs"
-                  autoFocus
+                  value={f.overs}
+                  onChange={handleOversChange}
+                  placeholder="20"
+                  className="w-12 text-center font-black text-sm text-slate-900 bg-transparent focus:outline-none"
                 />
-                <span className="text-xs font-bold text-slate-500">Overs</span>
-                {errors.overs && <span className="text-[10px] text-red-600 font-bold">{errors.overs}</span>}
+                <span className="text-xs font-bold text-slate-500">ov</span>
               </div>
-            )}
+
+              {/* Quick Chips */}
+              <div className="flex flex-wrap items-center gap-1 flex-1">
+                {QUICK_OVERS.map((ov) => {
+                  const isActive = Number(f.overs) === ov;
+                  return (
+                    <button
+                      key={ov}
+                      type="button"
+                      onClick={() => handlePresetClick(ov)}
+                      className={`rounded-xl py-1 px-2.5 text-xs font-bold transition-all border ${
+                        isActive
+                          ? 'bg-gradient-to-r from-emerald-500 to-pitch-500 text-navy-950 border-pitch-400 font-black shadow-xs scale-105'
+                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
+                      }`}
+                    >
+                      {ov} ov
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            {errors.overs && <span className="text-[10px] text-red-600 font-bold block">{errors.overs}</span>}
           </div>
 
-          {/* 3. ROCK-SOLID INTERACTIVE TOSS SECTION */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-3.5 space-y-3 shadow-2xs">
+          {/* 3. COMPACT WHO WON THE TOSS SECTION */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-2.5 sm:p-3 space-y-2 shadow-2xs">
             <div className="flex items-center justify-between">
-              <div>
-                <span className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
-                  <span>Who Won The Toss?</span>
-                  <span className="text-red-500">*</span>
-                </span>
-                <p className="text-[10px] text-slate-500">Tap the team that won the toss</p>
-              </div>
+              <span className="text-[11px] font-black uppercase tracking-wider text-slate-800 flex items-center gap-1">
+                <span>Who Won The Toss?</span>
+                <span className="text-red-500">*</span>
+              </span>
 
-              {/* Coin Spin Button for fun! */}
+              {/* Compact Coin Spin Button */}
               <button
                 type="button"
                 onClick={spinTossCoin}
                 disabled={isSpinningCoin || !home || !effectiveAway}
-                className="inline-flex items-center gap-1 rounded-xl bg-amber-100 hover:bg-amber-200 border border-amber-300 px-2.5 py-1 text-[10.5px] font-black text-amber-900 transition active:scale-95 shadow-2xs"
+                className="inline-flex items-center gap-1 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2 py-0.5 text-[10px] font-bold text-amber-800 transition active:scale-95 shadow-2xs"
                 title="Tap to spin coin randomly"
               >
-                <Coins className={`h-3.5 w-3.5 text-amber-600 ${isSpinningCoin ? 'animate-spin' : ''}`} />
+                <Coins className={`h-3 w-3 text-amber-600 ${isSpinningCoin ? 'animate-spin' : ''}`} />
                 <span>{isSpinningCoin ? 'Flipping…' : 'Flip Coin 🪙'}</span>
               </button>
             </div>
 
-            {/* Team Toss Winner Selector (Crystal Clear Distinct Cards) */}
-            <div className="grid grid-cols-2 gap-2.5">
+            {/* Team Toss Winner Selector - Compact Horizontal Cards */}
+            <div className="grid grid-cols-2 gap-2">
               {/* Home Team Button */}
               {home && (
                 <button
                   type="button"
                   onClick={() => set({ tossWinner: home.id })}
-                  className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border-2 transition-all gap-1.5 ${
+                  className={`flex items-center justify-between gap-1.5 p-2 rounded-xl border-2 transition-all ${
                     isHomeWinner
-                      ? 'bg-gradient-to-b from-emerald-500 to-emerald-600 text-white border-emerald-500 shadow-md ring-2 ring-emerald-400/50'
-                      : 'bg-emerald-50/50 text-slate-800 border-emerald-200/80 hover:bg-emerald-100/60'
+                      ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white border-emerald-500 shadow-xs'
+                      : 'bg-emerald-50/40 text-slate-800 border-emerald-200/70 hover:bg-emerald-50'
                   }`}
                 >
-                  <div className="flex items-center gap-1.5 min-w-0 max-w-full">
-                    <TeamLogo team={home} size={22} />
-                    <span className="text-xs font-black truncate">{home.name}</span>
+                  <div className="flex items-center gap-1.5 min-w-0 flex-1 text-left">
+                    <TeamLogo team={home} size={20} />
+                    <span className="text-xs font-bold truncate">{home.name}</span>
                   </div>
                   <span
-                    className={`text-[9.5px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                    className={`text-[9px] font-black uppercase px-1.5 py-0.2 rounded-md shrink-0 ${
                       isHomeWinner
-                        ? 'bg-white/20 text-white shadow-xs'
+                        ? 'bg-white/20 text-white'
                         : 'bg-emerald-100 text-emerald-800'
                     }`}
                   >
-                    {isHomeWinner ? '✓ Won Toss' : 'Home Team'}
+                    {isHomeWinner ? '✓ Won' : 'Home'}
                   </span>
                 </button>
               )}
@@ -569,42 +552,42 @@ export default function CreateMatch() {
                 <button
                   type="button"
                   onClick={() => set({ tossWinner: effectiveAway.id })}
-                  className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border-2 transition-all gap-1.5 ${
+                  className={`flex items-center justify-between gap-1.5 p-2 rounded-xl border-2 transition-all ${
                     isAwayWinner
-                      ? 'bg-gradient-to-b from-blue-600 to-indigo-600 text-white border-blue-500 shadow-md ring-2 ring-blue-400/50'
-                      : 'bg-blue-50/50 text-slate-800 border-blue-200/80 hover:bg-blue-100/60'
+                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-blue-500 shadow-xs'
+                      : 'bg-blue-50/40 text-slate-800 border-blue-200/70 hover:bg-blue-50'
                   }`}
                 >
-                  <div className="flex items-center gap-1.5 min-w-0 max-w-full">
+                  <div className="flex items-center gap-1.5 min-w-0 flex-1 text-left">
                     {effectiveAway.isGuest ? (
-                      <Users className="h-4.5 w-4.5 text-amber-500 shrink-0" />
+                      <Users className="h-4 w-4 text-amber-500 shrink-0" />
                     ) : (
-                      <TeamLogo team={effectiveAway} size={22} />
+                      <TeamLogo team={effectiveAway} size={20} />
                     )}
-                    <span className="text-xs font-black truncate">{effectiveAway.name}</span>
+                    <span className="text-xs font-bold truncate">{effectiveAway.name}</span>
                   </div>
                   <span
-                    className={`text-[9.5px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                    className={`text-[9px] font-black uppercase px-1.5 py-0.2 rounded-md shrink-0 ${
                       isAwayWinner
-                        ? 'bg-white/20 text-white shadow-xs'
+                        ? 'bg-white/20 text-white'
                         : 'bg-blue-100 text-blue-800'
                     }`}
                   >
-                    {isAwayWinner ? '✓ Won Toss' : isOpponentGuest ? 'Guest XI' : 'Opponent'}
+                    {isAwayWinner ? '✓ Won' : isOpponentGuest ? 'Guest XI' : 'Opponent'}
                   </span>
                 </button>
               )}
             </div>
 
-            {/* Toss Decision: Bat or Bowl */}
-            <div className="pt-2 border-t border-slate-100 space-y-1.5">
-              <span className="text-[10px] font-black uppercase tracking-wider text-slate-600 block">
-                Toss Winner Elected To:
+            {/* Toss Decision: Bat or Bowl - Compact */}
+            <div className="pt-1.5 border-t border-slate-100 flex items-center gap-2">
+              <span className="text-[10px] font-bold text-slate-500 shrink-0">
+                Elected to:
               </span>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-1.5 flex-1">
                 {[
-                  ['bat', '🏏 Batting First'],
-                  ['bowl', '⚾ Bowling First'],
+                  ['bat', '🏏 Bat First'],
+                  ['bowl', '⚾ Bowl First'],
                 ].map(([v, l]) => {
                   const active = f.tossDecision === v;
                   return (
@@ -612,9 +595,9 @@ export default function CreateMatch() {
                       key={v}
                       type="button"
                       onClick={() => set({ tossDecision: v })}
-                      className={`rounded-xl py-2 px-3 text-xs font-black border transition-all ${
+                      className={`rounded-lg py-1 px-2 text-xs font-bold border transition-all ${
                         active
-                          ? 'bg-slate-900 text-white border-slate-900 shadow-md ring-2 ring-slate-700/50 scale-102'
+                          ? 'bg-slate-900 text-white border-slate-900 shadow-2xs font-black'
                           : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                       }`}
                     >
@@ -625,11 +608,11 @@ export default function CreateMatch() {
               </div>
             </div>
 
-            {/* Live Toss Status Pill */}
+            {/* Compact Live Toss Status Note */}
             {tossWinnerTeam && (
-              <div className="rounded-xl bg-blue-50 border border-blue-200 px-3 py-2 text-center text-xs font-bold text-blue-900 shadow-2xs">
-                🏆 <strong className="font-black text-blue-950">{tossWinnerTeam.name}</strong> won the toss and chose to{' '}
-                <span className="uppercase text-blue-950 font-black underline decoration-2">
+              <div className="text-[10px] text-center font-bold text-blue-900 bg-blue-50/80 border border-blue-200/80 rounded-lg py-0.5 px-2">
+                🏆 <strong className="font-black text-blue-950">{tossWinnerTeam.name}</strong> won toss & chose to{' '}
+                <span className="font-black text-emerald-800 underline uppercase">
                   {f.tossDecision === 'bat' ? 'Bat First' : 'Bowl First'}
                 </span>
               </div>
