@@ -68,11 +68,8 @@ router.post('/login', limiter, wrap(async (req, res) => {
   res.json({ token: signToken(user, sessionToken), user: publicUser(user) });
 }));
 
-// Public registration is disabled; available only in test environment.
+// Anyone can sign up. Every public sign-up is a normal "user" (never an admin).
 router.post('/register', limiter, wrap(async (req, res) => {
-  if (process.env.NODE_ENV !== 'test') {
-    throw new HttpError(403, 'Public registration is currently disabled');
-  }
   const data = parse(registerSchema, req.body);
   await assertUnique(data);
   const sessionToken = crypto.randomBytes(16).toString('hex');

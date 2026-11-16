@@ -103,6 +103,17 @@ export default function Login() {
           </div>
           <button className="btn btn-primary w-full" disabled={busy}>{busy && <Loader2 className="h-4 w-4 animate-spin" />} {t('login.loginBtn')}</button>
           <p className="text-center text-xs text-slate-500">{t('login.viewerHint')}</p>
+
+          {/* New User Sign Up Link */}
+          <div className="pt-2 text-center border-t border-slate-100">
+            <p className="text-xs sm:text-sm text-slate-600">
+              New here?{' '}
+              <Link to="/register" className="font-extrabold text-pitch-700 hover:text-pitch-800 hover:underline">
+                Create Account (Sign Up)
+              </Link>
+            </p>
+          </div>
+
           {/* Language selector on login page */}
           <div className="pt-1 border-t border-slate-100">
             <LanguageSelect />

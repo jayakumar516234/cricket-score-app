@@ -4,6 +4,7 @@ import { useAuth } from './context/AuthContext.jsx';
 import Layout from './components/Layout.jsx';
 import CricketAppLoader from './components/CricketAppLoader.jsx';
 import Login from './pages/Login.jsx';
+import Register from './pages/Register.jsx';
 import SuperLogin from './pages/SuperLogin.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Teams from './pages/Teams.jsx';
@@ -50,7 +51,7 @@ export default function App() {
 
   // Save current route for seamless app restoration
   useEffect(() => {
-    if (user && location.pathname && !location.pathname.startsWith('/login') && !location.pathname.startsWith('/super-login')) {
+    if (user && location.pathname && !location.pathname.startsWith('/login') && !location.pathname.startsWith('/register') && !location.pathname.startsWith('/signup') && !location.pathname.startsWith('/super-login')) {
       try {
         localStorage.setItem('cricket_last_path', location.pathname);
       } catch {}
@@ -62,8 +63,8 @@ export default function App() {
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
       <Route path="/super-login" element={user ? <Navigate to="/" replace /> : <SuperLogin />} />
-      <Route path="/register" element={<Navigate to="/login" replace />} />
-      <Route path="/signup" element={<Navigate to="/login" replace />} />
+      <Route path="/register" element={user ? <Navigate to="/" replace /> : <Register />} />
+      <Route path="/signup" element={user ? <Navigate to="/" replace /> : <Register />} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/terms" element={<TermsAndConditions />} />
       <Route path="/live/:id" element={<PublicLiveMatch />} />
