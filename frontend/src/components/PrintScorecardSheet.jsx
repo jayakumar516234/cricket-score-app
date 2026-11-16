@@ -26,7 +26,7 @@ export function PrintScorecardSheet({ view }) {
       <div className="border border-slate-300 rounded-lg p-3 bg-slate-50 mb-4 flex items-center justify-between">
         <div>
           <div className="text-sm font-black text-slate-900">
-            {match.result ? match.result.summary : 'Match in progress / Result pending'}
+            {match.result?.summary ? match.result.summary : match.status === 'abandoned' ? '⚠️ Match Abandoned · Scores Saved' : 'Match in progress / Result pending'}
           </div>
           {match.toss && (
             <div className="text-[11px] text-slate-600 mt-0.5">

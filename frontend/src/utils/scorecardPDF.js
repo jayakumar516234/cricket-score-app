@@ -135,7 +135,23 @@ export async function downloadScorecardPDF(view) {
   y += hdrH + 16;
 
   // ── 4. RESULT BANNER ───────────────────────────────────────────────────────
-  if (match.result) {
+  if (match.status === 'abandoned') {
+    ctx.fillStyle = '#f8fafc';
+    roundRect(ctx, PAD, y, innerW, 66, 10);
+    ctx.fill();
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.fillStyle = '#334155';
+    ctx.font = 'bold 15px sans-serif';
+    ctx.fillText('⚠️  Match Abandoned', PAD + 16, y + 26);
+
+    ctx.fillStyle = '#64748b';
+    ctx.font = '12px sans-serif';
+    ctx.fillText('Match was called off and saved with official records.', PAD + 16, y + 48);
+    y += 82;
+  } else if (match.result) {
     ctx.fillStyle = C.emeraldBg;
     roundRect(ctx, PAD, y, innerW, 66, 10);
     ctx.fill();

@@ -279,7 +279,7 @@ router.post('/', wrap(async (req, res) => {
     }
     let code;
     while (!code || (await Team.exists({ code }))) {
-      code = generateTeamCode();
+      code = generateTeamCode(true);
     }
     away = await Team.create({
       name: uniqueName,
@@ -320,17 +320,31 @@ router.post('/', wrap(async (req, res) => {
     if (!away) throw new HttpError(404, 'Opponent team not found');
     if (String(home._id) === String(away._id)) throw new HttpError(400, 'Your team and the opponent must be different teams');
 
-    // If opponent is an existing guest team, allow updating its name
-    if (away.isGuest && d.guestTeam?.name && canManageTeam(req.user, away)) {
-      const newName = d.guestTeam.name.trim();
-      if (newName && newName !== away.name) {
-        let uniqueName = newName;
-        let suffix = 1;
-        while (await Team.findOne({ name: uniqueName, _id: { $ne: away._id } }).collation({ locale: 'en', strength: 2 })) {
-          uniqueName = `${newName} (${suffix++})`;
+    // If opponent is an existing guest team, allow updating its name & squad if customized
+    if (away.isGuest && canManageTeam(req.user, away)) {
+      if (d.guestTeam?.name) {
+        const newName = d.guestTeam.name.trim();
+        if (newName && newName !== away.name) {
+          let uniqueName = newName;
+          let suffix = 1;
+          while (await Team.findOne({ name: uniqueName, _id: { $ne: away._id } }).collation({ locale: 'en', strength: 2 })) {
+            uniqueName = `${newName} (${suffix++})`;
+          }
+          away.name = uniqueName;
+          await away.save();
         }
-        away.name = uniqueName;
-        await away.save();
+      }
+      if (d.guestTeam?.players && d.guestTeam.players.length >= 11) {
+        const existingPlayers = await Player.find({ team: away._id }).sort({ createdAt: 1, _id: 1 });
+        for (let i = 0; i < Math.min(existingPlayers.length, d.guestTeam.players.length); i++) {
+          const pDoc = existingPlayers[i];
+          const incoming = d.guestTeam.players[i];
+          if (incoming.name && (incoming.name.trim() !== pDoc.name || (incoming.role && incoming.role !== pDoc.role))) {
+            pDoc.name = incoming.name.trim();
+            pDoc.role = incoming.role || pDoc.role;
+            await pDoc.save();
+          }
+        }
       }
     }
 
@@ -417,6 +431,13 @@ router.put('/:id', wrap(async (req, res) => {
   if (d.status === 'abandoned') {
     if (match.status === 'completed') throw new HttpError(409, 'A completed match cannot be abandoned');
     match.status = 'abandoned';
+    if (!match.result || !match.result.summary) {
+      match.result = {
+        winner: null,
+        summary: 'Match abandoned',
+        byTieBreak: false,
+      };
+    }
   }
   await match.save();
   await audit(req.user, 'match.update', 'Match', match._id, { before, changes: d });

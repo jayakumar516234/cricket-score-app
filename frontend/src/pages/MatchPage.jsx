@@ -64,8 +64,7 @@ export default function MatchPage() {
   const { match } = view;
 
   let body;
-  if (match.status === 'completed') body = <ResultView view={view} />;
-  else if (match.status === 'abandoned') body = <Banner tone="slate">This match was abandoned.</Banner>;
+  if (match.status === 'completed' || match.status === 'abandoned') body = <ResultView view={view} />;
   else if (match.status === 'scheduled') body = <SetupView view={view} act={act} busy={busy} id={id} />;
   else {
     const inn = view.innings[match.currentInnings - 1];
@@ -327,11 +326,72 @@ function LiveView({ view, act, busy, id, queueProps }) {
   const striker = st.striker || sel.striker;
   const nonStriker = st.nonStriker || sel.nonStriker;
   const bowler = st.bowler || sel.bowler;
-  const nameOf = (list, pid) => list.find((p) => p.id === pid)?.name;
+  const nameOf = (list, pid) => (list || []).find((p) => p.id === pid)?.name;
   const ready = !st.completed && striker && nonStriker && bowler && striker !== nonStriker;
   const hasBalls = st.balls.length > 0;
 
-  const atCrease = st.battingCard.filter((b) => !b.out && (b.id === st.striker || b.id === st.nonStriker));
+  // Real-time Batters at crease (immediate display as soon as chosen, even before first ball)
+  const displayBatters = useMemo(() => {
+    const list = [];
+    if (striker) {
+      const existing = st.battingCard.find((b) => b.id === striker && !b.out);
+      if (existing) {
+        list.push({ ...existing, onStrike: true });
+      } else {
+        const pName = nameOf(st.availableBatters, striker) || nameOf(batting?.players, striker) || 'Striker';
+        list.push({
+          id: striker,
+          name: pName,
+          runs: 0,
+          balls: 0,
+          fours: 0,
+          sixes: 0,
+          strikeRate: 0,
+          onStrike: true,
+          out: false,
+        });
+      }
+    }
+    if (nonStriker && nonStriker !== striker) {
+      const existing = st.battingCard.find((b) => b.id === nonStriker && !b.out);
+      if (existing) {
+        list.push({ ...existing, onStrike: false });
+      } else {
+        const pName = nameOf(st.availableBatters, nonStriker) || nameOf(batting?.players, nonStriker) || 'Non-striker';
+        list.push({
+          id: nonStriker,
+          name: pName,
+          runs: 0,
+          balls: 0,
+          fours: 0,
+          sixes: 0,
+          strikeRate: 0,
+          onStrike: false,
+          out: false,
+        });
+      }
+    }
+    return list;
+  }, [striker, nonStriker, st.battingCard, st.availableBatters, batting?.players]);
+
+  // Real-time Active Bowler (immediate display as soon as chosen, even before first ball)
+  const displayBowlingCard = useMemo(() => {
+    if (!bowler) return [];
+    const existing = st.bowlingCard.find((b) => b.id === bowler);
+    if (existing) {
+      return [existing];
+    }
+    const bName = st.bowlerName || nameOf(st.eligibleBowlers, bowler) || nameOf(bowling?.players, bowler) || 'Bowler';
+    return [{
+      id: bowler,
+      name: bName,
+      overs: '0.0',
+      maidens: 0,
+      runs: 0,
+      wickets: 0,
+      economy: 0,
+    }];
+  }, [bowler, st.bowlingCard, st.bowlerName, st.eligibleBowlers, bowling?.players]);
   const rrr = st.target != null && st.ballsRemaining > 0 ? ((st.runsRequired / st.ballsRemaining) * 6).toFixed(2) : null;
   const firstInnings = view.innings[0]?.state;
   const isTied = match.currentInnings === 2 && firstInnings && st.runs === firstInnings.runs;
@@ -422,11 +482,13 @@ function LiveView({ view, act, busy, id, queueProps }) {
             </p>
           )}
 
-          {/* Batters at crease */}
-          {atCrease.length > 0 && <BatTable dark state={{ ...st, battingCard: atCrease }} />}
+          {/* Batters at crease (shows immediately upon choosing, before first ball!) */}
+          {displayBatters.length > 0 && <BatTable dark state={{ ...st, battingCard: displayBatters }} />}
           
-          {/* Active Bowler Only (Single bowler who is currently bowling) */}
-          <BowlTable dark state={{ ...st, bowlingCard: st.bowlingCard.filter((b) => b.id === (st.bowler || sel.bowler)) }} />
+          {/* Active Bowler (shows immediately upon choosing, before first ball!) */}
+          {displayBowlingCard.length > 0 && (
+            <BowlTable dark state={{ ...st, bowler: bowler, bowlingCard: displayBowlingCard }} />
+          )}
           
           {/* Current Over Balls Strip */}
           <CurrentOverStrip dark state={st} />
@@ -440,39 +502,16 @@ function LiveView({ view, act, busy, id, queueProps }) {
               <div className="flex items-center gap-2">
                 <Crosshair className="h-4 w-4 text-amber-600 shrink-0" />
                 <h3 className="font-bold text-amber-950 text-xs sm:text-sm">
-                  {!hasBalls ? 'Select openers and the first bowler to start scoring' : '⚡ Action required: Select next bowler / batter'}
+                  {!hasBalls ? 'Select Bowler & Openers' : !st.bowler ? 'Select Next Bowler' : 'Select Next Batter'}
                 </h3>
               </div>
-              <p className="text-[11px] text-amber-800">
-                {!st.bowler && hasBalls ? 'Over complete. Select next bowler below to unlock scoring.' : 'Choose the player below to continue live scoring.'}
-              </p>
-              {!st.striker && (
-                <div>
-                  <label className="label text-[11px]" htmlFor="sel-striker">{hasBalls ? 'New batter' : 'Striker'}</label>
-                  <DropdownSelect
-                    id="sel-striker"
-                    value={sel.striker}
-                    onChange={(v) => setSel({ ...sel, striker: v })}
-                    options={batterOptions(sel.nonStriker).map((p) => ({ value: p.id, label: p.name }))}
-                    placeholder="Select batter"
-                  />
-                </div>
-              )}
-              {!st.nonStriker && (
-                <div>
-                  <label className="label text-[11px]" htmlFor="sel-non">{hasBalls && st.striker ? 'New batter' : 'Non-striker'}</label>
-                  <DropdownSelect
-                    id="sel-non"
-                    value={sel.nonStriker}
-                    onChange={(v) => setSel({ ...sel, nonStriker: v })}
-                    options={batterOptions(sel.striker).map((p) => ({ value: p.id, label: p.name }))}
-                    placeholder="Select batter"
-                  />
-                </div>
-              )}
+
+              {/* Bowler Selection */}
               {!st.bowler && (
                 <div>
-                  <label className="label text-[11px]" htmlFor="sel-bowler">{hasBalls ? 'Next bowler' : 'Bowler'}</label>
+                  <label className="label text-[11px] font-bold text-slate-700" htmlFor="sel-bowler">
+                    {hasBalls ? 'Next Bowler' : 'Opening Bowler'}
+                  </label>
                   <DropdownSelect
                     id="sel-bowler"
                     value={sel.bowler}
@@ -480,7 +519,40 @@ function LiveView({ view, act, busy, id, queueProps }) {
                     options={st.eligibleBowlers.map((p) => ({ value: p.id, label: p.name }))}
                     placeholder="Select bowler"
                   />
-                  <p className="mt-0.5 text-[10px] text-slate-500">Max {Math.ceil(match.overs / 5)} over{Math.ceil(match.overs / 5) === 1 ? '' : 's'} per bowler. Cannot bowl 2 overs consecutively.</p>
+                </div>
+              )}
+
+              {/* Batsmen Selection (Striker & Non-Striker) */}
+              {(!st.striker || !st.nonStriker) && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {!st.striker && (
+                    <div>
+                      <label className="label text-[11px] font-bold text-slate-700" htmlFor="sel-striker">
+                        {hasBalls ? 'New Batter' : 'Striker (Facing ball)'}
+                      </label>
+                      <DropdownSelect
+                        id="sel-striker"
+                        value={sel.striker}
+                        onChange={(v) => setSel({ ...sel, striker: v })}
+                        options={batterOptions(sel.nonStriker).map((p) => ({ value: p.id, label: p.name }))}
+                        placeholder="Select striker"
+                      />
+                    </div>
+                  )}
+                  {!st.nonStriker && (
+                    <div>
+                      <label className="label text-[11px] font-bold text-slate-700" htmlFor="sel-non">
+                        {hasBalls && st.striker ? 'New Batter' : 'Non-Striker'}
+                      </label>
+                      <DropdownSelect
+                        id="sel-non"
+                        value={sel.nonStriker}
+                        onChange={(v) => setSel({ ...sel, nonStriker: v })}
+                        options={batterOptions(sel.striker).map((p) => ({ value: p.id, label: p.name }))}
+                        placeholder="Select non-striker"
+                      />
+                    </div>
+                  )}
                 </div>
               )}
             </section>
@@ -490,9 +562,31 @@ function LiveView({ view, act, busy, id, queueProps }) {
           {ready && (
             <div className="flex items-center justify-between rounded-xl bg-blue-50/90 border border-blue-200/70 px-3 py-1.5 text-xs text-blue-950 font-medium shadow-2xs">
               <span className="font-bold">Over {st.currentOver + 1} · Ball {(st.legalBalls % 6) + 1}</span>
-              <span className="truncate max-w-[210px] text-right">
-                <strong className="text-pitch-700">{nameOf(st.battingCard, striker) || nameOf(st.availableBatters, striker)}*</strong> facing {st.bowlerName || nameOf(st.eligibleBowlers, bowler)}
-              </span>
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <span className="truncate max-w-[200px] text-right">
+                  <strong className="text-pitch-700">{nameOf(st.battingCard, striker) || nameOf(st.availableBatters, striker)}*</strong> facing {st.bowlerName || nameOf(st.eligibleBowlers, bowler)}
+                </span>
+                {!hasBalls && (
+                  <button
+                    type="button"
+                    onClick={() => setSel({ ...sel, striker: sel.nonStriker, nonStriker: sel.striker })}
+                    className="badge bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-[10px] py-0.5 px-1.5 transition active:scale-95"
+                    title="Swap strike"
+                  >
+                    ⇄ Swap
+                  </button>
+                )}
+                {!st.bowler && (
+                  <button
+                    type="button"
+                    onClick={() => setSel({ ...sel, bowler: '' })}
+                    className="badge bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-[10px] py-0.5 px-1.5 transition active:scale-95"
+                    title="Change selected bowler"
+                  >
+                    Change Bowler
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
@@ -819,16 +913,19 @@ function WicketModal({ open, onClose, initialExtra, initialRuns = 0, initialType
 // ---------------------------------------------------------------- result
 function ResultView({ view }) {
   const { match } = view;
+  const isAbandoned = match.status === 'abandoned';
   const [downloading, setDownloading] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [posterLoading, setPosterLoading] = useState(false);
-  const r = match.result;
+  const r = match.result || {};
   const home = match.homeTeam;
   const away = match.awayTeam;
   const scoreOf = (team) => view.innings.find((i) => i.battingTeam === team.id)?.state;
   const won = r.winner === home.id;
   const lost = r.winner === away.id;
-  const headline = r.byTieBreak
+  const headline = isAbandoned
+    ? '⚠️ Match Abandoned'
+    : r.byTieBreak
     ? (won ? '🎉 Won the Super Over!' : `${r.winner === away.id ? away.name : 'Opponent'} Won the Super Over!`)
     : r.winner
     ? (won ? 'Congratulations! You Won the Match!' : 'Better Luck Next Time!')
@@ -866,25 +963,37 @@ function ResultView({ view }) {
 
   return (
     <div className="mx-auto max-w-md space-y-4">
-      <section className="rounded-2xl bg-gradient-to-b from-navy-950 to-navy-800 p-6 text-center text-white shadow">
-        <Trophy className={`mx-auto h-14 w-14 ${!r.winner ? 'text-amber-400' : lost ? 'text-slate-400' : 'text-amber-400'}`} aria-hidden />
+      <section className={`rounded-2xl p-6 text-center text-white shadow ${
+        isAbandoned
+          ? 'bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 border border-slate-700'
+          : 'bg-gradient-to-b from-navy-950 to-navy-800'
+      }`}>
+        {isAbandoned ? (
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-800 text-amber-400 border border-amber-400/30 text-3xl mb-2">
+            ⚠️
+          </div>
+        ) : (
+          <Trophy className={`mx-auto h-14 w-14 ${!r.winner ? 'text-amber-400' : lost ? 'text-slate-400' : 'text-amber-400'}`} aria-hidden />
+        )}
         <h2 className="mt-2 text-2xl font-extrabold">{headline}</h2>
-        <p className="mt-1 text-slate-300 font-medium">{r.summary}</p>
-        {!r.winner && (
+        <p className="mt-1 text-slate-300 font-medium">
+          {r.summary || (isAbandoned ? 'Match was called off. Official scores are saved.' : '')}
+        </p>
+        {!isAbandoned && !r.winner && (
           <p className="mt-1 text-xs text-amber-200/90">Both teams finished with equal scores. The match ended in an official Draw.</p>
         )}
-        {r.byTieBreak && (
+        {!isAbandoned && r.byTieBreak && (
           <p className="mt-1 text-xs text-amber-200/90">Scores were level after regular overs. Decided via Super Over.</p>
         )}
-        {r.winner && !r.byTieBreak && <p className="mt-1 text-xs text-slate-400">{won ? `${home.name} is your own team` : `Your own team is ${home.name}`}</p>}
+        {!isAbandoned && r.winner && !r.byTieBreak && <p className="mt-1 text-xs text-slate-400">{won ? `${home.name} is your own team` : `Your own team is ${home.name}`}</p>}
         <div className="mt-5 grid grid-cols-2 gap-3">
           {[home, away].map((t) => {
             const s = scoreOf(t);
             return (
-              <div key={t.id} className={`rounded-xl border p-3 ${r.winner === t.id ? 'border-pitch-400 bg-pitch-600/20' : 'border-white/15 bg-white/5'}`}>
+              <div key={t.id} className={`rounded-xl border p-3 ${!isAbandoned && r.winner === t.id ? 'border-pitch-400 bg-pitch-600/20' : 'border-white/15 bg-white/5'}`}>
                 <p className="text-sm font-semibold">{t.name}</p>
                 <p className="text-2xl font-bold">{s ? `${s.runs}/${s.wickets}` : '-'}</p>
-                <p className="text-xs text-slate-300">{s ? `(${s.overs} ov)` : ''}</p>
+                <p className="text-xs text-slate-300">{s ? `(${s.overs} ov)` : 'Yet to bat'}</p>
               </div>
             );
           })}
@@ -898,16 +1007,18 @@ function ResultView({ view }) {
         )}
       </section>
       <div className="grid gap-2.5">
-        <WhatsAppShareButton view={view} label="Share Result on WhatsApp" />
-        <button
-          type="button"
-          onClick={handleDownloadPoster}
-          disabled={posterLoading}
-          className="btn btn-outline flex items-center justify-center gap-2 border-amber-400 bg-amber-50/70 text-amber-900 hover:bg-amber-100/80 font-bold shadow-xs"
-        >
-          {posterLoading ? <Loader2 className="h-4 w-4 animate-spin text-amber-600" /> : <Sparkles className="h-4 w-4 text-amber-600" />}
-          <span>🎨 Download Match Winner Poster (WhatsApp Status)</span>
-        </button>
+        <WhatsAppShareButton view={view} label={isAbandoned ? 'Share Match Update' : 'Share Result on WhatsApp'} />
+        {!isAbandoned && (
+          <button
+            type="button"
+            onClick={handleDownloadPoster}
+            disabled={posterLoading}
+            className="btn btn-outline flex items-center justify-center gap-2 border-amber-400 bg-amber-50/70 text-amber-900 hover:bg-amber-100/80 font-bold shadow-xs"
+          >
+            {posterLoading ? <Loader2 className="h-4 w-4 animate-spin text-amber-600" /> : <Sparkles className="h-4 w-4 text-amber-600" />}
+            <span>🎨 Download Match Winner Poster (WhatsApp Status)</span>
+          </button>
+        )}
         <button
           type="button"
           onClick={handleDownloadPDF}

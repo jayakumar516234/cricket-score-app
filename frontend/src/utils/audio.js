@@ -188,6 +188,27 @@ export function playUndoSound() {
 }
 
 /**
+ * COIN FLIP - Metallic spinning ping
+ */
+export function playCoinFlipSound() {
+  if (!isSoundEnabled()) return;
+  vibrate([40, 30, 40]);
+  playTone({ freq: 1760, type: 'sine', duration: 0.15, gain: 0.25 });
+  playTone({ freq: 2637, type: 'triangle', duration: 0.12, gain: 0.18, delay: 0.05 });
+}
+
+/**
+ * COIN WIN - Upbeat victory fanfare
+ */
+export function playCoinWinSound() {
+  if (!isSoundEnabled()) return;
+  vibrate([80, 50, 100]);
+  playTone({ freq: 587.33, type: 'triangle', duration: 0.18, gain: 0.25 });
+  playTone({ freq: 880.00, type: 'triangle', duration: 0.22, gain: 0.28, delay: 0.09 });
+  playTone({ freq: 1174.66, type: 'sine', duration: 0.35, gain: 0.22, delay: 0.18 });
+}
+
+/**
  * Helper to dispatch sound based on ball outcome
  */
 export function playBallSound(candidate) {

@@ -41,6 +41,10 @@ const addTeamSchema = z.object({
   name: z.string().trim().min(2).max(60).optional(),
   location: z.string().trim().max(80).optional(),
   contact: z.string().trim().max(100).optional(),
+  players: z.array(z.object({
+    name: z.string().trim().min(1).max(60),
+    role: z.string().optional().default('batsman'),
+  })).optional(),
 });
 
 const joinTournamentSchema = z.object({
@@ -497,7 +501,7 @@ router.post('/:id/teams', requireAuth, wrap(async (req, res) => {
   const tournament = await Tournament.findById(req.params.id);
   if (!tournament) throw new HttpError(404, 'Tournament not found');
 
-  const { teamId, teamCode, isGuest, name, location, contact } = parse(addTeamSchema, req.body);
+  const { teamId, teamCode, isGuest, name, location, contact, players } = parse(addTeamSchema, req.body);
   let team;
   if (teamId) {
     team = await Team.findById(teamId);
@@ -507,14 +511,31 @@ router.post('/:id/teams', requireAuth, wrap(async (req, res) => {
     if (!name || name.trim().length < 2) {
       throw new HttpError(400, 'Guest team name must have at least 2 characters');
     }
-    // Check if team with this name already exists
-    let existing = await Team.findOne({ name: new RegExp(`^${name.trim()}$`, 'i') });
+    // Check if guest team with this name already exists (created by this user)
+    let existing = await Team.findOne({
+      name: new RegExp(`^${name.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i'),
+      isGuest: true,
+      createdBy: req.user._id,
+    });
     if (existing) {
       team = existing;
+      // Update players if provided
+      if (players && players.length >= 11) {
+        await Player.deleteMany({ team: team._id });
+        await Player.insertMany(
+          players.slice(0, 11).map((p, i) => ({
+            name: p.name.trim() || `Player ${i + 1}`,
+            role: p.role || (i < 4 ? 'batsman' : i < 6 ? 'allrounder' : 'bowler'),
+            team: team._id,
+            battingStyle: 'right',
+            bowlingStyle: 'right_medium',
+          }))
+        );
+      }
     } else {
-      let code = generateTeamCode();
+      let code = generateTeamCode(true);
       while (await Team.findOne({ code })) {
-        code = generateTeamCode();
+        code = generateTeamCode(true);
       }
       team = await Team.create({
         name: name.trim(),
@@ -533,14 +554,23 @@ router.post('/:id/teams', requireAuth, wrap(async (req, res) => {
   if (team.isGuest) {
     const pCount = await Player.countDocuments({ team: team._id });
     if (pCount === 0) {
-      const defaultPlayers = Array.from({ length: 11 }, (_, i) => ({
-        name: `${team.name} Player ${i + 1}`,
-        team: team._id,
-        role: i < 4 ? 'batsman' : i < 6 ? 'allrounder' : 'bowler',
-        battingStyle: 'right',
-        bowlingStyle: 'right_medium',
-      }));
-      await Player.insertMany(defaultPlayers);
+      // Use named players if provided, else use defaults
+      const playerList = players && players.length >= 11
+        ? players.slice(0, 11).map((p, i) => ({
+            name: p.name.trim() || `${team.name} Player ${i + 1}`,
+            team: team._id,
+            role: p.role || (i < 4 ? 'batsman' : i < 6 ? 'allrounder' : 'bowler'),
+            battingStyle: 'right',
+            bowlingStyle: 'right_medium',
+          }))
+        : Array.from({ length: 11 }, (_, i) => ({
+            name: `${team.name} Player ${i + 1}`,
+            team: team._id,
+            role: i < 4 ? 'batsman' : i < 6 ? 'allrounder' : 'bowler',
+            battingStyle: 'right',
+            bowlingStyle: 'right_medium',
+          }));
+      await Player.insertMany(playerList);
     }
   }
 

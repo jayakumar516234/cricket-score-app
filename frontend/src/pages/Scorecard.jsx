@@ -85,6 +85,11 @@ export default function Scorecard() {
           {match.result && (
             <p className="col-span-2 text-sm font-semibold text-pitch-700">{match.result.summary}</p>
           )}
+          {match.status === 'abandoned' && !match.result?.summary && (
+            <p className="col-span-2 text-xs sm:text-sm font-bold text-slate-700 bg-slate-100 py-2 px-3 rounded-xl border border-slate-200">
+              ⚠️ Match Abandoned · Official scores saved
+            </p>
+          )}
           {match.playerOfMatch && (
             <p className="col-span-2 flex items-center justify-center gap-1.5 text-sm text-slate-600">
               <Crown className="h-4 w-4 text-amber-500" aria-hidden /> Player of the Match:{' '}
@@ -94,57 +99,89 @@ export default function Scorecard() {
           )}
         </section>
 
-        {/* Action Buttons: Download PDF, WhatsApp Share, Download Image, Winner Poster, QR Code & Print */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-          <button
-            type="button"
-            onClick={handleDownloadPDF}
-            disabled={pdfLoading}
-            className="btn btn-outline flex items-center justify-center gap-1.5 border-rose-300 bg-rose-50/70 text-rose-900 hover:bg-rose-100/80 shadow-2xs font-bold text-xs !py-2.5"
-            title="Download Official A4 PDF Scoresheet"
-          >
-            {pdfLoading ? <Loader2 className="h-4 w-4 animate-spin text-rose-600" /> : <FileText className="h-4 w-4 text-rose-600" />}
-            <span>Download PDF</span>
-          </button>
-          <WhatsAppShareButton view={view} label="Share Score" />
-          <button
-            type="button"
-            onClick={handleDownloadImage}
-            disabled={downloading}
-            className="btn btn-outline flex items-center justify-center gap-1.5 border-emerald-300 bg-emerald-50/50 text-emerald-800 hover:bg-emerald-100/60 shadow-2xs font-bold text-xs !py-2.5"
-          >
-            {downloading ? <Loader2 className="h-4 w-4 animate-spin text-emerald-600" /> : <ImageIcon className="h-4 w-4 text-emerald-600" />}
-            <span>Scorecard Image</span>
-          </button>
-          {match.status === 'completed' ? (
+        {/* Action Buttons: Only show Scorecard & PDF Downloads when match is Completed or Abandoned */}
+        {match.status === 'completed' || match.status === 'abandoned' ? (
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
             <button
               type="button"
-              onClick={handleDownloadPoster}
-              disabled={posterLoading}
-              className="btn btn-outline flex items-center justify-center gap-1.5 border-amber-300 bg-amber-50/60 text-amber-900 hover:bg-amber-100/70 shadow-2xs font-bold text-xs !py-2.5"
+              onClick={handleDownloadPDF}
+              disabled={pdfLoading}
+              className="btn btn-outline flex items-center justify-center gap-1.5 border-rose-300 bg-rose-50/70 text-rose-900 hover:bg-rose-100/80 shadow-2xs font-bold text-xs !py-2.5"
+              title="Download Official A4 PDF Scoresheet"
             >
-              {posterLoading ? <Loader2 className="h-4 w-4 animate-spin text-amber-600" /> : <Sparkles className="h-4 w-4 text-amber-600" />}
-              <span>Winner Poster</span>
+              {pdfLoading ? <Loader2 className="h-4 w-4 animate-spin text-rose-600" /> : <FileText className="h-4 w-4 text-rose-600" />}
+              <span>Download PDF</span>
             </button>
-          ) : (
+            <WhatsAppShareButton view={view} label="Share Score" />
             <button
               type="button"
-              onClick={() => setQrOpen(true)}
-              className="btn btn-outline flex items-center justify-center gap-1.5 border-blue-300 bg-blue-50/60 text-blue-900 hover:bg-blue-100/70 shadow-2xs font-bold text-xs !py-2.5"
+              onClick={handleDownloadImage}
+              disabled={downloading}
+              className="btn btn-outline flex items-center justify-center gap-1.5 border-emerald-300 bg-emerald-50/50 text-emerald-800 hover:bg-emerald-100/60 shadow-2xs font-bold text-xs !py-2.5"
             >
-              <QrCode className="h-4 w-4 text-blue-600" />
-              <span>Fan QR Code</span>
+              {downloading ? <Loader2 className="h-4 w-4 animate-spin text-emerald-600" /> : <ImageIcon className="h-4 w-4 text-emerald-600" />}
+              <span>Scorecard Image</span>
             </button>
-          )}
-          <button
-            type="button"
-            onClick={handlePrint}
-            className="btn btn-outline flex items-center justify-center gap-1.5 border-slate-300 text-slate-800 hover:bg-slate-50 shadow-2xs font-bold text-xs !py-2.5"
-          >
-            <Printer className="h-4 w-4 text-slate-600" />
-            <span>Print Sheet</span>
-          </button>
-        </div>
+            {match.status === 'completed' ? (
+              <button
+                type="button"
+                onClick={handleDownloadPoster}
+                disabled={posterLoading}
+                className="btn btn-outline flex items-center justify-center gap-1.5 border-amber-300 bg-amber-50/60 text-amber-900 hover:bg-amber-100/70 shadow-2xs font-bold text-xs !py-2.5"
+              >
+                {posterLoading ? <Loader2 className="h-4 w-4 animate-spin text-amber-600" /> : <Sparkles className="h-4 w-4 text-amber-600" />}
+                <span>Winner Poster</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setQrOpen(true)}
+                className="btn btn-outline flex items-center justify-center gap-1.5 border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-100 shadow-2xs font-bold text-xs !py-2.5"
+              >
+                <QrCode className="h-4 w-4 text-slate-600" />
+                <span>Fan QR Code</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="btn btn-outline flex items-center justify-center gap-1.5 border-slate-300 text-slate-800 hover:bg-slate-50 shadow-2xs font-bold text-xs !py-2.5"
+            >
+              <Printer className="h-4 w-4 text-slate-600" />
+              <span>Print Sheet</span>
+            </button>
+          </div>
+        ) : (
+          /* When match is still LIVE or SCHEDULED: Guide user to live scoring and fan QR */
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 p-3 rounded-2xl bg-gradient-to-r from-red-50/80 via-white to-red-50/50 border border-red-200 shadow-2xs">
+            <div className="flex items-center gap-2 text-center sm:text-left">
+              <span className="h-3 w-3 rounded-full bg-red-600 animate-pulse shrink-0" />
+              <div>
+                <span className="text-xs sm:text-sm font-black text-red-950 block">
+                  {match.status === 'live' ? 'Match is LIVE in progress' : 'Match is Scheduled'}
+                </span>
+                <span className="text-[10px] text-slate-500">
+                  Official PDF & Scorecard downloads unlock once the match is completed or abandoned.
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setQrOpen(true)}
+                className="btn btn-outline text-xs !py-1.5 !px-3 font-bold border-slate-300 text-slate-700 hover:bg-slate-50"
+              >
+                <QrCode className="h-3.5 w-3.5" /> Fan QR
+              </button>
+              <Link
+                to={`/matches/${id}`}
+                className="btn btn-green text-xs !py-1.5 !px-3.5 font-black bg-red-600 hover:bg-red-700 text-white shadow-2xs inline-flex items-center gap-1.5"
+              >
+                Go to Match →
+              </Link>
+            </div>
+          </div>
+        )}
 
         {/* QR Code Modal */}
         <QRCodeModal open={qrOpen} onClose={() => setQrOpen(false)} match={match} matchId={id} />

@@ -2,8 +2,15 @@ import mongoose from 'mongoose';
 
 export const BALL_TYPES = ['Leather Ball', 'Tennis Ball', 'Rubber Ball', 'Other'];
 
-export function generateTeamCode() {
+export function generateTeamCode(isGuest = false) {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  if (isGuest) {
+    let res = 'GST';
+    for (let i = 0; i < 3; i++) {
+      res += chars[Math.floor(Math.random() * chars.length)];
+    }
+    return res;
+  }
   let res = '';
   for (let i = 0; i < 6; i++) {
     res += chars[Math.floor(Math.random() * chars.length)];

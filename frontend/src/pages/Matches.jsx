@@ -277,11 +277,14 @@ export default function Matches() {
               const isLive = m.status === 'live';
               const isCompleted = m.status === 'completed';
               const isScheduled = m.status === 'scheduled';
+              const isAbandoned = m.status === 'abandoned';
 
               const borderAccent = isLive
                 ? 'border-2 border-red-500/90 bg-gradient-to-r from-red-50/50 via-white to-white shadow-xs'
                 : isCompleted
                 ? 'border border-slate-200/90 bg-white hover:border-emerald-300 shadow-2xs'
+                : isAbandoned
+                ? 'border border-slate-300 bg-slate-50/50 shadow-2xs'
                 : 'border border-slate-200/90 bg-white hover:border-blue-300 shadow-2xs';
 
               return (
@@ -342,8 +345,8 @@ export default function Matches() {
                             </Link>
                           )}
 
-                          {/* Completed match Scorecard PDF button */}
-                          {isCompleted && (
+                          {/* Completed or Abandoned match Scorecard PDF button */}
+                          {(isCompleted || isAbandoned) && (
                             <button
                               type="button"
                               onClick={() => nav(`/matches/${m.id}/scorecard`)}

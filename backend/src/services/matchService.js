@@ -117,7 +117,7 @@ export async function buildView(match, user) {
     const { state } = await loadState(match, inn);
     views.push(inningsView(inn, state, names));
   }
-  const scorecard = match.status === 'completed' ? await Scorecard.findOne({ match: match._id }).lean() : null;
+  const scorecard = (match.status === 'completed' || match.status === 'abandoned') ? await Scorecard.findOne({ match: match._id }).lean() : null;
   const tournamentDoc = match.tournament ? await Tournament.findById(match.tournament).select('name code format').lean() : null;
   const plain = match.toObject();
   const xiOut = (list) => list.map((p) => ({ id: sid(p.player), name: p.name, role: p.role, jerseyNumber: p.jerseyNumber, guest: !!p.guest }));
@@ -142,7 +142,7 @@ export async function buildView(match, user) {
       awayTeam: teamOut(match.awayTeam),
       toss: { winner: sid(match.toss.winner), decision: match.toss.decision },
       xi: { home: xiOut(match.xi.home), away: xiOut(match.xi.away) },
-      result: match.status === 'completed' ? { ...plain.result, winner: plain.result?.winner ? sid(plain.result.winner) : null } : null,
+      result: (match.status === 'completed' || match.status === 'abandoned') ? { ...plain.result, winner: plain.result?.winner ? sid(plain.result.winner) : null } : null,
       playerOfMatch: match.status === 'completed' && plain.playerOfMatch ? { ...plain.playerOfMatch, team: sid(plain.playerOfMatch.team) } : null,
       completedAt: match.completedAt,
       createdAt: match.createdAt,

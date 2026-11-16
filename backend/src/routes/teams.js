@@ -73,7 +73,7 @@ async function ensureTeamCode(teamDoc) {
   if (!teamDoc.code) {
     let code;
     while (!code || (await Team.exists({ code }))) {
-      code = generateTeamCode();
+      code = generateTeamCode(Boolean(teamDoc.isGuest));
     }
     teamDoc.code = code;
     await Team.updateOne({ _id: teamDoc._id }, { $set: { code } });
@@ -89,7 +89,8 @@ const teamOut = (t, extra = {}, user = null) => {
     user.role === 'admin' ||
     extra.canManage ||
     extra.isOwn ||
-    canManageTeam(user, t)
+    canManageTeam(user, t) ||
+    t.isGuest
   );
 
   return {
@@ -102,6 +103,7 @@ const teamOut = (t, extra = {}, user = null) => {
     ballType: t.ballType,
     createdAt: t.createdAt,
     createdBy: t.createdBy ? String(t.createdBy) : undefined,
+    isGuest: Boolean(t.isGuest),
     ...extra,
   };
 };
@@ -118,7 +120,10 @@ const playerOut = (p) => ({
 
 router.get('/', wrap(async (req, res) => {
   const { page, limit, skip } = pageParams(req.query);
-  const filter = { isGuest: { $ne: true } };
+  let filter = { isGuest: { $ne: true } };
+  if (req.query.isGuest === 'true') {
+    filter = { isGuest: true, createdBy: req.user._id };
+  }
   if (isViewer(req.user)) filter._id = req.user.viewTeam; // viewers see only their own team
   if (req.query.search) {
     const rx = new RegExp(escapeRegex(String(req.query.search)), 'i');
@@ -512,9 +517,11 @@ router.get('/:id/connections', wrap(async (req, res) => {
     if (c.status === 'accepted') {
       const opp = String(c.fromTeam?._id) === String(team._id) ? c.toTeam : c.fromTeam;
       if (opp) {
+        await ensureTeamCode(opp);
+        const playerCount = await Player.countDocuments({ team: opp._id });
         connected.push({
           connectionId: String(c._id),
-          team: teamOut(opp),
+          team: teamOut(opp, { playerCount, isGuest: Boolean(opp.isGuest) }, req.user),
           connectedAt: c.updatedAt,
         });
       }
@@ -523,7 +530,7 @@ router.get('/:id/connections', wrap(async (req, res) => {
         if (c.fromTeam) {
           incoming.push({
             connectionId: String(c._id),
-            fromTeam: teamOut(c.fromTeam),
+            fromTeam: teamOut(c.fromTeam, {}, req.user),
             createdAt: c.createdAt,
           });
         }
@@ -531,7 +538,7 @@ router.get('/:id/connections', wrap(async (req, res) => {
         if (c.toTeam) {
           outgoing.push({
             connectionId: String(c._id),
-            toTeam: teamOut(c.toTeam),
+            toTeam: teamOut(c.toTeam, {}, req.user),
             createdAt: c.createdAt,
           });
         }

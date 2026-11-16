@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -46,6 +46,15 @@ export default function TournamentDetail() {
   const [guestTeamName, setGuestTeamName] = useState('');
   const [guestTeamCity, setGuestTeamCity] = useState('');
   const [guestTeamContact, setGuestTeamContact] = useState('');
+
+  // Guest players list (11 players) - same pattern as CreateMatch.jsx
+  const [guestPlayers, setGuestPlayers] = useState(
+    Array.from({ length: 11 }, (_, i) => ({
+      name: `Player ${i + 1}`,
+      role: i < 4 ? 'batsman' : i < 6 ? 'allrounder' : 'bowler',
+    }))
+  );
+  const [showGuestPlayers, setShowGuestPlayers] = useState(false);
 
   // Edit Team modal
   const [editTeamOpen, setEditTeamOpen] = useState(false);
@@ -138,6 +147,10 @@ export default function TournamentDetail() {
           name: guestTeamName.trim(),
           location: guestTeamCity.trim(),
           contact: guestTeamContact.trim(),
+          players: guestPlayers.map((p, i) => ({
+            name: p.name.trim() || `Player ${i + 1}`,
+            role: p.role,
+          })),
         });
         if (res?.message) resMsg = res.message;
       }
@@ -145,6 +158,11 @@ export default function TournamentDetail() {
       setGuestTeamName('');
       setGuestTeamCity('');
       setGuestTeamContact('');
+      setGuestPlayers(Array.from({ length: 11 }, (_, i) => ({
+        name: `Player ${i + 1}`,
+        role: i < 4 ? 'batsman' : i < 6 ? 'allrounder' : 'bowler',
+      })));
+      setShowGuestPlayers(false);
       setAddTeamOpen(false);
       setActionSuccess(resMsg);
       setTimeout(() => setActionSuccess(''), 4000);
@@ -1493,6 +1511,7 @@ export default function TournamentDetail() {
           {/* GUEST TEAM TAB: for teams without app account */}
           {addTeamTab === 'guest' && (
             <form onSubmit={handleAddTeam} className="space-y-3 text-sm">
+              {/* Team Name */}
               <div>
                 <label className="label font-bold text-slate-700">அணி பெயர் *</label>
                 <input
@@ -1527,8 +1546,69 @@ export default function TournamentDetail() {
                   />
                 </div>
               </div>
+
+              {/* 11 Players Toggle Section */}
+              <div className="rounded-xl border border-amber-200 bg-amber-50/50 overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setShowGuestPlayers((v) => !v)}
+                  className="w-full flex items-center justify-between px-3 py-2.5 text-xs font-black text-amber-900 hover:bg-amber-100 transition"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <Users className="h-3.5 w-3.5 text-amber-700" />
+                    11 பேர் பெயர் போடு (வீரர் பட்டியல்)
+                  </span>
+                  <span className="text-amber-600 text-[10px] font-bold">
+                    {showGuestPlayers ? '▲ மூடு' : '▼ திற'}
+                  </span>
+                </button>
+
+                {showGuestPlayers && (
+                  <div className="px-3 pb-3 space-y-1.5 border-t border-amber-200">
+                    <p className="text-[10px] text-amber-700 font-medium pt-2">
+                      வீரர் பெயர் மாத்துக்கலாம் — default-ஆ Player 1–11 இருக்கும்.
+                    </p>
+                    <div className="space-y-1 max-h-56 overflow-y-auto pr-0.5">
+                      {guestPlayers.map((player, idx) => (
+                        <div key={idx} className="flex items-center gap-1.5 p-1 rounded-xl border border-amber-200 bg-white">
+                          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-amber-100 border border-amber-200 font-mono text-[9px] font-black text-amber-700">
+                            {idx + 1}
+                          </span>
+                          <input
+                            type="text"
+                            className="input !py-1 !px-2 flex-1 text-xs border-slate-200 font-medium bg-white"
+                            value={player.name}
+                            onChange={(e) => {
+                              const updated = [...guestPlayers];
+                              updated[idx] = { ...updated[idx], name: e.target.value };
+                              setGuestPlayers(updated);
+                            }}
+                            placeholder={`Player ${idx + 1}`}
+                            maxLength={40}
+                          />
+                          <select
+                            value={player.role}
+                            onChange={(e) => {
+                              const updated = [...guestPlayers];
+                              updated[idx] = { ...updated[idx], role: e.target.value };
+                              setGuestPlayers(updated);
+                            }}
+                            className="shrink-0 rounded-lg border border-slate-200 bg-white px-1.5 py-1 text-[10px] font-bold text-slate-700 focus:outline-none focus:border-amber-400"
+                          >
+                            <option value="batsman">🏏 Bat</option>
+                            <option value="bowler">⚾ Bowl</option>
+                            <option value="allrounder">⚡ All</option>
+                            <option value="wicketkeeper">🧤 WK</option>
+                          </select>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <p className="text-xs text-slate-500 bg-amber-50 border border-amber-200/60 p-2.5 rounded-xl">
-                💡 ஆப்பில் அக்கவுண்ட் இல்லாத அணிகளை இப்படி நேரடியாக சேர்க்கலாம். பிறகு பெயர் அல்லது விவரங்களை திருத்தலாம்.
+                💡 ஆப்பில் அக்கவுண்ட் இல்லாத அணிகளை இப்படி நேரடியாக சேர்க்கலாம். GST கோட் கிடைக்கும் — மேட்ச் உடனே நடத்தலாம்.
               </p>
               <div className="flex gap-2 justify-end pt-1">
                 <button type="button" onClick={() => setAddTeamOpen(false)} className="btn btn-outline flex-1 sm:flex-initial py-2.5">Cancel</button>

@@ -508,20 +508,42 @@ export default function Teams() {
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="font-extrabold text-blue-950 text-sm truncate">{opp.name}</span>
-                            <span className="badge bg-blue-600 text-white text-[9px] font-bold uppercase tracking-wider py-0.2 px-1.5 rounded shadow-2xs">
-                              Opponent
-                            </span>
+                            {opp.isGuest ? (
+                              <span className="badge bg-amber-500 text-white text-[9px] font-black uppercase tracking-wider py-0.2 px-1.5 rounded shadow-2xs">
+                                ⭐ Guest Opponent
+                              </span>
+                            ) : (
+                              <span className="badge bg-blue-600 text-white text-[9px] font-bold uppercase tracking-wider py-0.2 px-1.5 rounded shadow-2xs">
+                                Opponent
+                              </span>
+                            )}
                           </div>
                           <div className="text-[10px] text-slate-500 mt-0.5">
                             {opp.playerCount || 11} Players · {opp.ballType}{opp.location ? ` · ${opp.location}` : ''}
+                            {opp.isGuest && (
+                              <span className="text-amber-700 font-bold ml-1 block sm:inline">
+                                · Private Opponent for {myTeamData?.name || 'your team'}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </Link>
 
-                      {opp.code && canSeeCode && (
-                        <span className="font-mono text-[11px] font-bold bg-blue-100/80 text-blue-900 border border-blue-200 px-2 py-0.5 rounded-lg shrink-0">
-                          {opp.code}
-                        </span>
+                      {opp.code && (
+                        <div className="text-right shrink-0">
+                          <span className={`font-mono text-[11px] font-black px-2 py-0.5 rounded-lg border ${
+                            opp.isGuest
+                              ? 'bg-amber-100 text-amber-950 border-amber-300'
+                              : 'bg-blue-100/80 text-blue-900 border-blue-200'
+                          }`}>
+                            {opp.code}
+                          </span>
+                          {opp.isGuest && (
+                            <span className="block text-[8.5px] text-amber-700 font-black uppercase tracking-wider mt-0.5">
+                              Guest Code
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
 
