@@ -137,40 +137,6 @@ function UserHomeView({ data, user, myTeam, t, isViewer }) {
 
   return (
     <div className="space-y-3.5 sm:space-y-4">
-      {/* 🔴 Active Live Match Banner (Top Priority for Quick Scoring) */}
-      {liveMatch && (
-        <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-red-600 via-rose-600 to-red-700 p-3.5 sm:p-4 text-white shadow-md border border-red-400/40">
-          <div className="pointer-events-none absolute -right-6 -bottom-6 h-24 w-24 rounded-full bg-white/10 blur-xl" />
-
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="space-y-1">
-              <div className="flex items-center gap-1.5">
-                <span className="relative flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white"></span>
-                </span>
-                <span className="text-[10.5px] font-black uppercase tracking-wider text-red-100 flex items-center gap-1">
-                  <span>LIVE MATCH IN PROGRESS</span>
-                </span>
-              </div>
-              <h3 className="text-base sm:text-lg font-black tracking-tight">{liveMatch.name}</h3>
-              <p className="text-xs text-red-100 font-medium">
-                {liveMatch.homeTeam?.name} vs {liveMatch.awayTeam?.name} · {liveMatch.format || 'Standard'}
-              </p>
-            </div>
-
-            <Link
-              to={`/matches/${liveMatch.id}`}
-              className="btn bg-white text-red-700 hover:bg-red-50 font-black text-xs sm:text-sm !py-2 !px-4 rounded-xl shadow-md flex items-center justify-center gap-1.5 shrink-0 self-stretch sm:self-auto"
-            >
-              <Radio className="h-4 w-4 text-red-600 animate-pulse" />
-              <span>{isViewer ? 'Watch Live Score' : 'Update Live Score'}</span>
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-        </section>
-      )}
-
       {/* 🛡️ My Team Showcase Banner */}
       {myTeam ? (
         <section className="rounded-2xl bg-gradient-to-br from-navy-950 via-navy-900 to-navy-850 p-3.5 sm:p-4 text-white shadow-md border border-navy-700/60 relative overflow-hidden">
@@ -225,15 +191,37 @@ function UserHomeView({ data, user, myTeam, t, isViewer }) {
               >
                 <Users className="h-3.5 w-3.5 text-slate-300" /> Squad
               </Link>
-              {!isViewer && data.can?.createMatch && (
-                <Link
-                  to="/matches/new"
-                  className="relative inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 px-4 py-1.5 text-xs font-black text-white shadow-md shadow-emerald-900/40 transition-all hover:scale-105 active:scale-95 overflow-hidden"
-                >
-                  <span className="absolute inset-0 bg-white/10 opacity-0 hover:opacity-100 transition" />
-                  <Zap className="h-3.5 w-3.5 drop-shadow" />
-                  <span>Start Match</span>
-                </Link>
+              {!isViewer && (
+                liveMatch ? (
+                  <div className="flex items-center gap-1.5">
+                    <Link
+                      to={`/matches/${liveMatch.id}`}
+                      className="relative inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 px-3.5 py-1.5 text-xs font-black text-white shadow-md shadow-red-900/40 transition-all hover:scale-105 active:scale-95 overflow-hidden"
+                    >
+                      <Radio className="h-3.5 w-3.5 animate-pulse text-white" />
+                      <span>Update Match</span>
+                    </Link>
+                    {data.can?.createMatch && (
+                      <Link
+                        to="/matches/new"
+                        className="inline-flex items-center gap-1 rounded-xl bg-white/10 hover:bg-white/20 px-2.5 py-1.5 text-xs font-bold text-slate-200 border border-white/10 transition"
+                        title="Start another match"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        <span>New Match</span>
+                      </Link>
+                    )}
+                  </div>
+                ) : data.can?.createMatch ? (
+                  <Link
+                    to="/matches/new"
+                    className="relative inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 px-4 py-1.5 text-xs font-black text-white shadow-md shadow-emerald-900/40 transition-all hover:scale-105 active:scale-95 overflow-hidden"
+                  >
+                    <span className="absolute inset-0 bg-white/10 opacity-0 hover:opacity-100 transition" />
+                    <Zap className="h-3.5 w-3.5 drop-shadow" />
+                    <span>Start Match</span>
+                  </Link>
+                ) : null
               )}
             </div>
           </div>
@@ -256,20 +244,41 @@ function UserHomeView({ data, user, myTeam, t, isViewer }) {
 
       {/* 🚀 Quick Action Shortcuts Dock (Mobile-First 4 Pills) */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-        {!isViewer && data.can?.createMatch && (
-          <Link
-            to="/matches/new"
-            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-700 p-3 flex flex-col gap-2 shadow-md shadow-emerald-900/30 hover:shadow-lg hover:shadow-emerald-900/40 hover:scale-[1.02] transition-all active:scale-95 border border-emerald-400/30"
-          >
-            <div className="pointer-events-none absolute -right-3 -bottom-3 h-14 w-14 rounded-full bg-white/10 blur-lg" />
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 text-white shadow-xs">
-              <Zap className="h-5 w-5 drop-shadow" />
-            </div>
-            <div>
-              <div className="text-sm font-black text-white leading-tight">Start Match</div>
-              <div className="text-[10px] text-emerald-100 font-medium">Live Scoring</div>
-            </div>
-          </Link>
+        {!isViewer && (
+          liveMatch ? (
+            <Link
+              to={`/matches/${liveMatch.id}`}
+              className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-red-600 via-rose-600 to-red-700 p-3 flex flex-col gap-2 shadow-md shadow-red-900/30 hover:shadow-lg hover:shadow-red-900/40 hover:scale-[1.02] transition-all active:scale-95 border border-red-400/30"
+            >
+              <div className="pointer-events-none absolute -right-3 -bottom-3 h-14 w-14 rounded-full bg-white/10 blur-lg" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 text-white shadow-xs">
+                <Radio className="h-5 w-5 animate-pulse" />
+              </div>
+              <div>
+                <div className="text-sm font-black text-white leading-tight flex items-center gap-1.5">
+                  <span>Update Match</span>
+                  <span className="h-2 w-2 rounded-full bg-white animate-ping" />
+                </div>
+                <div className="text-[10px] text-red-100 font-medium truncate mt-0.5">
+                  {liveMatch.name || 'Live Match in Progress'}
+                </div>
+              </div>
+            </Link>
+          ) : data.can?.createMatch ? (
+            <Link
+              to="/matches/new"
+              className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-700 p-3 flex flex-col gap-2 shadow-md shadow-emerald-900/30 hover:shadow-lg hover:shadow-emerald-900/40 hover:scale-[1.02] transition-all active:scale-95 border border-emerald-400/30"
+            >
+              <div className="pointer-events-none absolute -right-3 -bottom-3 h-14 w-14 rounded-full bg-white/10 blur-lg" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 text-white shadow-xs">
+                <Zap className="h-5 w-5 drop-shadow" />
+              </div>
+              <div>
+                <div className="text-sm font-black text-white leading-tight">Start Match</div>
+                <div className="text-[10px] text-emerald-100 font-medium">Live Scoring</div>
+              </div>
+            </Link>
+          ) : null
         )}
 
         {myTeam && (

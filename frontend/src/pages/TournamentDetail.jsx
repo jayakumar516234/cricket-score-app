@@ -669,7 +669,7 @@ export default function TournamentDetail() {
                       to={`/matches/${m.id}`}
                       className="flex-1 text-center rounded-xl bg-emerald-400 hover:bg-emerald-300 text-emerald-900 font-black text-xs py-2 transition"
                     >
-                      {m.canManage ? '🏏 Score Match' : '👁 Watch Live'}
+                      {m.canManage ? '🏏 Update Match' : '👁 Watch Live'}
                     </Link>
                     <Link
                       to={`/matches/${m.id}/scorecard`}
@@ -903,7 +903,7 @@ export default function TournamentDetail() {
                         }`}
                       >
                         {m.status === 'live'
-                          ? (m.canManage ? '🏏 Score Match' : '🔴 Watch Live')
+                          ? (m.canManage ? '🏏 Update Match' : '🔴 Watch Live')
                           : m.canManage
                           ? (m.status === 'completed' ? 'View Details' : '▶ Start Scoring')
                           : 'View Match'}

@@ -151,6 +151,8 @@ export default function Matches() {
     { value: 'completed', label: 'Completed' },
   ];
 
+  const currentLiveMatch = (data?.items || []).find((m) => m.status === 'live');
+
   return (
     <div className="space-y-3 sm:space-y-4">
       {/* ─── Header bar ─── */}
@@ -165,14 +167,30 @@ export default function Matches() {
           </p>
         </div>
 
-        {data?.canCreate && (
-          <Link
-            to="/matches/new"
-            className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-xs text-xs !py-1.5 !px-3 inline-flex items-center gap-1"
-          >
-            <Plus className="h-3.5 w-3.5" /> Start Match
-          </Link>
-        )}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {currentLiveMatch && (
+            <Link
+              to={`/matches/${currentLiveMatch.id}`}
+              className="btn bg-red-600 hover:bg-red-700 text-white font-black shadow-xs text-xs !py-1.5 !px-3 inline-flex items-center gap-1.5 rounded-xl"
+            >
+              <Radio className="h-3.5 w-3.5 animate-pulse text-white" />
+              <span>Update Match</span>
+            </Link>
+          )}
+          {data?.canCreate && (
+            <Link
+              to="/matches/new"
+              className={`btn font-bold shadow-xs text-xs !py-1.5 !px-3 inline-flex items-center gap-1 rounded-xl ${
+                currentLiveMatch
+                  ? 'btn-outline border-slate-300 text-slate-700 hover:bg-slate-50'
+                  : 'btn-green bg-emerald-600 hover:bg-emerald-700 text-white'
+              }`}
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>{currentLiveMatch ? 'New Match' : 'Start Match'}</span>
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* ─── Quick Status Filter Pills (1-Tap Switching) ─── */}
@@ -341,7 +359,7 @@ export default function Matches() {
                               className="btn btn-green min-h-[38px] text-xs sm:text-sm !py-2 !px-3.5 font-black bg-red-600 hover:bg-red-700 text-white shadow-2xs flex items-center gap-1.5 rounded-xl"
                             >
                               <Radio className="h-4 w-4 animate-pulse text-white" />
-                              <span>Live Scoring</span>
+                              <span>Update Match</span>
                             </Link>
                           )}
 
