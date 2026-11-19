@@ -9,10 +9,8 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useFetch } from '../useFetch.js';
 import {
   ConfirmDialog, Empty, ErrorBox, Pagination, Spinner, SkeletonList,
-  SkeletonTeamsPage, TeamLogo, DropdownSelect
+  SkeletonTeamsPage, TeamLogo
 } from '../components/ui.jsx';
-
-const BALLS = ['Leather Ball', 'Tennis Ball', 'Rubber Ball', 'Other'];
 
 export default function Teams() {
   const nav = useNavigate();
@@ -25,7 +23,6 @@ export default function Teams() {
 
   const [search, setSearch] = useState('');
   const [q, setQ] = useState('');
-  const [ball, setBall] = useState('');
   const [page, setPage] = useState(1);
   const [del, setDel] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -56,7 +53,7 @@ export default function Teams() {
     }
   }, [searchParams, setSearchParams]);
 
-  const { data, error, loading, reload } = useFetch(`/teams${qs({ search: q, ballType: ball, page, limit: 8 })}`);
+  const { data, error, loading, reload } = useFetch(`/teams${qs({ search: q, page, limit: 8 })}`);
 
   // Fetch connections for user's team if they have one
   const myTeamId = data?.myTeam?.id;
@@ -277,26 +274,16 @@ export default function Teams() {
         </div>
       )}
 
-      {/* ─── Search & Ball Filter Bar (Directly below Add Opponent / Edit Squad) ─── */}
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" aria-hidden />
-          <input
-            className="input !pl-9 text-xs sm:text-sm"
-            placeholder="Search teams by name or location..."
-            aria-label="Search teams"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-        <div className="sm:w-44">
-          <DropdownSelect
-            value={ball}
-            onChange={(v) => { setBall(v); setPage(1); }}
-            options={BALLS.map((b) => ({ value: b, label: b }))}
-            placeholder="All ball types"
-          />
-        </div>
+      {/* ─── Search Bar (Directly below Add Opponent / Edit Squad) ─── */}
+      <div className="relative">
+        <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" aria-hidden />
+        <input
+          className="input !pl-9 text-xs sm:text-sm"
+          placeholder="Search teams by name or location..."
+          aria-label="Search teams"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
       </div>
 
       {/* ─── Teams List (Logged-in User's Team First in Green, Opponents below) ─── */}
@@ -307,9 +294,9 @@ export default function Teams() {
       ) : (data?.items || []).length === 0 ? (
         <Empty
           icon={Shield}
-          title={q || ball ? 'No teams match your search' : 'No teams yet'}
-          text={q || ball ? 'Try a different name or ball filter.' : 'Create a team with 11 players to get started.'}
-          action={!q && !ball && data?.canCreate && <Link to="/teams/new" className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md">Create Team</Link>}
+          title={q ? 'No teams match your search' : 'No teams yet'}
+          text={q ? 'Try a different name or location.' : 'Create a team with 11 players to get started.'}
+          action={!q && data?.canCreate && <Link to="/teams/new" className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md">Create Team</Link>}
         />
       ) : (
         <>
@@ -429,14 +416,17 @@ export default function Teams() {
                           >
                             <Pencil className="h-3 w-3 mr-1" /> Edit
                           </button>
-                          <button
-                            className="btn btn-ghost !p-1.5 text-red-600 hover:bg-red-50 rounded-lg"
-                            onClick={() => setDel(t)}
-                            aria-label={`Delete ${t.name}`}
-                            title="Delete Team"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
+                          {/* Only superadmin can delete other teams; your team delete is disabled */}
+                          {isSuper && !t.isOwn && (
+                            <button
+                              className="btn btn-ghost !p-1.5 text-red-600 hover:bg-red-50 rounded-lg"
+                              onClick={() => setDel(t)}
+                              aria-label={`Delete ${t.name}`}
+                              title="Delete Team"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
