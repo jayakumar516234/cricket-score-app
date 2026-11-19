@@ -10,6 +10,7 @@ import {
   BarChart3,
   Check,
   Copy,
+  Share2,
   Trophy,
   KeyRound,
   ShieldCheck,
@@ -73,7 +74,6 @@ export default function TeamDetail() {
                   {copied ? 'Copied!' : 'Copy'}
                 </button>
               </div>
-              <div className="mt-1 text-[11px] text-pitch-600">Give this code to tournament organizers or opponents to connect</div>
             </div>
           )}
         </div>
@@ -334,24 +334,15 @@ function PlayerStats({ teamId, teamName, teamLogo }) {
   );
 }
 
-// Team Credentials Manager (Manages both View-only login and Team Admin login)
+// Team Credentials & Share Manager
 function TeamCredentialsManager({ team }) {
   const { user } = useAuth();
-  const [credTab, setCredTab] = useState('viewer'); // 'viewer' or 'admin'
+  const [credTab, setCredTab] = useState('share'); // 'share' or 'admin'
   const { data, loading, error, reload } = useFetch(`/teams/${team.id}/viewer`);
 
-  // Viewer login form states
-  const [vUsername, setVUsername] = useState('');
-  const [vPassword, setVPassword] = useState('');
-  const [vPhone, setVPhone] = useState('');
-  const [showVPassword, setShowVPassword] = useState(false);
-  const [vBusy, setVBusy] = useState(false);
-  const [vMsg, setVMsg] = useState('');
-  const [vErr, setVErr] = useState('');
-  const [removeOpen, setRemoveOpen] = useState(false);
   const [vCopied, setVCopied] = useState(false);
 
-  // Team Admin login form states
+  // Team Admin form states
   const [adminModal, setAdminModal] = useState(false);
   const [aName, setAName] = useState('');
   const [aUsername, setAUsername] = useState('');
@@ -362,77 +353,23 @@ function TeamCredentialsManager({ team }) {
   const [aMsg, setAMsg] = useState('');
   const [aErr, setAErr] = useState('');
 
-  const viewer = data?.viewer;
   const teamAdmin = data?.teamAdmin;
-
   const isSuperOrAdmin = user?.role === 'superadmin' || user?.role === 'admin';
   const isTeamOwner = !!user?._id && !!team?.createdBy && String(user._id) === String(team.createdBy);
   const canEditTeamAdmin = isSuperOrAdmin || isTeamOwner;
 
-  // Initialize viewer fields when data arrives
-  useEffect(() => {
-    if (data?.viewer) {
-      setVUsername(data.viewer.username);
-      setVPhone(data.viewer.phone || '');
-    } else if (data && !data.viewer) {
-      setVUsername(`${slug(team?.name || '')}_view`);
-    }
-  }, [data, team?.name]);
+  const viewCode = team.code || team.id;
+  const viewUrl = `${window.location.origin}/view/${viewCode}`;
 
-  const saveViewer = async (e, extra = {}) => {
-    e?.preventDefault();
-    setVErr('');
-    setVMsg('');
-    if (!vUsername.trim() || vUsername.trim().length < 3) {
-      return setVErr('Enter a valid username (3+ letters or numbers)');
-    }
-    if (!viewer && (!vPassword || vPassword.length < 4)) {
-      return setVErr('Enter a password (at least 4 characters)');
-    }
-    if (viewer && vPassword && vPassword.length < 4) {
-      return setVErr('New password must be at least 4 characters');
-    }
-
-    setVBusy(true);
-    try {
-      await api(`/teams/${team.id}/viewer`, {
-        method: 'PUT',
-        body: {
-          username: vUsername.trim().toLowerCase(),
-          phone: vPhone.trim() || undefined,
-          ...(vPassword ? { password: vPassword } : {}),
-          ...extra,
-        },
-      });
-      setVMsg(
-        viewer
-          ? vPassword
-            ? 'Viewer credentials and password updated successfully.'
-            : 'Viewer credentials updated.'
-          : `View login created! Username: ${vUsername.trim().toLowerCase()}, Password: ${vPassword}`
-      );
-      setVPassword('');
-      reload();
-    } catch (x) {
-      setVErr(x.message);
-    } finally {
-      setVBusy(false);
-    }
+  const copyViewLink = () => {
+    navigator.clipboard?.writeText(viewUrl);
+    setVCopied(true);
+    setTimeout(() => setVCopied(false), 2000);
   };
 
-  const removeViewer = async () => {
-    setVBusy(true);
-    try {
-      await api(`/teams/${team.id}/viewer`, { method: 'DELETE' });
-      setRemoveOpen(false);
-      setVMsg('');
-      reload();
-    } catch (x) {
-      setVErr(x.message);
-      setRemoveOpen(false);
-    } finally {
-      setVBusy(false);
-    }
+  const shareWhatsApp = () => {
+    const text = `🏏 Follow *${team.name}* live scores, squad and match stats!\n\n👉 Open view link:\n${viewUrl}`;
+    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
   };
 
   const openAdminEdit = () => {
@@ -467,7 +404,7 @@ function TeamCredentialsManager({ team }) {
         },
       });
       setAdminModal(false);
-      setAMsg('Team Admin login credentials updated successfully!');
+      setAMsg('Admin credentials updated successfully');
       reload();
     } catch (err) {
       setAErr(err.message);
@@ -476,220 +413,99 @@ function TeamCredentialsManager({ team }) {
     }
   };
 
-  const copyViewerCreds = () => {
-    const credText = `Team: ${team.name}\nViewer Login Username: ${viewer?.username || vUsername}\nPassword: ${vPassword || '(Use your configured password)'}`;
-    navigator.clipboard?.writeText(credText);
-    setVCopied(true);
-    setTimeout(() => setVCopied(false), 2000);
-  };
-
   return (
-    <section className="card p-4 sm:p-5 border border-slate-200/80 shadow-xs space-y-4">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 border border-blue-200">
-            <KeyRound className="h-5 w-5" />
-          </div>
-          <div>
-            <h2 className="font-bold text-slate-900 text-base">Team Logins & Access Credentials</h2>
-            <p className="text-xs text-slate-500">Manage usernames and passwords for this team's admin and view-only accounts.</p>
-          </div>
-        </div>
-
-        {/* Tab switch between Viewer and Team Admin */}
-        <div className="flex rounded-lg bg-slate-100 p-1 self-start sm:self-auto text-xs font-semibold">
+    <section className="card p-3.5 sm:p-4 border border-slate-200/80 shadow-xs space-y-3">
+      {/* Tab Switcher: Share Link / Admin Login */}
+      <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+        <div className="flex rounded-lg bg-slate-100 p-1 text-xs font-semibold">
           <button
             type="button"
-            onClick={() => setCredTab('viewer')}
-            className={`rounded-md px-3 py-1.5 transition ${credTab === 'viewer' ? 'bg-white text-slate-900 shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900'}`}
+            onClick={() => setCredTab('share')}
+            className={`rounded-md px-3 py-1.5 transition ${credTab === 'share' ? 'bg-white text-slate-900 shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900'}`}
           >
-            👁️ Viewer Login
+            🔗 Viewer Share Link
           </button>
           <button
             type="button"
             onClick={() => setCredTab('admin')}
             className={`rounded-md px-3 py-1.5 transition ${credTab === 'admin' ? 'bg-white text-slate-900 shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900'}`}
           >
-            🛡️ Team Admin Login
+            🛡️ Admin Login
           </button>
         </div>
       </div>
 
       {loading && !data ? (
-        <SkeletonList count={5} />
+        <SkeletonList count={2} />
       ) : error ? (
         <ErrorBox message={error} onRetry={reload} />
-      ) : credTab === 'viewer' ? (
-        /* Viewer Login Section */
-        <div className="space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">View-Only Account</span>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Share this login with your players or fans. They can view live scores, squad and match stats, but cannot change anything.
-              </p>
-            </div>
-            {viewer && (
-              <span className={`badge shrink-0 self-start sm:self-auto ${viewer.active ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-600'}`}>
-                {viewer.active ? 'Active' : 'Switched off'}
-              </span>
-            )}
-          </div>
-
-          <form onSubmit={saveViewer} className="space-y-3" noValidate>
-            <ErrorBox message={vErr} />
-            {vMsg && <p className="rounded-lg bg-green-50 p-3 text-xs sm:text-sm text-green-800 font-medium" role="status">{vMsg}</p>}
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="Viewer Username" htmlFor="v-user" hint="Can be edited anytime">
-                <input
-                  id="v-user"
-                  autoCapitalize="none"
-                  autoCorrect="off"
-                  className="input font-mono"
-                  value={vUsername}
-                  onChange={(e) => setVUsername(e.target.value)}
-                />
-              </Field>
-
-              <Field
-                label={viewer ? 'New Password (or leave blank)' : 'Password'}
-                htmlFor="v-pass"
-                hint="Minimum 4 characters"
+      ) : credTab === 'share' ? (
+        /* Viewer Share Link Section */
+        <div className="space-y-2">
+          <label className="text-xs font-bold text-slate-700">Viewer Share Link</label>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              readOnly
+              value={viewUrl}
+              onClick={(e) => e.target.select()}
+              className="input font-mono text-xs flex-1 bg-slate-50 cursor-pointer"
+            />
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={copyViewLink}
+                className="btn btn-outline text-xs !py-2 !px-3 font-bold flex-1 sm:flex-none justify-center"
               >
-                <div className="relative">
-                  <input
-                    id="v-pass"
-                    type={showVPassword ? 'text' : 'password'}
-                    autoComplete="off"
-                    className="input pr-10"
-                    placeholder={viewer ? '•••••••• (leave blank to keep)' : 'Enter password'}
-                    value={vPassword}
-                    onChange={(e) => setVPassword(e.target.value)}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowVPassword(!showVPassword)}
-                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
-                    title={showVPassword ? 'Hide password' : 'Show password'}
-                  >
-                    {showVPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </Field>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2 pt-1">
-              <button className="btn btn-primary font-bold" disabled={vBusy}>
-                {vBusy && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-                {viewer ? 'Save Viewer Changes' : 'Create Viewer Login'}
+                {vCopied ? <Check className="h-4 w-4 text-emerald-600 mr-1" /> : <Copy className="h-4 w-4 mr-1 text-slate-500" />}
+                {vCopied ? 'Copied!' : 'Copy Link'}
               </button>
-
-              {viewer && (
-                <>
-                  <button
-                    type="button"
-                    className="btn btn-outline"
-                    disabled={vBusy}
-                    onClick={() => saveViewer(null, { active: !viewer.active })}
-                  >
-                    {viewer.active ? 'Switch Off' : 'Switch On'}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-outline"
-                    onClick={copyViewerCreds}
-                    title="Copy viewer credentials"
-                  >
-                    {vCopied ? <Check className="h-4 w-4 text-emerald-600 mr-1" /> : <Copy className="h-4 w-4 mr-1" />}
-                    {vCopied ? 'Copied!' : 'Copy Login'}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-ghost text-red-600 hover:bg-red-50"
-                    disabled={vBusy}
-                    onClick={() => setRemoveOpen(true)}
-                  >
-                    Remove Login
-                  </button>
-                </>
-              )}
+              <button
+                type="button"
+                onClick={shareWhatsApp}
+                className="btn bg-[#25D366] hover:bg-[#20ba59] text-white text-xs !py-2 !px-3 font-bold flex-1 sm:flex-none justify-center"
+              >
+                <Share2 className="h-4 w-4 mr-1" />
+                WhatsApp
+              </button>
             </div>
-          </form>
-
-          <ConfirmDialog
-            open={removeOpen}
-            danger
-            title="Remove Viewer Login?"
-            confirmLabel="Remove Login"
-            busy={vBusy}
-            onCancel={() => setRemoveOpen(false)}
-            onConfirm={removeViewer}
-            message="Anyone using this username and password will lose access. You can create a new view login later."
-          />
+          </div>
         </div>
       ) : (
         /* Team Admin Login Section */
         <div className="space-y-3">
-          <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Team Admin / Scorer Account</span>
-            <p className="text-xs text-slate-500 mt-0.5">
-              The manager/owner of this team. Can add players, schedule matches, update ball-by-ball score, and manage opponents.
-            </p>
-          </div>
-
-          {aMsg && <p className="rounded-lg bg-green-50 p-3 text-xs sm:text-sm text-green-800 font-medium" role="status">{aMsg}</p>}
+          {aMsg && <p className="rounded-lg bg-green-50 p-2.5 text-xs text-green-800 font-medium">{aMsg}</p>}
 
           {teamAdmin ? (
-            <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100 font-black text-blue-700 text-sm">
-                    {(teamAdmin.name || '?').slice(0, 2).toUpperCase()}
-                  </div>
-                  <div>
-                    <div className="font-bold text-slate-900 text-sm">{teamAdmin.name}</div>
-                    <div className="text-xs font-mono text-slate-500">@{teamAdmin.username}</div>
-                  </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-100 font-bold text-blue-700 text-xs">
+                  {(teamAdmin.name || '?').slice(0, 2).toUpperCase()}
                 </div>
-
-                <div className="flex items-center gap-2">
-                  <span className={`badge text-[11px] font-bold ${teamAdmin.active ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-600'}`}>
-                    {teamAdmin.active ? 'Active' : 'Disabled'}
-                  </span>
-                  {canEditTeamAdmin && (
-                    <button
-                      type="button"
-                      onClick={openAdminEdit}
-                      className="btn btn-outline text-xs !py-1.5 !px-3 font-bold"
-                    >
-                      <Pencil className="h-3.5 w-3.5 mr-1" /> Edit Credentials / Password
-                    </button>
-                  )}
+                <div>
+                  <div className="font-bold text-slate-900 text-sm">{teamAdmin.name}</div>
+                  <div className="text-xs font-mono text-slate-500">@{teamAdmin.username} {teamAdmin.phone ? `· ${teamAdmin.phone}` : ''}</div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-slate-200/60 text-slate-600">
-                <div>
-                  <span className="text-slate-400 block text-[10px] uppercase font-bold">Phone Number</span>
-                  <span className="font-medium text-slate-900">{teamAdmin.phone || 'Not provided'}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[10px] uppercase font-bold">Last Activity</span>
-                  <span className="font-medium text-slate-900">{teamAdmin.lastActiveAt ? timeAgo(teamAdmin.lastActiveAt) : 'Never'}</span>
-                </div>
-              </div>
+              {canEditTeamAdmin && (
+                <button
+                  type="button"
+                  onClick={openAdminEdit}
+                  className="btn btn-outline text-xs !py-1.5 !px-3 font-bold self-start sm:self-auto"
+                >
+                  <Pencil className="h-3.5 w-3.5 mr-1" /> Edit Admin Credentials
+                </button>
+              )}
             </div>
           ) : (
-            <div className="rounded-xl border border-dashed border-slate-300 p-4 text-center text-xs text-slate-500">
-              No Team Admin assigned directly. This team is managed by the system administrator.
+            <div className="rounded-xl border border-dashed border-slate-300 p-3 text-center text-xs text-slate-500">
+              No Team Admin assigned.
             </div>
           )}
 
           {/* Edit Team Admin Modal */}
-          <Modal open={adminModal} onClose={() => setAdminModal(false)} title={`Edit Team Admin for ${team.name}`}>
-            <form onSubmit={saveAdminCredentials} className="space-y-4" noValidate>
+          <Modal open={adminModal} onClose={() => setAdminModal(false)} title={`Edit Admin - ${team.name}`}>
+            <form onSubmit={saveAdminCredentials} className="space-y-3" noValidate>
               <ErrorBox message={aErr} />
 
               <Field label="Full Name" required htmlFor="ta-name">
@@ -702,7 +518,7 @@ function TeamCredentialsManager({ team }) {
               </Field>
 
               <div className="grid gap-3 sm:grid-cols-2">
-                <Field label="Username" required htmlFor="ta-user" hint="For login">
+                <Field label="Username" required htmlFor="ta-user">
                   <input
                     id="ta-user"
                     autoCapitalize="none"
@@ -713,7 +529,7 @@ function TeamCredentialsManager({ team }) {
                   />
                 </Field>
 
-                <Field label="Mobile Phone" htmlFor="ta-phone" hint="10-digit number">
+                <Field label="Mobile Phone" htmlFor="ta-phone">
                   <input
                     id="ta-phone"
                     type="tel"
@@ -724,11 +540,7 @@ function TeamCredentialsManager({ team }) {
                 </Field>
               </div>
 
-              <Field
-                label="New Password (leave blank to keep current)"
-                htmlFor="ta-pass"
-                hint="Minimum 4 characters"
-              >
+              <Field label="New Password (optional)" htmlFor="ta-pass">
                 <div className="relative">
                   <input
                     id="ta-pass"
@@ -743,7 +555,6 @@ function TeamCredentialsManager({ team }) {
                     type="button"
                     onClick={() => setShowAPassword(!showAPassword)}
                     className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
-                    title={showAPassword ? 'Hide password' : 'Show password'}
                   >
                     {showAPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -755,7 +566,7 @@ function TeamCredentialsManager({ team }) {
                   Cancel
                 </button>
                 <button className="btn btn-primary font-bold" disabled={aBusy}>
-                  {aBusy ? 'Saving...' : 'Save Admin Credentials'}
+                  {aBusy ? 'Saving...' : 'Save Credentials'}
                 </button>
               </div>
             </form>

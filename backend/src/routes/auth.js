@@ -3,7 +3,9 @@ import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
+import mongoose from 'mongoose';
 import { User } from '../models/User.js';
+import { Team } from '../models/Team.js';
 import { requireAuth, signToken, publicUser } from '../middleware/auth.js';
 import { HttpError, parse, wrap } from '../utils/http.js';
 import { normalizePhone, isValidPhone, USERNAME_RE } from '../utils/identity.js';
@@ -75,6 +77,51 @@ router.post('/register', limiter, wrap(async (req, res) => {
   const sessionToken = crypto.randomBytes(16).toString('hex');
   const user = await User.create({ name: data.name, username: data.username, phone: data.phone, passwordHash: await bcrypt.hash(data.password, 10), role: 'user', sessionToken });
   res.status(201).json({ token: signToken(user, sessionToken), user: publicUser(user) });
+}));
+
+// Direct view access via team code or team ID (auto-logs in as viewer for that team)
+router.get('/view-access/:code', wrap(async (req, res) => {
+  const rawCode = (req.params.code || '').trim();
+  if (!rawCode) throw new HttpError(400, 'Team code is required');
+
+  const or = [{ code: rawCode.toUpperCase() }];
+  if (mongoose.Types.ObjectId.isValid(rawCode)) {
+    or.push({ _id: rawCode });
+  }
+  const team = await Team.findOne({ $or: or });
+  if (!team) throw new HttpError(404, 'Team not found');
+
+  // Find or automatically create a viewer user for this team
+  let viewer = await User.findOne({ viewTeam: team._id, role: 'viewer' });
+  if (!viewer) {
+    const cleanName = team.name.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 18);
+    const baseUser = `${cleanName || 'team'}_view`;
+    let username = baseUser;
+    let counter = 1;
+    while (await User.exists({ username })) {
+      username = `${baseUser}${counter++}`;
+    }
+    viewer = await User.create({
+      name: `${team.name} Viewer`,
+      username,
+      role: 'viewer',
+      viewTeam: team._id,
+      passwordHash: await bcrypt.hash(crypto.randomBytes(8).toString('hex'), 10),
+      active: true,
+    });
+  } else if (!viewer.active) {
+    viewer.active = true;
+    await viewer.save();
+  }
+
+  const token = signToken(viewer, '');
+  res.json({
+    token,
+    user: publicUser(viewer),
+    teamId: String(team._id),
+    teamName: team.name,
+    teamCode: team.code,
+  });
 }));
 
 router.get('/me', requireAuth, (req, res) => res.json({ user: publicUser(req.user) }));

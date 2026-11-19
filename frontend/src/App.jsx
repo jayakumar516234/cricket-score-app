@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { api } from './api.js';
 import { useAuth } from './context/AuthContext.jsx';
 import Layout from './components/Layout.jsx';
 import CricketAppLoader from './components/CricketAppLoader.jsx';
@@ -35,6 +36,45 @@ function Protected({ children, superOnly, adminOnly, noViewer }) {
   return children;
 }
 
+function ViewTeamRedirect() {
+  const { code } = useParams();
+  const { user, loginWithToken } = useAuth();
+  const navigate = useNavigate();
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let cancel = false;
+    api(`/auth/view-access/${code}`)
+      .then((res) => {
+        if (cancel) return;
+        if (user && (user.role === 'superadmin' || user.role === 'admin' || (user.role === 'teamadmin' && String(user.viewTeam) === String(res.teamId)))) {
+          navigate(`/teams/${res.teamId}`, { replace: true });
+          return;
+        }
+        loginWithToken(res.token, res.user);
+        navigate(`/teams/${res.teamId}`, { replace: true });
+      })
+      .catch((err) => {
+        if (!cancel) setError(err.message || 'Unable to open view link');
+      });
+    return () => { cancel = true; };
+  }, [code, user, loginWithToken, navigate]);
+
+  if (error) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center p-4 bg-slate-900 text-white">
+        <div className="max-w-md w-full bg-slate-800 rounded-2xl p-6 text-center border border-slate-700 space-y-4">
+          <div className="text-red-400 font-bold text-lg">Unable to View Team</div>
+          <p className="text-sm text-slate-300">{error}</p>
+          <button onClick={() => navigate('/login')} className="btn btn-primary w-full">Go to Login</button>
+        </div>
+      </div>
+    );
+  }
+
+  return <CricketAppLoader text="Opening Team View..." />;
+}
+
 export default function App() {
   const { user, loading } = useAuth();
   const location = useLocation();
@@ -62,11 +102,14 @@ export default function App() {
     location.pathname === '/login' ||
     location.pathname === '/register' ||
     location.pathname === '/signup' ||
-    location.pathname === '/super-login';
+    location.pathname === '/super-login' ||
+    location.pathname.startsWith('/view');
 
   if (loading && !isAuthRoute) return <CricketAppLoader text="Loading Cricket Arena..." />;
   return (
     <Routes>
+      <Route path="/view/:code" element={<ViewTeamRedirect />} />
+      <Route path="/view-team/:code" element={<ViewTeamRedirect />} />
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
       <Route path="/super-login" element={user ? <Navigate to="/" replace /> : <SuperLogin />} />
       <Route path="/register" element={user ? <Navigate to="/" replace /> : <Register />} />
