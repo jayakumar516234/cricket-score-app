@@ -228,98 +228,38 @@ function UserHomeView({ data, user, myTeam, t, isViewer }) {
         </section>
       )}
 
-      {/* 🚀 Quick Action Shortcuts Dock */}
-      {/* Count visible cards to pick best grid layout */}
-      {(() => {
-        const cards = [];
-
-        if (!isViewer) {
-          if (liveMatch) {
-            cards.push(
-              <Link
-                key="match"
-                to={`/matches/${liveMatch.id}`}
-                className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 p-3 flex flex-col gap-2 shadow-md shadow-amber-900/30 hover:shadow-lg hover:shadow-amber-900/40 hover:scale-[1.02] transition-all active:scale-95 border border-amber-400/30"
-              >
-                <div className="pointer-events-none absolute -right-3 -bottom-3 h-14 w-14 rounded-full bg-white/10 blur-lg" />
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 text-white shadow-xs">
-                  <Radio className="h-5 w-5 animate-pulse" />
-                </div>
-                <div>
-                  <div className="text-sm font-black text-white leading-tight flex items-center gap-1.5">
-                    <span>Update Match</span>
-                    <span className="h-2 w-2 rounded-full bg-white animate-ping" />
-                  </div>
-                  <div className="text-[10px] text-amber-100 font-medium truncate mt-0.5">
-                    {liveMatch.name || 'Live Match in Progress'}
-                  </div>
-                </div>
-              </Link>
-            );
-          } else if (data.can?.createMatch) {
-            cards.push(
-              <Link
-                key="match"
-                to="/matches/new"
-                className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-700 p-3 flex flex-col gap-2 shadow-md shadow-emerald-900/30 hover:shadow-lg hover:shadow-emerald-900/40 hover:scale-[1.02] transition-all active:scale-95 border border-emerald-400/30"
-              >
-                <div className="pointer-events-none absolute -right-3 -bottom-3 h-14 w-14 rounded-full bg-white/10 blur-lg" />
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 text-white shadow-xs">
-                  <Zap className="h-5 w-5 drop-shadow" />
-                </div>
-                <div>
-                  <div className="text-sm font-black text-white leading-tight">Start Match</div>
-                  <div className="text-[10px] text-emerald-100 font-medium">Live Scoring</div>
-                </div>
-              </Link>
-            );
-          }
-        }
-
-        if (myTeam) {
-          cards.push(
-            <Link
-              key="squad"
-              to={`/teams/${myTeam.id}`}
-              className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 p-3 flex flex-col gap-2 shadow-md shadow-blue-900/30 hover:shadow-lg hover:shadow-blue-900/40 hover:scale-[1.02] transition-all active:scale-95 border border-blue-400/30"
-            >
-              <div className="pointer-events-none absolute -right-3 -bottom-3 h-14 w-14 rounded-full bg-white/10 blur-lg" />
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 text-white shadow-xs">
-                <Shield className="h-5 w-5" />
-              </div>
-              <div>
-                <div className="text-sm font-black text-white leading-tight">My Squad</div>
-                <div className="text-[10px] text-blue-100 font-medium">{record.playerCount || 11} Players</div>
-              </div>
-            </Link>
-          );
-        }
-
-        cards.push(
+      {/* 🚀 Quick Action Shortcuts Dock — 2 cards: My Squad + Tournaments */}
+      <div className="grid grid-cols-2 gap-2.5">
+        {myTeam && (
           <Link
-            key="tournaments"
-            to="/tournaments"
-            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-600 via-violet-600 to-purple-700 p-3 flex flex-col gap-2 shadow-md shadow-purple-900/30 hover:shadow-lg hover:shadow-purple-900/40 hover:scale-[1.02] transition-all active:scale-95 border border-purple-400/30"
+            to={`/teams/${myTeam.id}`}
+            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 p-3 flex flex-col gap-2 shadow-md shadow-blue-900/30 hover:shadow-lg hover:shadow-blue-900/40 hover:scale-[1.02] transition-all active:scale-95 border border-blue-400/30"
           >
             <div className="pointer-events-none absolute -right-3 -bottom-3 h-14 w-14 rounded-full bg-white/10 blur-lg" />
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 text-white shadow-xs">
-              <Medal className="h-5 w-5" />
+              <Shield className="h-5 w-5" />
             </div>
             <div>
-              <div className="text-sm font-black text-white leading-tight">Tournaments</div>
-              <div className="text-[10px] text-purple-100 font-medium">Cups & Brackets</div>
+              <div className="text-sm font-black text-white leading-tight">My Squad</div>
+              <div className="text-[10px] text-blue-100 font-medium">{record.playerCount || 11} Players</div>
             </div>
           </Link>
-        );
+        )}
 
-        const count = cards.length;
-        const gridClass =
-          count === 1 ? 'grid grid-cols-1 gap-2.5' :
-          count === 2 ? 'grid grid-cols-2 gap-2.5' :
-          'grid grid-cols-3 gap-2.5';
-
-        return <div className={gridClass}>{cards}</div>;
-      })()}
+        <Link
+          to="/tournaments"
+          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-600 via-violet-600 to-purple-700 p-3 flex flex-col gap-2 shadow-md shadow-purple-900/30 hover:shadow-lg hover:shadow-purple-900/40 hover:scale-[1.02] transition-all active:scale-95 border border-purple-400/30"
+        >
+          <div className="pointer-events-none absolute -right-3 -bottom-3 h-14 w-14 rounded-full bg-white/10 blur-lg" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 text-white shadow-xs">
+            <Medal className="h-5 w-5" />
+          </div>
+          <div>
+            <div className="text-sm font-black text-white leading-tight">Tournaments</div>
+            <div className="text-[10px] text-purple-100 font-medium">Cups & Brackets</div>
+          </div>
+        </Link>
+      </div>
 
       {/* 📊 Team Performance Stats Grid */}
       {myTeam && (
