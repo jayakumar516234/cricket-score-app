@@ -896,14 +896,14 @@ export default function TournamentDetail() {
                         to={`/matches/${m.id}`}
                         className={`flex-1 text-center rounded-xl font-black text-xs py-2 shadow-2xs transition ${
                           m.status === 'live'
-                            ? 'bg-red-600 hover:bg-red-700 text-white'
+                            ? 'bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 text-white'
                             : m.canManage && m.status !== 'completed'
                             ? 'bg-pitch-600 hover:bg-pitch-700 text-white'
                             : 'bg-slate-100 hover:bg-slate-200 text-slate-800'
                         }`}
                       >
                         {m.status === 'live'
-                          ? (m.canManage ? '🏏 Update Match' : '🔴 Watch Live')
+                          ? (m.canManage ? '🏏 Update Match' : '🟠 Watch Live')
                           : m.canManage
                           ? (m.status === 'completed' ? 'View Details' : '▶ Start Scoring')
                           : 'View Match'}

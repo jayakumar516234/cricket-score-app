@@ -168,28 +168,23 @@ export default function Matches() {
         </div>
 
         <div className="flex items-center gap-1.5 flex-wrap">
-          {currentLiveMatch && (
+          {currentLiveMatch ? (
             <Link
               to={`/matches/${currentLiveMatch.id}`}
-              className="btn bg-red-600 hover:bg-red-700 text-white font-black shadow-xs text-xs !py-1.5 !px-3 inline-flex items-center gap-1.5 rounded-xl"
+              className="btn bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 text-white font-black shadow-xs text-xs !py-1.5 !px-3.5 inline-flex items-center gap-1.5 rounded-xl border border-amber-400/30"
             >
-              <Radio className="h-3.5 w-3.5 animate-pulse text-white" />
+              <Radio className="h-3.5 w-3.5 animate-pulse text-amber-100" />
               <span>Update Match</span>
             </Link>
-          )}
-          {data?.canCreate && (
+          ) : data?.canCreate ? (
             <Link
               to="/matches/new"
-              className={`btn font-bold shadow-xs text-xs !py-1.5 !px-3 inline-flex items-center gap-1 rounded-xl ${
-                currentLiveMatch
-                  ? 'btn-outline border-slate-300 text-slate-700 hover:bg-slate-50'
-                  : 'btn-green bg-emerald-600 hover:bg-emerald-700 text-white'
-              }`}
+              className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-xs text-xs !py-1.5 !px-3.5 inline-flex items-center gap-1.5 rounded-xl"
             >
               <Plus className="h-3.5 w-3.5" />
-              <span>{currentLiveMatch ? 'New Match' : 'Start Match'}</span>
+              <span>Start Match</span>
             </Link>
-          )}
+          ) : null}
         </div>
       </div>
 
@@ -278,6 +273,7 @@ export default function Matches() {
           action={
             !q &&
             !status &&
+            !currentLiveMatch &&
             data?.canCreate && (
               <Link
                 to="/matches/new"
@@ -298,7 +294,7 @@ export default function Matches() {
               const isAbandoned = m.status === 'abandoned';
 
               const borderAccent = isLive
-                ? 'border-2 border-red-500/90 bg-gradient-to-r from-red-50/50 via-white to-white shadow-xs'
+                ? 'border-2 border-amber-400/90 bg-gradient-to-r from-amber-50/50 via-white to-white shadow-xs'
                 : isCompleted
                 ? 'border border-slate-200/90 bg-white hover:border-emerald-300 shadow-2xs'
                 : isAbandoned
@@ -312,7 +308,7 @@ export default function Matches() {
                       {/* Top Header: Title, Format & Status */}
                       <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
                         <Link to={`/matches/${m.id}`} className="flex items-center gap-1.5 min-w-0 flex-1 hover:text-emerald-700 transition">
-                          <span className={`text-sm sm:text-base truncate ${isLive ? 'font-black text-red-950' : 'font-extrabold text-slate-900'}`}>
+                          <span className={`text-sm sm:text-base truncate ${isLive ? 'font-black text-amber-950' : 'font-extrabold text-slate-900'}`}>
                             {m.name}
                           </span>
                           <span className="badge bg-slate-100 text-slate-700 text-[9.5px] uppercase font-bold py-0.2 px-1.5 rounded shrink-0">
@@ -356,9 +352,9 @@ export default function Matches() {
                           {isLive && (
                             <Link
                               to={`/matches/${m.id}`}
-                              className="btn btn-green min-h-[38px] text-xs sm:text-sm !py-2 !px-3.5 font-black bg-red-600 hover:bg-red-700 text-white shadow-2xs flex items-center gap-1.5 rounded-xl"
+                              className="btn min-h-[38px] text-xs sm:text-sm !py-2 !px-3.5 font-black bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 text-white shadow-2xs flex items-center gap-1.5 rounded-xl border border-amber-400/40"
                             >
-                              <Radio className="h-4 w-4 animate-pulse text-white" />
+                              <Radio className="h-4 w-4 animate-pulse text-amber-100" />
                               <span>Update Match</span>
                             </Link>
                           )}

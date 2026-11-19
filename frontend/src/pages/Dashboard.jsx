@@ -9,7 +9,6 @@ import {
   Activity,
   CheckCircle2,
   Plus,
-  Handshake,
   Copy,
   Check,
   Radio,
@@ -154,7 +153,6 @@ function UserHomeView({ data, user, myTeam, t, isViewer }) {
                 </div>
                 <div className="text-[11px] text-slate-300 mt-0.5 flex items-center gap-2 flex-wrap">
                   {myTeam.location && <span>📍 {myTeam.location}</span>}
-                  {myTeam.ballType && <span>🏏 {myTeam.ballType}</span>}
                   <span>👥 {record.playerCount || 11} players</span>
                 </div>
 
@@ -193,25 +191,13 @@ function UserHomeView({ data, user, myTeam, t, isViewer }) {
               </Link>
               {!isViewer && (
                 liveMatch ? (
-                  <div className="flex items-center gap-1.5">
-                    <Link
-                      to={`/matches/${liveMatch.id}`}
-                      className="relative inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 px-3.5 py-1.5 text-xs font-black text-white shadow-md shadow-red-900/40 transition-all hover:scale-105 active:scale-95 overflow-hidden"
-                    >
-                      <Radio className="h-3.5 w-3.5 animate-pulse text-white" />
-                      <span>Update Match</span>
-                    </Link>
-                    {data.can?.createMatch && (
-                      <Link
-                        to="/matches/new"
-                        className="inline-flex items-center gap-1 rounded-xl bg-white/10 hover:bg-white/20 px-2.5 py-1.5 text-xs font-bold text-slate-200 border border-white/10 transition"
-                        title="Start another match"
-                      >
-                        <Plus className="h-3.5 w-3.5" />
-                        <span>New Match</span>
-                      </Link>
-                    )}
-                  </div>
+                  <Link
+                    to={`/matches/${liveMatch.id}`}
+                    className="relative inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-400 hover:to-orange-500 px-3.5 py-1.5 text-xs font-black text-white shadow-md shadow-amber-900/30 transition-all hover:scale-105 active:scale-95 overflow-hidden"
+                  >
+                    <Radio className="h-3.5 w-3.5 animate-pulse text-amber-100" />
+                    <span>Update Match</span>
+                  </Link>
                 ) : data.can?.createMatch ? (
                   <Link
                     to="/matches/new"
@@ -231,7 +217,7 @@ function UserHomeView({ data, user, myTeam, t, isViewer }) {
           <div className="max-w-xl space-y-2">
             <h2 className="text-lg sm:text-xl font-bold tracking-tight">Welcome, {user?.name}!</h2>
             <p className="text-xs text-slate-300">
-              Create your club squad, connect with opponent teams and start live scoring matches.
+              Create your club squad and score live matches.
             </p>
             {data.can?.createTeam && (
               <Link to="/teams/new" className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white mt-1.5 min-h-[40px] !py-2 !px-4 font-bold shadow-xs inline-flex items-center gap-2 text-xs sm:text-sm rounded-xl">
@@ -242,13 +228,13 @@ function UserHomeView({ data, user, myTeam, t, isViewer }) {
         </section>
       )}
 
-      {/* 🚀 Quick Action Shortcuts Dock (Mobile-First 4 Pills) */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+      {/* 🚀 Quick Action Shortcuts Dock (Mobile-First 3 Pills) */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
         {!isViewer && (
           liveMatch ? (
             <Link
               to={`/matches/${liveMatch.id}`}
-              className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-red-600 via-rose-600 to-red-700 p-3 flex flex-col gap-2 shadow-md shadow-red-900/30 hover:shadow-lg hover:shadow-red-900/40 hover:scale-[1.02] transition-all active:scale-95 border border-red-400/30"
+              className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 p-3 flex flex-col gap-2 shadow-md shadow-amber-900/30 hover:shadow-lg hover:shadow-amber-900/40 hover:scale-[1.02] transition-all active:scale-95 border border-amber-400/30"
             >
               <div className="pointer-events-none absolute -right-3 -bottom-3 h-14 w-14 rounded-full bg-white/10 blur-lg" />
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 text-white shadow-xs">
@@ -259,7 +245,7 @@ function UserHomeView({ data, user, myTeam, t, isViewer }) {
                   <span>Update Match</span>
                   <span className="h-2 w-2 rounded-full bg-white animate-ping" />
                 </div>
-                <div className="text-[10px] text-red-100 font-medium truncate mt-0.5">
+                <div className="text-[10px] text-amber-100 font-medium truncate mt-0.5">
                   {liveMatch.name || 'Live Match in Progress'}
                 </div>
               </div>
@@ -296,20 +282,6 @@ function UserHomeView({ data, user, myTeam, t, isViewer }) {
             </div>
           </Link>
         )}
-
-        <Link
-          to="/teams?add=opponent"
-          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600 via-purple-600 to-purple-700 p-3 flex flex-col gap-2 shadow-md shadow-purple-900/30 hover:shadow-lg hover:shadow-purple-900/40 hover:scale-[1.02] transition-all active:scale-95 border border-violet-400/30"
-        >
-          <div className="pointer-events-none absolute -right-3 -bottom-3 h-14 w-14 rounded-full bg-white/10 blur-lg" />
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 text-white shadow-xs">
-            <Handshake className="h-5 w-5" />
-          </div>
-          <div>
-            <div className="text-sm font-black text-white leading-tight">Add Opponent</div>
-            <div className="text-[10px] text-purple-100 font-medium">Team Code</div>
-          </div>
-        </Link>
 
         <Link
           to="/tournaments"
@@ -364,126 +336,57 @@ function UserHomeView({ data, user, myTeam, t, isViewer }) {
         </section>
       )}
 
-      {/* 🏏 Two Columns: Recent Matches & Connected Opponents */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        {/* Matches Section */}
-        <section className="space-y-2">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xs sm:text-sm font-extrabold text-slate-900 flex items-center gap-1.5">
-              <Trophy className="h-4 w-4 text-emerald-600" />
-              <span>Recent Matches</span>
-            </h2>
-            <Link to="/matches" className="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 flex items-center gap-0.5">
-              View All <ArrowRight className="h-3 w-3" />
-            </Link>
-          </div>
+      {/* 🏏 Recent Matches */}
+      <section className="space-y-2">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs sm:text-sm font-extrabold text-slate-900 flex items-center gap-1.5">
+            <Trophy className="h-4 w-4 text-emerald-600" />
+            <span>Recent Matches</span>
+          </h2>
+          <Link to="/matches" className="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 flex items-center gap-0.5">
+            View All <ArrowRight className="h-3 w-3" />
+          </Link>
+        </div>
 
-          {data.recentMatches.length === 0 ? (
-            <Empty
-              icon={Trophy}
-              title="No matches recorded yet"
-              text="Start scoring a live match with your squad or opponent."
-              action={
-                !isViewer && data.can?.createMatch ? (
-                  <Link to="/matches/new" className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs">
-                    <Plus className="h-3.5 w-3.5 mr-1" /> Start New Match
-                  </Link>
-                ) : null
-              }
-            />
-          ) : (
-            <ul className="space-y-2">
-              {data.recentMatches.map((m) => {
-                const isLive = m.status === 'live';
-                const isCompleted = m.status === 'completed';
-                const borderAccent = isLive
-                  ? 'border-2 border-red-400/90 bg-gradient-to-r from-red-50/50 to-white'
-                  : isCompleted
-                  ? 'border border-slate-200/90 bg-white hover:border-emerald-300'
-                  : 'border border-slate-200/90 bg-white hover:border-blue-300';
-
-                return (
-                  <li key={m.id}>
-                    <Link to={`/matches/${m.id}`} className={`card block p-3 transition shadow-2xs hover:shadow-xs rounded-xl ${borderAccent}`}>
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <span className="text-xs sm:text-sm font-bold text-slate-900 truncate">{m.name}</span>
-                        <StatusBadge status={m.status} />
-                      </div>
-                      <MatchScoreLine match={m} />
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </section>
-
-        {/* Opponents Section */}
-        <section className="space-y-2">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xs sm:text-sm font-extrabold text-slate-900 flex items-center gap-1.5">
-              <Handshake className="h-4 w-4 text-blue-600" />
-              <span>Opponent Teams</span>
-            </h2>
-            <div className="flex items-center gap-2">
-              {myTeam && !isViewer && (
-                <Link to="/teams?add=opponent" className="btn btn-primary min-h-[36px] text-xs sm:text-sm !py-1.5 !px-3 font-bold shadow-2xs rounded-xl">
-                  <Plus className="h-3.5 w-3.5" /> Add
+        {data.recentMatches.length === 0 ? (
+          <Empty
+            icon={Trophy}
+            title="No matches recorded yet"
+            text="Start scoring a live match with your squad or opponent."
+            action={
+              !isViewer && !liveMatch && data.can?.createMatch ? (
+                <Link to="/matches/new" className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs">
+                  <Plus className="h-3.5 w-3.5 mr-1" /> Start New Match
                 </Link>
-              )}
-              <Link to="/teams" className="text-[11px] font-bold text-blue-700 hover:text-blue-900 flex items-center gap-0.5">
-                View All <ArrowRight className="h-3 w-3" />
-              </Link>
-            </div>
-          </div>
+              ) : null
+            }
+          />
+        ) : (
+          <ul className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+            {data.recentMatches.map((m) => {
+              const isLive = m.status === 'live';
+              const isCompleted = m.status === 'completed';
+              const borderAccent = isLive
+                ? 'border-2 border-amber-400/90 bg-gradient-to-r from-amber-50/50 via-white to-white shadow-xs'
+                : isCompleted
+                ? 'border border-slate-200/90 bg-white hover:border-emerald-300'
+                : 'border border-slate-200/90 bg-white hover:border-blue-300';
 
-          {(data.recentOpponents || []).length === 0 ? (
-            <Empty
-              icon={Handshake}
-              title="No opponents connected yet"
-              text={myTeam ? "Connect with rival clubs using their 6-character team code to play matches." : "Create your team first to connect with opponents."}
-              action={
-                myTeam && !isViewer ? (
-                  <Link to="/teams?add=opponent" className="btn btn-primary min-h-[40px] text-xs sm:text-sm !py-2 !px-4 font-bold rounded-xl">
-                    <Handshake className="h-4 w-4 mr-1" /> Add Opponent
+              return (
+                <li key={m.id}>
+                  <Link to={`/matches/${m.id}`} className={`card block p-3 transition shadow-2xs hover:shadow-xs rounded-xl ${borderAccent}`}>
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span className="text-xs sm:text-sm font-bold text-slate-900 truncate">{m.name}</span>
+                      <StatusBadge status={m.status} />
+                    </div>
+                    <MatchScoreLine match={m} />
                   </Link>
-                ) : null
-              }
-            />
-          ) : (
-            <ul className="space-y-2">
-              {data.recentOpponents.map((tm) => (
-                <li key={tm.id}>
-                  <div className="card flex items-center justify-between gap-2.5 p-2.5 border border-blue-200/80 bg-gradient-to-r from-blue-50/40 via-white to-white shadow-2xs rounded-xl hover:border-blue-300 transition">
-                    <Link to={`/teams/${tm.id}`} className="flex items-center gap-2.5 min-w-0 flex-1">
-                      <TeamLogo team={tm} size={36} />
-                      <div className="min-w-0 flex-1">
-                        <div className="text-xs sm:text-sm font-bold text-blue-950 flex items-center gap-1.5 truncate">
-                          <span>{tm.name}</span>
-                          <span className="badge bg-blue-100 text-blue-700 text-[9px] font-bold py-0.2 px-1 rounded shrink-0">Opponent</span>
-                        </div>
-                        <div className="text-[10px] text-slate-500 truncate">
-                          {tm.playerCount} Players{tm.location ? ` · ${tm.location}` : ''}
-                        </div>
-                      </div>
-                    </Link>
-
-                    {myTeam && !isViewer && (
-                      <Link
-                        to={`/matches/new?home=${myTeam.id}&away=${tm.id}`}
-                        className="btn btn-green text-xs sm:text-sm min-h-[38px] !py-2 !px-3.5 font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs shrink-0 flex items-center gap-1.5 rounded-xl"
-                        title="Play Match with this Opponent"
-                      >
-                        <Trophy className="h-3.5 w-3.5" /> Play
-                      </Link>
-                    )}
-                  </div>
                 </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      </div>
+              );
+            })}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }
@@ -492,6 +395,7 @@ function UserHomeView({ data, user, myTeam, t, isViewer }) {
 function AdminDashboardView({ data, user, t, myTeam }) {
   const totals = data.totals;
   const userInit = (user?.name || '?').split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
+  const adminLiveMatch = data.activeLiveMatch || (data.recentMatches || []).find((m) => m.status === 'live');
 
   return (
     <div className="space-y-3.5 sm:space-y-4">
@@ -524,9 +428,22 @@ function AdminDashboardView({ data, user, t, myTeam }) {
               </Link>
             )}
             {data.can?.createMatch && (
-              <Link to="/matches/new" className="relative inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 px-4 py-1.5 text-xs font-black text-white shadow-md shadow-emerald-900/40 transition-all hover:scale-105 active:scale-95">
-                <Zap className="h-3.5 w-3.5" /> {t('dashboard.createMatch')}
-              </Link>
+              adminLiveMatch ? (
+                <Link
+                  to={`/matches/${adminLiveMatch.id}`}
+                  className="relative inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-400 hover:to-orange-500 px-3.5 py-1.5 text-xs font-black text-white shadow-md shadow-amber-900/30 transition-all hover:scale-105 active:scale-95"
+                >
+                  <Radio className="h-3.5 w-3.5 animate-pulse text-amber-100" />
+                  <span>Update Match</span>
+                </Link>
+              ) : (
+                <Link
+                  to="/matches/new"
+                  className="relative inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 px-4 py-1.5 text-xs font-black text-white shadow-md shadow-emerald-900/40 transition-all hover:scale-105 active:scale-95"
+                >
+                  <Zap className="h-3.5 w-3.5" /> {t('dashboard.createMatch')}
+                </Link>
+              )
             )}
           </div>
         </div>
@@ -557,7 +474,7 @@ function AdminDashboardView({ data, user, t, myTeam }) {
               {data.recentMatches.map((m) => {
                 const borderAccent =
                   m.status === 'live'
-                    ? 'border-2 border-red-400 bg-gradient-to-r from-red-50/40 to-white'
+                    ? 'border-2 border-amber-400 bg-gradient-to-r from-amber-50/40 to-white'
                     : m.status === 'completed'
                     ? 'border border-slate-200/90 bg-white hover:border-emerald-300'
                     : 'border border-slate-200/90 bg-white hover:border-blue-300';
