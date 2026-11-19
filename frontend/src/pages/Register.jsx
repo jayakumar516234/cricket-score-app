@@ -56,126 +56,126 @@ export default function Register() {
   };
 
   return (
-    <div className="flex min-h-full flex-col items-center justify-center bg-gradient-to-b from-navy-950 via-navy-900 to-navy-800 p-4 select-none">
-      {/* App Branding */}
-      <div className="mb-6 flex flex-col items-center text-white text-center">
-        <div className="relative mb-2">
-          <CricketBallIcon className="h-16 w-16 drop-shadow-md" />
+    <div className="fixed inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-navy-950 via-navy-900 to-navy-800 overflow-hidden select-none px-4 py-3">
+      {/* App Branding - compact */}
+      <div className="mb-3 flex items-center gap-2.5 text-white">
+        <CricketBallIcon className="h-9 w-9 drop-shadow-md shrink-0" />
+        <div>
+          <h1 className="text-xl font-extrabold tracking-tight leading-tight">Cricket Score</h1>
+          <p className="text-[11px] text-slate-300 leading-tight">{t('login.tagline') || 'Live scoring & match management'}</p>
         </div>
-        <h1 className="text-3xl font-extrabold tracking-tight">Cricket Score</h1>
-        <p className="text-sm text-slate-300">{t('login.tagline') || 'Live scoring & match management'}</p>
       </div>
 
-      {/* Main Register Card - Essential Content Only */}
-      <form onSubmit={submit} className="w-full max-w-sm space-y-4 rounded-2xl bg-white p-6 shadow-2xl" noValidate>
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900">Create Account</h2>
-          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-            Enter your details to create your account
-          </p>
+      {/* Main Register Card */}
+      <form onSubmit={submit} className="w-full max-w-sm rounded-2xl bg-white px-5 py-4 shadow-2xl" noValidate>
+        <div className="mb-3">
+          <h2 className="text-lg font-bold text-slate-900 leading-tight">Create Account</h2>
+          <p className="text-[11px] text-slate-500 mt-0.5">Enter your details to get started</p>
         </div>
 
         <ErrorBox message={error} />
 
-        {/* 1. Full Name */}
-        <div>
-          <label className="label text-xs font-bold text-slate-700" htmlFor="name">
-            Your Name *
-          </label>
-          <div className="relative">
-            <User className="absolute left-3 top-3 h-4 w-4 text-slate-400" aria-hidden />
-            <input
-              id="name"
-              type="text"
-              autoComplete="name"
-              className={`input pl-9 ${errors.name ? 'input-error' : ''}`}
-              value={f.name}
-              onChange={set('name')}
-              placeholder="e.g. Suresh Kumar"
-              required
-            />
+        <div className="space-y-2.5">
+          {/* 1. Full Name */}
+          <div>
+            <label className="mb-0.5 block text-[10px] font-bold uppercase tracking-wider text-slate-600" htmlFor="name">
+              Your Name *
+            </label>
+            <div className="relative">
+              <User className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" aria-hidden />
+              <input
+                id="name"
+                type="text"
+                autoComplete="name"
+                className={`w-full rounded-xl border border-slate-200 bg-white pl-8 pr-3 py-2 text-xs text-slate-900 placeholder-slate-400 shadow-2xs transition focus:border-pitch-500 focus:outline-none focus:ring-2 focus:ring-pitch-500/25 ${errors.name ? 'border-red-400 focus:border-red-500 focus:ring-red-500/30' : ''}`}
+                value={f.name}
+                onChange={set('name')}
+                placeholder="e.g. Suresh Kumar"
+                required
+              />
+            </div>
+            {errors.name && <span className="text-[10px] text-red-600 font-semibold mt-0.5 block">{errors.name}</span>}
           </div>
-          {errors.name && <span className="text-[11px] text-red-600 font-semibold mt-1 block">{errors.name}</span>}
-        </div>
 
-        {/* 2. Username */}
-        <div>
-          <label className="label text-xs font-bold text-slate-700" htmlFor="username">
-            Username *
-          </label>
-          <div className="relative">
-            <AtSign className="absolute left-3 top-3 h-4 w-4 text-slate-400" aria-hidden />
-            <input
-              id="username"
-              type="text"
-              autoCapitalize="none"
-              autoComplete="username"
-              className={`input pl-9 font-mono ${errors.username ? 'input-error' : ''}`}
-              value={f.username}
-              onChange={set('username')}
-              placeholder="e.g. suresh_cricket"
-              required
-            />
+          {/* 2. Username */}
+          <div>
+            <label className="mb-0.5 block text-[10px] font-bold uppercase tracking-wider text-slate-600" htmlFor="username">
+              Username *
+            </label>
+            <div className="relative">
+              <AtSign className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" aria-hidden />
+              <input
+                id="username"
+                type="text"
+                autoCapitalize="none"
+                autoComplete="username"
+                className={`w-full rounded-xl border border-slate-200 bg-white pl-8 pr-3 py-2 text-xs font-mono text-slate-900 placeholder-slate-400 shadow-2xs transition focus:border-pitch-500 focus:outline-none focus:ring-2 focus:ring-pitch-500/25 ${errors.username ? 'border-red-400 focus:border-red-500 focus:ring-red-500/30' : ''}`}
+                value={f.username}
+                onChange={set('username')}
+                placeholder="e.g. suresh_cricket"
+                required
+              />
+            </div>
+            {errors.username && <span className="text-[10px] text-red-600 font-semibold mt-0.5 block">{errors.username}</span>}
           </div>
-          {errors.username && <span className="text-[11px] text-red-600 font-semibold mt-1 block">{errors.username}</span>}
-        </div>
 
-        {/* 3. Mobile Number */}
-        <div>
-          <label className="label text-xs font-bold text-slate-700" htmlFor="phone">
-            Mobile Number (10 Digits) *
-          </label>
-          <div className="relative">
-            <Phone className="absolute left-3 top-3 h-4 w-4 text-slate-400" aria-hidden />
-            <input
-              id="phone"
-              type="tel"
-              inputMode="numeric"
-              autoComplete="tel"
-              className={`input pl-9 ${errors.phone ? 'input-error' : ''}`}
-              value={f.phone}
-              onChange={set('phone')}
-              placeholder="e.g. 9876543210"
-              maxLength={14}
-              required
-            />
+          {/* 3. Mobile Number */}
+          <div>
+            <label className="mb-0.5 block text-[10px] font-bold uppercase tracking-wider text-slate-600" htmlFor="phone">
+              Mobile Number *
+            </label>
+            <div className="relative">
+              <Phone className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" aria-hidden />
+              <input
+                id="phone"
+                type="tel"
+                inputMode="numeric"
+                autoComplete="tel"
+                className={`w-full rounded-xl border border-slate-200 bg-white pl-8 pr-3 py-2 text-xs text-slate-900 placeholder-slate-400 shadow-2xs transition focus:border-pitch-500 focus:outline-none focus:ring-2 focus:ring-pitch-500/25 ${errors.phone ? 'border-red-400 focus:border-red-500 focus:ring-red-500/30' : ''}`}
+                value={f.phone}
+                onChange={set('phone')}
+                placeholder="e.g. 9876543210"
+                maxLength={14}
+                required
+              />
+            </div>
+            {errors.phone && <span className="text-[10px] text-red-600 font-semibold mt-0.5 block">{errors.phone}</span>}
           </div>
-          {errors.phone && <span className="text-[11px] text-red-600 font-semibold mt-1 block">{errors.phone}</span>}
-        </div>
 
-        {/* 4. Password */}
-        <div>
-          <label className="label text-xs font-bold text-slate-700" htmlFor="password">
-            Password *
-          </label>
-          <div className="relative">
-            <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" aria-hidden />
-            <input
-              id="password"
-              type={show ? 'text' : 'password'}
-              autoComplete="new-password"
-              className={`input pl-9 pr-10 ${errors.password ? 'input-error' : ''}`}
-              value={f.password}
-              onChange={set('password')}
-              placeholder="At least 4 characters"
-              required
-            />
-            <button
-              type="button"
-              onClick={() => setShow(!show)}
-              className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
-              aria-label={show ? 'Hide password' : 'Show password'}
-            >
-              {show ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-            </button>
+          {/* 4. Password */}
+          <div>
+            <label className="mb-0.5 block text-[10px] font-bold uppercase tracking-wider text-slate-600" htmlFor="password">
+              Password *
+            </label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" aria-hidden />
+              <input
+                id="password"
+                type={show ? 'text' : 'password'}
+                autoComplete="new-password"
+                className={`w-full rounded-xl border border-slate-200 bg-white pl-8 pr-9 py-2 text-xs text-slate-900 placeholder-slate-400 shadow-2xs transition focus:border-pitch-500 focus:outline-none focus:ring-2 focus:ring-pitch-500/25 ${errors.password ? 'border-red-400 focus:border-red-500 focus:ring-red-500/30' : ''}`}
+                value={f.password}
+                onChange={set('password')}
+                placeholder="At least 4 characters"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShow(!show)}
+                className="absolute right-3 top-2 text-slate-400 hover:text-slate-600"
+                aria-label={show ? 'Hide password' : 'Show password'}
+              >
+                {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+            {errors.password && <span className="text-[10px] text-red-600 font-semibold mt-0.5 block">{errors.password}</span>}
           </div>
-          {errors.password && <span className="text-[11px] text-red-600 font-semibold mt-1 block">{errors.password}</span>}
         </div>
 
         {/* Submit Button */}
         <button
           type="submit"
-          className="btn btn-primary w-full py-3 text-sm sm:text-base font-black shadow-lg shadow-pitch-600/25 flex items-center justify-center gap-2"
+          className="mt-3 btn btn-primary w-full py-2.5 text-sm font-black shadow-lg shadow-pitch-600/25 flex items-center justify-center gap-2"
           disabled={busy}
         >
           {busy ? (
@@ -191,18 +191,14 @@ export default function Register() {
           )}
         </button>
 
-        {/* Back to Login */}
-        <div className="pt-2 text-center border-t border-slate-100">
-          <p className="text-xs sm:text-sm text-slate-600">
-            Already have an account?{' '}
+        {/* Back to Login + Language */}
+        <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+          <p className="text-[11px] text-slate-600">
+            Have an account?{' '}
             <Link to="/login" className="font-extrabold text-pitch-700 hover:text-pitch-800 hover:underline">
-              Log in here
+              Log in
             </Link>
           </p>
-        </div>
-
-        {/* Language selector */}
-        <div className="pt-1 border-t border-slate-100">
           <LanguageSelect />
         </div>
       </form>
