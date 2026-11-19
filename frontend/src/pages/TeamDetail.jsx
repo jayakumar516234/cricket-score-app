@@ -524,7 +524,7 @@ function TeamCredentialsManager({ team }) {
         </div>
       </div>
 
-      {loading && !players ? (
+      {loading && !data ? (
         <SkeletonList count={5} />
       ) : error ? (
         <ErrorBox message={error} onRetry={reload} />

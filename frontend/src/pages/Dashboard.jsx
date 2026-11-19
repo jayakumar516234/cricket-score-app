@@ -228,9 +228,9 @@ function UserHomeView({ data, user, myTeam, t, isViewer }) {
         </section>
       )}
 
-      {/* 🚀 Quick Action Shortcuts Dock — 2 cards: My Squad + Tournaments */}
+      {/* 🚀 Quick Action Shortcuts Dock — 2 cards: Squad + Tournaments */}
       <div className="grid grid-cols-2 gap-2.5">
-        {myTeam && (
+        {myTeam ? (
           <Link
             to={`/teams/${myTeam.id}`}
             className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 p-3 flex flex-col gap-2 shadow-md shadow-blue-900/30 hover:shadow-lg hover:shadow-blue-900/40 hover:scale-[1.02] transition-all active:scale-95 border border-blue-400/30"
@@ -242,6 +242,20 @@ function UserHomeView({ data, user, myTeam, t, isViewer }) {
             <div>
               <div className="text-sm font-black text-white leading-tight">My Squad</div>
               <div className="text-[10px] text-blue-100 font-medium">{record.playerCount || 11} Players</div>
+            </div>
+          </Link>
+        ) : (
+          <Link
+            to="/teams/new"
+            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 p-3 flex flex-col gap-2 shadow-md shadow-blue-900/30 hover:shadow-lg hover:shadow-blue-900/40 hover:scale-[1.02] transition-all active:scale-95 border border-blue-400/30"
+          >
+            <div className="pointer-events-none absolute -right-3 -bottom-3 h-14 w-14 rounded-full bg-white/10 blur-lg" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 text-white shadow-xs">
+              <Shield className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="text-sm font-black text-white leading-tight">Create Squad</div>
+              <div className="text-[10px] text-blue-100 font-medium">Add Your Team</div>
             </div>
           </Link>
         )}
