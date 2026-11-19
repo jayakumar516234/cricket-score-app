@@ -247,7 +247,7 @@ export default function Teams() {
                   <TeamLogo team={inc.fromTeam} size={36} />
                   <div>
                     <div className="font-bold text-slate-900 text-xs">{inc.fromTeam.name}</div>
-                    <div className="text-[10px] text-slate-500">{inc.fromTeam.ballType}{inc.fromTeam.location ? ` · ${inc.fromTeam.location}` : ''}</div>
+                    <div className="text-[10px] text-slate-500">{inc.fromTeam.location || 'Cricket Team'}</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5 pt-1.5 sm:pt-0 border-t sm:border-t-0 border-slate-100">
@@ -348,7 +348,7 @@ export default function Teams() {
                       </div>
 
                       <div className="text-[10px] text-slate-500 mt-0.5">
-                        {t.playerCount} Players{t.location ? ` · ${t.location}` : ''} · {t.ballType}
+                        {t.playerCount} Players{t.location ? ` · ${t.location}` : ''}
                       </div>
                     </div>
                   </Link>

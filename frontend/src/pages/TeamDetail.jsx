@@ -56,7 +56,7 @@ export default function TeamDetail() {
           <TeamLogo team={team} size={56} className="h-14 w-14 sm:h-16 sm:w-16 rounded-xl sm:rounded-2xl shrink-0" />
           <div className="flex-1 text-xs sm:text-sm text-slate-600">
             {team.location && <div className="font-bold text-slate-900 text-sm sm:text-base">{team.location}</div>}
-            <div className="mt-0.5">{team.ballType} · {players.length} players</div>
+            <div className="mt-0.5">{players.length} players{team.location ? ` · ${team.location}` : ''}</div>
             {team.description && <p className="mt-1 text-slate-500 text-xs">{team.description}</p>}
           </div>
           {team.code && canSeeCode && (
@@ -884,7 +884,7 @@ function OpponentsSection({ team }) {
                   <TeamLogo team={inc.fromTeam} size={40} />
                   <div>
                     <div className="font-semibold text-slate-900">{inc.fromTeam?.name || 'Unknown Team'}</div>
-                    <div className="text-xs text-slate-500">{inc.fromTeam?.ballType || ''}{inc.fromTeam?.location ? ` · ${inc.fromTeam.location}` : ''}</div>
+                    <div className="text-xs text-slate-500">{inc.fromTeam?.location || ''}</div>
                   </div>
                 </div>
                 {team.canManage && (
@@ -975,7 +975,7 @@ function OpponentsSection({ team }) {
                       <div>
                         <div className="font-bold text-slate-900">{opp.name}</div>
                         <div className="text-xs text-slate-500">
-                          {opp.playerCount || 0} players · {opp.ballType}{opp.location ? ` · ${opp.location}` : ''}
+                          {opp.playerCount || 0} players{opp.location ? ` · ${opp.location}` : ''}
                         </div>
                       </div>
                     </div>

@@ -41,7 +41,7 @@ const teamSchema = z.object({
   logo: image,
   location: z.string().trim().max(80).optional().default(''),
   description: z.string().trim().max(500).optional().default(''),
-  ballType: z.enum(BALL_TYPES, { errorMap: () => ({ message: 'Select a valid ball type' }) }),
+  ballType: z.string().optional().default('Leather Ball'),
   players: z.array(playerSchema)
     .min(MIN_SQUAD, `A team needs at least ${MIN_SQUAD} players`)
     .max(MAX_SQUAD, `A team can have at most ${MAX_SQUAD} players`),

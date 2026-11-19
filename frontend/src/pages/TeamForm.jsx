@@ -5,7 +5,6 @@ import { api } from '../api.js';
 import { ErrorBox, Field, ImagePicker, Spinner, SkeletonForm, DropdownSelect } from '../components/ui.jsx';
 
 const ROLES = ['Batsman', 'Bowler', 'All-rounder', 'Wicket Keeper'];
-const BALLS = ['Leather Ball', 'Tennis Ball', 'Rubber Ball', 'Other'];
 const MIN_SQUAD = 11;
 const MAX_SQUAD = 25;
 
@@ -18,7 +17,7 @@ export default function TeamForm() {
   const nav = useNavigate();
   const [loading, setLoading] = useState(editing);
   const [loadError, setLoadError] = useState('');
-  const [team, setTeam] = useState({ name: '', logo: '', location: '', description: '', ballType: 'Leather Ball' });
+  const [team, setTeam] = useState({ name: '', logo: '', location: '', description: '' });
   const [players, setPlayers] = useState(Array.from({ length: MIN_SQUAD }, blankPlayer));
   const [open, setOpen] = useState(0);
   const [errors, setErrors] = useState({});
@@ -29,7 +28,7 @@ export default function TeamForm() {
     if (!editing) return;
     api(`/teams/${id}`)
       .then((d) => {
-        setTeam({ name: d.team.name, logo: d.team.logo || '', location: d.team.location || '', description: d.team.description || '', ballType: d.team.ballType });
+        setTeam({ name: d.team.name, logo: d.team.logo || '', location: d.team.location || '', description: d.team.description || '' });
         setPlayers(d.players.map((p) => ({ _key: p.id, _id: p.id, name: p.name, photo: p.photo || '', jerseyNumber: p.jerseyNumber ?? '', age: p.age ?? '', role: p.role, battingStyle: p.battingStyle || '', bowlingStyle: p.bowlingStyle || '' })));
       })
       .catch((e) => setLoadError(e.message))
@@ -112,16 +111,6 @@ export default function TeamForm() {
         <Field label="Team Description (optional)" htmlFor="tdesc">
           <textarea id="tdesc" rows={2} className="input" value={team.description} onChange={(e) => setTeam({ ...team, description: e.target.value })} maxLength={500} />
         </Field>
-        <fieldset>
-          <legend className="label">Ball Type</legend>
-          <div className="flex flex-wrap gap-x-5 gap-y-2">
-            {BALLS.map((b) => (
-              <label key={b} className="flex items-center gap-2 text-sm">
-                <input type="radio" name="ball" checked={team.ballType === b} onChange={() => setTeam({ ...team, ballType: b })} className="h-4 w-4 accent-blue-600" /> {b}
-              </label>
-            ))}
-          </div>
-        </fieldset>
       </section>
 
       <section>
