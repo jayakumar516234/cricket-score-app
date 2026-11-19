@@ -194,9 +194,6 @@ export default function Layout() {
           </span>
         </div>
       </div>
-      <span className="rounded-lg bg-navy-900 px-2 py-0.5 text-[10px] font-bold text-pitch-400 border border-navy-700/80 shadow-2xs">
-        v{APP_VERSION}
-      </span>
     </div>
   );
 
