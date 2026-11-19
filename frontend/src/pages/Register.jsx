@@ -61,8 +61,7 @@ export default function Register() {
       {/* Header Branding */}
       <div className="mb-6 flex flex-col items-center text-white text-center">
         <div className="relative mb-2">
-          <div className="absolute inset-0 rounded-full bg-pitch-500/20 blur-lg animate-pulse" />
-          <CricketBallIcon className="relative h-16 w-16 drop-shadow-md" />
+          <CricketBallIcon className="h-16 w-16 drop-shadow-md" />
         </div>
         <h1 className="text-3xl font-extrabold tracking-tight">Cricket Score</h1>
         <p className="text-sm text-slate-300">Create matches, manage squads and score live</p>

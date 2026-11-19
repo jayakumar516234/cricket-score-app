@@ -58,7 +58,13 @@ export default function App() {
     }
   }, [location, user]);
 
-  if (loading) return <CricketAppLoader text="Loading Cricket Arena..." />;
+  const isAuthRoute =
+    location.pathname === '/login' ||
+    location.pathname === '/register' ||
+    location.pathname === '/signup' ||
+    location.pathname === '/super-login';
+
+  if (loading && !isAuthRoute) return <CricketAppLoader text="Loading Cricket Arena..." />;
   return (
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
