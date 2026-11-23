@@ -12,6 +12,20 @@ import {
   SkeletonTeamsPage, TeamLogo
 } from '../components/ui.jsx';
 
+const createDefaultPlayers = () => [
+  { id: 'p1', name: 'Player 1', role: 'Batsman' },
+  { id: 'p2', name: 'Player 2', role: 'Batsman' },
+  { id: 'p3', name: 'Player 3', role: 'Batsman' },
+  { id: 'p4', name: 'Player 4', role: 'Batsman' },
+  { id: 'p5', name: 'Player 5', role: 'Wicket Keeper' },
+  { id: 'p6', name: 'Player 6', role: 'All-rounder' },
+  { id: 'p7', name: 'Player 7', role: 'All-rounder' },
+  { id: 'p8', name: 'Player 8', role: 'All-rounder' },
+  { id: 'p9', name: 'Player 9', role: 'Bowler' },
+  { id: 'p10', name: 'Player 10', role: 'Bowler' },
+  { id: 'p11', name: 'Player 11', role: 'Bowler' },
+];
+
 export default function Teams() {
   const nav = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -31,10 +45,14 @@ export default function Teams() {
 
   // Add Opponent Modal & Code state
   const [showAddOpponent, setShowAddOpponent] = useState(false);
+  const [oppTab, setOppTab] = useState('code'); // 'code' | 'manual'
   const [oppCode, setOppCode] = useState('');
   const [oppSending, setOppSending] = useState(false);
   const [oppMsg, setOppMsg] = useState('');
   const [oppErr, setOppErr] = useState('');
+  const [manualName, setManualName] = useState('Fire Boys');
+  const [manualLocation, setManualLocation] = useState('');
+  const [manualPlayers, setManualPlayers] = useState(createDefaultPlayers);
   const [copied, setCopied] = useState(false);
   const [copiedTeamCode, setCopiedTeamCode] = useState(null);
   const [connActionBusy, setConnActionBusy] = useState(false);
@@ -124,6 +142,72 @@ export default function Teams() {
       if (reloadConns) reloadConns();
     } catch (err) {
       setOppErr(err.message);
+    } finally {
+      setOppSending(false);
+    }
+  };
+
+  const addManualPlayer = () => {
+    if (manualPlayers.length >= 15) return;
+    const nextIdx = manualPlayers.length + 1;
+    setManualPlayers((prev) => [
+      ...prev,
+      { id: `p-${Date.now()}-${nextIdx}`, name: `Player ${nextIdx}`, role: 'All-rounder' },
+    ]);
+  };
+
+  const removeManualPlayer = (idx) => {
+    if (manualPlayers.length <= 11) return;
+    setManualPlayers((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const updateManualPlayer = (idx, field, val) => {
+    setManualPlayers((prev) =>
+      prev.map((p, i) => (i === idx ? { ...p, [field]: val } : p))
+    );
+  };
+
+  const createManualOpponent = async (e) => {
+    e.preventDefault();
+    setOppErr('');
+    setOppMsg('');
+    if (!myTeamId) {
+      return setOppErr('Please create your own team first before adding opponents.');
+    }
+    if (!manualName.trim() || manualName.trim().length < 2) {
+      return setOppErr('Team name must be at least 2 characters.');
+    }
+    if (manualPlayers.length < 11) {
+      return setOppErr('At least 11 players are required.');
+    }
+    const emptyPlayer = manualPlayers.find((p) => !p.name.trim());
+    if (emptyPlayer) {
+      return setOppErr('All players must have a name.');
+    }
+
+    setOppSending(true);
+    try {
+      const res = await api(`/teams/${myTeamId}/manual-opponent`, {
+        method: 'POST',
+        body: {
+          name: manualName.trim(),
+          location: manualLocation.trim() || undefined,
+          players: manualPlayers.map((p, idx) => ({
+            name: p.name.trim(),
+            role: p.role,
+            jerseyNumber: idx + 1,
+          })),
+        },
+      });
+      setActionSuccess(res.message || `Opponent team "${manualName.trim()}" added!`);
+      setShowAddOpponent(false);
+      setManualName('Fire Boys');
+      setManualLocation('');
+      setManualPlayers(createDefaultPlayers());
+      reload();
+      if (reloadConns) reloadConns();
+    } catch (err) {
+      setOppErr(err.message || 'Failed to create opponent team');
     } finally {
       setOppSending(false);
     }
@@ -453,14 +537,14 @@ export default function Teams() {
 
       {/* Add New Opponent Modal */}
       {showAddOpponent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-2xs">
-          <div className="card w-full max-w-md p-5 shadow-xl space-y-3.5">
-            <div className="flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4 backdrop-blur-2xs">
+          <div className="card w-full max-w-lg p-4 sm:p-5 shadow-xl space-y-3.5 max-h-[92vh] flex flex-col">
+            <div className="flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
                 <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-pitch-500/15 text-pitch-700">
                   <Handshake className="h-4 w-4" />
                 </div>
-                <h2 className="text-base font-bold text-slate-900">Add New Opponent Team</h2>
+                <h2 className="text-base font-bold text-slate-900">Add Opponent Team</h2>
               </div>
               <button
                 type="button"
@@ -471,46 +555,172 @@ export default function Teams() {
               </button>
             </div>
 
-            <p className="text-[11px] text-slate-600 leading-relaxed">
-              Enter the opponent team's 6-character Team Code. A connection request will be sent to their manager. Once accepted, they appear as your opponent and you can schedule matches together.
-            </p>
+            {/* Tab selection: Code vs Manual */}
+            <div className="flex rounded-xl bg-slate-100 p-1 text-xs font-semibold gap-1 shrink-0">
+              <button
+                type="button"
+                onClick={() => { setOppTab('code'); setOppErr(''); setOppMsg(''); }}
+                className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-1.5 transition ${oppTab === 'code' ? 'bg-white text-slate-900 shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'}`}
+              >
+                <Handshake className="h-3.5 w-3.5" /> By Team Code
+              </button>
+              <button
+                type="button"
+                onClick={() => { setOppTab('manual'); setOppErr(''); setOppMsg(''); }}
+                className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-1.5 transition ${oppTab === 'manual' ? 'bg-white text-slate-900 shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'}`}
+              >
+                <Plus className="h-3.5 w-3.5" /> Create Manually
+              </button>
+            </div>
 
-            <form onSubmit={sendOpponentRequest} className="space-y-3">
-              <div>
-                <label className="label text-xs" htmlFor="opp-code">Opponent Team Code</label>
-                <input
-                  id="opp-code"
-                  type="text"
-                  placeholder="e.g. GCWEXJ"
-                  value={oppCode}
-                  onChange={(e) => setOppCode(e.target.value.toUpperCase())}
-                  maxLength={10}
-                  className="input font-mono uppercase tracking-widest text-base font-bold !py-2"
-                  autoFocus
-                />
-              </div>
+            {oppTab === 'code' ? (
+              <form onSubmit={sendOpponentRequest} className="space-y-3">
+                <p className="text-[11px] text-slate-600 leading-relaxed">
+                  Enter the opponent team's 6-character Team Code. A connection request will be sent to their manager. Once accepted, you can schedule and score matches together.
+                </p>
 
-              {oppErr && <p className="text-xs font-semibold text-red-600">{oppErr}</p>}
-              {oppMsg && <p className="text-xs font-semibold text-green-600">{oppMsg}</p>}
+                <div>
+                  <label className="label text-xs" htmlFor="opp-code">Opponent Team Code</label>
+                  <input
+                    id="opp-code"
+                    type="text"
+                    placeholder="e.g. GCWEXJ"
+                    value={oppCode}
+                    onChange={(e) => setOppCode(e.target.value.toUpperCase())}
+                    maxLength={10}
+                    className="input font-mono uppercase tracking-widest text-base font-bold !py-2"
+                    autoFocus
+                  />
+                </div>
 
-              <div className="flex items-center justify-end gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => setShowAddOpponent(false)}
-                  className="btn btn-outline text-xs !py-1.5 !px-3"
-                >
-                  Close
-                </button>
-                <button
-                  type="submit"
-                  disabled={oppSending || !oppCode.trim()}
-                  className="btn btn-primary text-xs !py-1.5 !px-3.5"
-                >
-                  {oppSending && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />}
-                  Send Request
-                </button>
-              </div>
-            </form>
+                {oppErr && <p className="text-xs font-semibold text-red-600">{oppErr}</p>}
+                {oppMsg && <p className="text-xs font-semibold text-green-600">{oppMsg}</p>}
+
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddOpponent(false)}
+                    className="btn btn-outline text-xs !py-1.5 !px-3"
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={oppSending || !oppCode.trim()}
+                    className="btn btn-primary text-xs !py-1.5 !px-3.5"
+                  >
+                    {oppSending && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />}
+                    Send Request
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={createManualOpponent} className="space-y-3 flex-1 overflow-hidden flex flex-col">
+                <div className="space-y-3 overflow-y-auto pr-1 flex-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="label text-xs font-bold text-slate-700" htmlFor="m-team-name">Opponent Team Name *</label>
+                      <input
+                        id="m-team-name"
+                        type="text"
+                        placeholder="e.g. Fire Boys"
+                        value={manualName}
+                        onChange={(e) => setManualName(e.target.value)}
+                        className="input text-xs font-bold"
+                        required
+                        autoFocus
+                      />
+                    </div>
+                    <div>
+                      <label className="label text-xs font-bold text-slate-700" htmlFor="m-team-loc">Location (Optional)</label>
+                      <input
+                        id="m-team-loc"
+                        type="text"
+                        placeholder="e.g. Local Ground"
+                        value={manualLocation}
+                        onChange={(e) => setManualLocation(e.target.value)}
+                        className="input text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-slate-800">Squad Players</span>
+                        <span className={`badge text-[10px] font-bold ${manualPlayers.length >= 11 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+                          {manualPlayers.length}/15 Players
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={addManualPlayer}
+                        disabled={manualPlayers.length >= 15}
+                        className="btn btn-outline text-[11px] !py-1 !px-2 font-bold flex items-center gap-1 disabled:opacity-40"
+                      >
+                        <Plus className="h-3 w-3" /> Add Player
+                      </button>
+                    </div>
+
+                    <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+                      {manualPlayers.map((p, idx) => (
+                        <div key={p.id} className="flex items-center gap-1.5 bg-slate-50 p-1.5 rounded-lg border border-slate-200">
+                          <span className="text-[10px] font-mono font-bold text-slate-400 w-5 text-center">#{idx + 1}</span>
+                          <input
+                            type="text"
+                            value={p.name}
+                            onChange={(e) => updateManualPlayer(idx, 'name', e.target.value)}
+                            placeholder={`Player ${idx + 1} Name`}
+                            className="input !py-1 text-xs flex-1 bg-white"
+                            required
+                          />
+                          <select
+                            value={p.role}
+                            onChange={(e) => updateManualPlayer(idx, 'role', e.target.value)}
+                            className="input !py-1 text-[11px] w-28 bg-white"
+                          >
+                            <option value="Batsman">Batsman</option>
+                            <option value="Bowler">Bowler</option>
+                            <option value="All-rounder">All-rounder</option>
+                            <option value="Wicket Keeper">Wicket Keeper</option>
+                          </select>
+                          {manualPlayers.length > 11 && (
+                            <button
+                              type="button"
+                              onClick={() => removeManualPlayer(idx)}
+                              className="text-slate-400 hover:text-red-600 p-1 rounded"
+                              title="Remove player"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {oppErr && <p className="text-xs font-semibold text-red-600 shrink-0">{oppErr}</p>}
+
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddOpponent(false)}
+                    className="btn btn-outline text-xs !py-1.5 !px-3"
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={oppSending || !manualName.trim() || manualPlayers.length < 11}
+                    className="btn btn-primary text-xs !py-1.5 !px-3.5 font-bold"
+                  >
+                    {oppSending && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />}
+                    Create & Add Opponent
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

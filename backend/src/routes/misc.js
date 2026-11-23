@@ -104,7 +104,7 @@ router.get('/stats', requireAuth, wrap(async (req, res) => {
   // ==========================================
   const myTeamDoc = vt
     ? await Team.findById(vt).select('_id name code logo location ballType').lean()
-    : await Team.findOne({ createdBy: req.user._id, isGuest: { $ne: true } })
+    : await Team.findOne({ createdBy: req.user._id, isGuest: { $ne: true }, isOpponent: { $ne: true } })
         .select('_id name code logo location ballType')
         .lean();
 

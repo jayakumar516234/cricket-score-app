@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Crosshair, Loader2, Play, Trophy, Undo2, Crown, UserPlus, X, Volume2, VolumeX, Download, Image as ImageIcon, QrCode, Sparkles, FileText } from 'lucide-react';
 import { api } from '../api.js';

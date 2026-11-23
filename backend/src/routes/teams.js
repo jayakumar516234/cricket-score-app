@@ -104,6 +104,7 @@ const teamOut = (t, extra = {}, user = null) => {
     createdAt: t.createdAt,
     createdBy: t.createdBy ? String(t.createdBy) : undefined,
     isGuest: Boolean(t.isGuest),
+    isOpponent: Boolean(t.isOpponent),
     ...extra,
   };
 };
@@ -136,17 +137,17 @@ router.get('/', wrap(async (req, res) => {
   ]);
   const counts = await Player.aggregate([{ $match: { team: { $in: teams.map((t) => t._id) } } }, { $group: { _id: '$team', n: { $sum: 1 } } }]);
   const countMap = Object.fromEntries(counts.map((c) => [String(c._id), c.n]));
-  const ownedCount = (req.user.role === 'superadmin' || req.user.role === 'admin') ? 0 : await Team.countDocuments({ createdBy: req.user._id, isGuest: { $ne: true } });
+  const ownedCount = (req.user.role === 'superadmin' || req.user.role === 'admin') ? 0 : await Team.countDocuments({ createdBy: req.user._id, isGuest: { $ne: true }, isOpponent: { $ne: true } });
 
   // Resolve user's own team (myTeamDoc)
   let myTeamDoc = null;
   if (!isViewer(req.user)) {
-    myTeamDoc = await Team.findOne({ createdBy: req.user._id, isGuest: { $ne: true } }).select('_id name code logo location ballType');
+    myTeamDoc = await Team.findOne({ createdBy: req.user._id, isGuest: { $ne: true }, isOpponent: { $ne: true } }).select('_id name code logo location ballType');
     if (!myTeamDoc && req.user.viewTeam) {
-      myTeamDoc = await Team.findOne({ _id: req.user.viewTeam, isGuest: { $ne: true } }).select('_id name code logo location ballType');
+      myTeamDoc = await Team.findOne({ _id: req.user.viewTeam, isGuest: { $ne: true }, isOpponent: { $ne: true } }).select('_id name code logo location ballType');
     }
     if (!myTeamDoc && (req.user.role === 'superadmin' || req.user.role === 'admin')) {
-      myTeamDoc = await Team.findOne({ isGuest: { $ne: true } }).select('_id name code logo location ballType');
+      myTeamDoc = await Team.findOne({ isGuest: { $ne: true }, isOpponent: { $ne: true } }).select('_id name code logo location ballType');
     }
     if (myTeamDoc) {
       await ensureTeamCode(myTeamDoc);
@@ -215,7 +216,7 @@ router.get('/pending-requests-count', wrap(async (req, res) => {
   if (req.user.viewTeam) {
     myTeamId = req.user.viewTeam;
   } else {
-    const myTeam = await Team.findOne({ createdBy: req.user._id, isGuest: { $ne: true } }).select('_id');
+    const myTeam = await Team.findOne({ createdBy: req.user._id, isGuest: { $ne: true }, isOpponent: { $ne: true } }).select('_id');
     myTeamId = myTeam?._id;
   }
   if (!myTeamId) return res.json({ count: 0 });
@@ -244,7 +245,7 @@ router.get('/:id', wrap(async (req, res) => {
 router.post('/', wrap(async (req, res) => {
   if (!canCreateTeams(req.user)) throw new HttpError(403, 'You do not have permission to create teams');
   if (req.user.role !== 'superadmin' && req.user.role !== 'admin') {
-    const owned = await Team.countDocuments({ createdBy: req.user._id, isGuest: { $ne: true } });
+    const owned = await Team.countDocuments({ createdBy: req.user._id, isGuest: { $ne: true }, isOpponent: { $ne: true } });
     if (owned >= 1) throw new HttpError(403, 'Team Admin can create only 1 team. You can edit your existing team.');
   }
   const data = parse(teamSchema, req.body);
@@ -497,6 +498,78 @@ router.post('/:id/connect', wrap(async (req, res) => {
   });
   await audit(req.user, 'team.connection.request', 'TeamConnection', conn._id, { from: team.name, to: target.name });
   res.status(201).json({ ok: true, status: 'pending', message: `Opponent request sent to ${target.name}` });
+}));
+
+// Create an opponent team manually with up to 15 players and automatically connect
+const manualOpponentSchema = z.object({
+  name: z.string().trim().min(2, 'Team name must be at least 2 characters').max(60),
+  location: z.string().trim().max(80).optional().default(''),
+  players: z.array(z.object({
+    name: z.string().trim().min(1, 'Player name is required').max(60),
+    role: z.enum(PLAYER_ROLES).optional().default('All-rounder'),
+    jerseyNumber: optInt(0, 999, 'Jersey number').optional(),
+  }))
+    .min(11, 'An opponent team needs at least 11 players')
+    .max(15, 'An opponent team can have at most 15 players'),
+});
+
+router.post('/:id/manual-opponent', wrap(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) throw new HttpError(404, 'Team not found');
+  const myTeam = await Team.findById(req.params.id);
+  if (!myTeam) throw new HttpError(404, 'Your team was not found');
+  if (!canManageTeam(req.user, myTeam)) throw new HttpError(403, 'Only team managers can add opponent teams');
+
+  const data = parse(manualOpponentSchema, req.body);
+
+  let teamName = data.name;
+  let counter = 1;
+  while (await Team.findOne({ name: teamName }).collation({ locale: 'en', strength: 2 })) {
+    teamName = `${data.name} (${counter++})`;
+  }
+
+  let code;
+  while (!code || (await Team.exists({ code }))) {
+    code = generateTeamCode(false);
+  }
+
+  const oppTeam = await Team.create({
+    name: teamName,
+    code,
+    location: data.location || '',
+    ballType: myTeam.ballType || 'Tennis Ball',
+    createdBy: req.user._id,
+    isGuest: false,
+    isOpponent: true,
+  });
+
+  try {
+    await Player.insertMany(
+      data.players.map((p) => ({
+        name: p.name,
+        role: p.role || 'All-rounder',
+        jerseyNumber: p.jerseyNumber ?? null,
+        team: oppTeam._id,
+        photo: '',
+      }))
+    );
+  } catch (err) {
+    await Team.deleteOne({ _id: oppTeam._id });
+    throw err;
+  }
+
+  // Connect opponent to user's team automatically as accepted
+  await TeamConnection.findOneAndUpdate(
+    { fromTeam: myTeam._id, toTeam: oppTeam._id },
+    { $set: { status: 'accepted' } },
+    { upsert: true, new: true }
+  );
+
+  await audit(req.user, 'team.opponent.create', 'Team', oppTeam._id, { name: oppTeam.name, opponentOf: myTeam.name });
+
+  res.status(201).json({
+    message: `Opponent team "${oppTeam.name}" created and connected!`,
+    team: teamOut(oppTeam, { playerCount: data.players.length, isConnectedOpponent: true }, req.user),
+  });
 }));
 
 // Get connections (accepted opponent teams, incoming requests, outgoing requests)
