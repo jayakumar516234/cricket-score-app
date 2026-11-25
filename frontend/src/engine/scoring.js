@@ -312,6 +312,41 @@ export function computeDecoratedInnings(deliveries, cfg, names) {
   return decorate(raw, names);
 }
 
+/** Returns an error message, or null if the delivery is valid for the given state. */
+export function validateBall(state, cfg, input) {
+  if (state.completed) return 'Innings is already complete';
+  const { striker, nonStriker, bowler, runs = 0, extra = null, wicket = null } = input;
+
+  if (extra !== null && !EXTRAS.includes(extra)) return 'Invalid extra type';
+  if (!Number.isInteger(runs) || runs < 0 || runs > 7) return 'Runs must be a whole number from 0 to 7';
+
+  if (!striker || !nonStriker) return 'Select the striker and the non-striker';
+  if (striker === nonStriker) return 'Striker and non-striker must be different players';
+  for (const id of [striker, nonStriker]) {
+    if (!cfg.battingXI.includes(id)) return 'Batter is not in the batting XI';
+    if (state.battingCard.find((b) => b.id === id)?.out) return 'That batter is already out';
+  }
+  if (state.striker && state.striker !== striker) return 'Striker does not match the current state';
+  if (state.nonStriker && state.nonStriker !== nonStriker) return 'Non-striker does not match the current state';
+
+  if (!bowler) return 'Select a bowler';
+  if (!cfg.bowlingXI.includes(bowler)) return 'Bowler is not in the bowling XI';
+  if (state.bowler && state.bowler !== bowler) return 'The bowler cannot change in the middle of an over';
+  if (!state.bowler && !state.eligibleBowlers?.some((p) => (p.id || p) === bowler)) {
+    return 'This bowler cannot bowl now (no consecutive overs, and the per-bowler over limit applies)';
+  }
+
+  if (wicket && wicket.type) {
+    const allowed = ALLOWED_WICKETS[extra || 'none'];
+    if (!allowed.includes(wicket.type)) {
+      return `A ${wicket.type} dismissal is not possible on ${extra ? `a ${extra}` : 'this delivery'}`;
+    }
+    if (wicket.dismissed && !['striker', 'nonStriker'].includes(wicket.dismissed)) return 'Invalid dismissed batter';
+    if (wicket.type !== 'runout' && wicket.dismissed === 'nonStriker') return 'Only a run out can dismiss the non-striker';
+  }
+  return null;
+}
+
 export function applyQueueToView(serverView, queue) {
   if (!serverView || !queue || queue.length === 0) return serverView;
   const match = serverView.match;

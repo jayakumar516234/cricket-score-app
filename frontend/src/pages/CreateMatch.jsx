@@ -16,12 +16,15 @@ import {
   Calendar,
   RotateCw,
   Sparkles,
+  Wifi,
+  WifiOff,
 } from 'lucide-react';
 import { api } from '../api.js';
 import { useFetch } from '../useFetch.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { ErrorBox, SkeletonForm, TeamLogo, DropdownSelect, Modal } from '../components/ui.jsx';
 import { playCoinFlipSound, playCoinWinSound } from '../utils/audio.js';
+import { createOfflineMatch } from '../utils/offlineStorage.js';
 
 const QUICK_OVERS = [6, 8, 10, 12, 15, 20, 50];
 
@@ -45,6 +48,7 @@ export default function CreateMatch() {
     tossWinner: '',
     tossDecision: 'bat',
     tieBreaker: 'tie',
+    mode: (typeof window !== 'undefined' && localStorage.getItem('cricket_scoring_mode') === 'offline') ? 'offline' : 'online',
   });
 
   const [guestPlayers, setGuestPlayers] = useState(
@@ -60,6 +64,9 @@ export default function CreateMatch() {
   const [errors, setErrors] = useState({});
   const [formError, setFormError] = useState('');
   const [busy, setBusy] = useState(false);
+
+  // Flip Coin is only shown if enabled in Settings (default: false / OFF)
+  const showCoinFlip = typeof window !== 'undefined' && localStorage.getItem('cricket_coin_flip') === 'true';
 
   const set = (patch) => setF((p) => ({ ...p, ...patch }));
 
@@ -283,6 +290,23 @@ export default function CreateMatch() {
         tieBreaker: f.tieBreaker,
       };
 
+      if (f.mode === 'offline') {
+        const homeDoc = home || { id: 'home_local', name: 'Home Team', players: [] };
+        const awayDocFinal = effectiveAway || { id: 'away_local', name: 'Opponent', players: [] };
+        const offlineMatch = createOfflineMatch({
+          name: f.name || `${homeDoc.name} vs ${awayDocFinal.name}`,
+          homeTeam: homeDoc,
+          awayTeam: awayDocFinal,
+          format: Number(f.overs) === 20 ? 'T20' : Number(f.overs) === 10 ? 'T10' : Number(f.overs) === 50 ? 'ODI' : 'Custom',
+          overs: Number(f.overs) || 10,
+          venue: f.venue,
+          tossWinner: f.tossWinner === 'guest' ? awayDocFinal.id : f.tossWinner || homeDoc.id,
+          tossDecision: f.tossDecision || 'bat',
+        });
+        nav(`/matches/${offlineMatch.id}`);
+        return;
+      }
+
       const res = await api('/matches', { method: 'POST', body });
       try {
         const savedAwayId = res?.match?.awayTeam?.id || (isGuest ? 'guest' : f.awayTeam);
@@ -358,53 +382,53 @@ export default function CreateMatch() {
             </button>
           </div>
 
-          {/* ⚔️ VISUAL VS BATTLE ARENA (BIGGER & PROMINENT) */}
-          <div className="mt-3.5 rounded-2xl bg-white/5 border border-white/10 p-3 backdrop-blur-sm">
-            <div className="flex items-center justify-between gap-3">
+          {/* ⚔️ VISUAL VS BATTLE ARENA (COMPACT & PROMINENT) */}
+          <div className="mt-2.5 rounded-2xl bg-white/5 border border-white/10 p-2.5 backdrop-blur-sm">
+            <div className="flex items-center justify-between gap-2.5">
               
-              {/* Home Team Side (Big Team Name) */}
+              {/* Home Team Side (Team Name) */}
               <div className="flex-1 text-center min-w-0">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/20 border-2 border-emerald-400/50 text-emerald-400 shadow-lg">
-                  {home ? <TeamLogo team={home} size={36} /> : <Shield className="h-6 w-6 text-emerald-400" />}
+                <div className="mx-auto flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl bg-emerald-500/20 border-2 border-emerald-400/50 text-emerald-400 shadow-md">
+                  {home ? <TeamLogo team={home} size={28} /> : <Shield className="h-5 w-5 text-emerald-400" />}
                 </div>
-                <div className="mt-2 text-sm sm:text-base font-black truncate text-white tracking-tight">
+                <div className="mt-1 text-xs sm:text-sm font-black truncate text-white tracking-tight">
                   {home?.name || 'Your Team'}
                 </div>
-                <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest block mt-0.5">
+                <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-widest block">
                   Home Team
                 </span>
               </div>
 
-              {/* Glowing VS Badge & Big Overs Display */}
+              {/* Glowing VS Badge & Match Overs Display */}
               <div className="flex flex-col items-center justify-center shrink-0 px-1">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-amber-500 to-rose-600 text-xs font-black text-white shadow-lg ring-2 ring-white/30">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-tr from-amber-500 to-rose-600 text-[11px] font-black text-white shadow-md ring-2 ring-white/30">
                   VS
                 </span>
-                <span className="text-xs sm:text-sm font-black text-amber-300 uppercase tracking-wider mt-1 drop-shadow-sm">
+                <span className="text-[11px] sm:text-xs font-black text-amber-300 uppercase tracking-wider mt-0.5 drop-shadow-sm">
                   {f.overs ? `${f.overs} Overs` : 'Match'}
                 </span>
                 {tossWinnerTeam && (
-                  <span className="text-[9.5px] font-bold text-slate-300 mt-0.5 max-w-[110px] truncate text-center">
+                  <span className="text-[9px] font-bold text-slate-300 mt-0.5 max-w-[120px] truncate text-center">
                     Toss: {tossWinnerTeam.name.slice(0, 10)} ({f.tossDecision === 'bat' ? 'Bat' : 'Bowl'})
                   </span>
                 )}
               </div>
 
-              {/* Away Team Side (Big Team Name) */}
+              {/* Away Team Side (Team Name) */}
               <div className="flex-1 text-center min-w-0">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-500/20 border-2 border-blue-400/50 text-blue-400 shadow-lg">
+                <div className="mx-auto flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl bg-blue-500/20 border-2 border-blue-400/50 text-blue-400 shadow-md">
                   {effectiveAway?.isGuest ? (
-                    <Users className="h-6 w-6 text-amber-400" />
+                    <Users className="h-5 w-5 text-amber-400" />
                   ) : effectiveAway ? (
-                    <TeamLogo team={effectiveAway} size={36} />
+                    <TeamLogo team={effectiveAway} size={28} />
                   ) : (
-                    <Shield className="h-6 w-6 text-blue-400" />
+                    <Shield className="h-5 w-5 text-blue-400" />
                   )}
                 </div>
-                <div className="mt-2 text-sm sm:text-base font-black truncate text-white tracking-tight">
+                <div className="mt-1 text-xs sm:text-sm font-black truncate text-white tracking-tight">
                   {effectiveAway?.name || 'Opponent'}
                 </div>
-                <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest block mt-0.5">
+                <span className="text-[9px] font-bold text-blue-400 uppercase tracking-widest block">
                   {isOpponentGuest ? 'Guest Opponent' : 'Opponent'}
                 </span>
               </div>
@@ -414,50 +438,86 @@ export default function CreateMatch() {
         </div>
 
         {/* Form Body */}
-        <form onSubmit={submit} noValidate className="p-3.5 sm:p-4 space-y-3.5 bg-slate-50/50">
+        <form onSubmit={submit} noValidate className="p-3.5 sm:p-4 space-y-3 bg-slate-50/50">
           <ErrorBox message={formError} />
 
-          {/* 1. TEAM SELECTION DROPDOWNS */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-3 space-y-2.5 shadow-2xs">
-            <div className="grid grid-cols-2 gap-2">
-              {/* Home Select */}
-              <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase tracking-wider text-emerald-800 flex items-center gap-1">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                  Your Team
-                </label>
-                <DropdownSelect
-                  id="home"
-                  value={f.homeTeam}
-                  onChange={(id) => set({ homeTeam: id, awayTeam: f.awayTeam === id ? '' : f.awayTeam, tossWinner: id })}
-                  options={homeOptions}
-                  placeholder="Select squad"
-                  error={!!errors.homeTeam}
-                  buttonClassName="!py-2.5 !px-3 text-sm font-bold min-h-[44px]"
-                />
-              </div>
+          {/* Scoring Mode Switcher: Online Live vs Offline Local Match */}
+          <div className="flex items-center justify-between p-1 rounded-2xl bg-white border border-slate-200 shadow-2xs gap-1">
+            <button
+              type="button"
+              onClick={() => set({ mode: 'online' })}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-black transition-all ${
+                f.mode === 'online'
+                  ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              <Wifi className="h-3.5 w-3.5" />
+              <span>Online Live</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => set({ mode: 'offline' })}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-black transition-all ${
+                f.mode === 'offline'
+                  ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              <WifiOff className="h-3.5 w-3.5" />
+              <span>Offline Local Match</span>
+            </button>
+          </div>
 
-              {/* Opponent Select */}
-              <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase tracking-wider text-blue-800 flex items-center gap-1">
-                  <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
-                  Opponent
+          {/* 1. TEAM SELECTION DROPDOWNS - STACKED 1-BY-1 FOR FULL VISIBILITY */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-2.5 sm:p-3 space-y-2 shadow-2xs">
+            {/* Your Team (Home) */}
+            <div className="space-y-1">
+              <div className="flex items-center justify-between px-0.5">
+                <label className="text-[10px] font-black uppercase tracking-wider text-emerald-800 flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  Your Team (Home)
                 </label>
-                <DropdownSelect
-                  id="away"
-                  value={f.awayTeam}
-                  onChange={(id) => set({ awayTeam: id, tossWinner: f.tossWinner || f.homeTeam })}
-                  options={opponentOptions}
-                  placeholder={connLoading ? 'Loading...' : 'Opponent'}
-                  error={!!errors.awayTeam}
-                  buttonClassName="!py-2.5 !px-3 text-sm font-bold min-h-[44px]"
-                />
+                <span className="text-[9.5px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                  Primary Squad
+                </span>
               </div>
+              <DropdownSelect
+                id="home"
+                value={f.homeTeam}
+                onChange={(id) => set({ homeTeam: id, awayTeam: f.awayTeam === id ? '' : f.awayTeam, tossWinner: id })}
+                options={homeOptions}
+                placeholder="Select squad"
+                error={!!errors.homeTeam}
+                buttonClassName="!py-2 !px-3 text-xs sm:text-sm font-bold min-h-[40px] w-full"
+              />
+            </div>
+
+            {/* Opponent Team (Away / Guest) - Full Width so long names are completely visible */}
+            <div className="space-y-1 pt-1.5 border-t border-slate-100">
+              <div className="flex items-center justify-between px-0.5">
+                <label className="text-[10px] font-black uppercase tracking-wider text-blue-800 flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+                  Opponent Team
+                </label>
+                <span className="text-[9.5px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+                  {isOpponentGuest ? 'Guest XI' : 'Registered / Guest'}
+                </span>
+              </div>
+              <DropdownSelect
+                id="away"
+                value={f.awayTeam}
+                onChange={(id) => set({ awayTeam: id, tossWinner: f.tossWinner || f.homeTeam })}
+                options={opponentOptions}
+                placeholder={connLoading ? 'Loading...' : 'Select Opponent'}
+                error={!!errors.awayTeam}
+                buttonClassName="!py-2 !px-3 text-xs sm:text-sm font-bold min-h-[40px] w-full"
+              />
             </div>
 
             {/* If Guest XI is selected: Clean dynamic Team Name + Edit 11 button */}
             {isOpponentGuest && (
-              <div className="rounded-xl bg-gradient-to-r from-amber-50 via-orange-50/40 to-amber-50 border border-amber-200/90 p-2.5 space-y-1.5 text-xs">
+              <div className="rounded-xl bg-gradient-to-r from-amber-50 via-orange-50/40 to-amber-50 border border-amber-200/90 p-2 sm:p-2.5 space-y-1.5 text-xs mt-1">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-black uppercase tracking-wider text-amber-900 flex items-center gap-1">
                     <Edit2 className="h-3 w-3 text-amber-600" />
@@ -470,7 +530,7 @@ export default function CreateMatch() {
                       </span>
                     )}
                     <span className="badge bg-amber-100 text-amber-800 border border-amber-300 text-[9px] font-bold py-0.2 px-1.5 rounded">
-                      Opponent for {home?.name || 'Your Team'} only
+                      Opponent for {home?.name || 'Your Team'}
                     </span>
                   </div>
                 </div>
@@ -478,20 +538,20 @@ export default function CreateMatch() {
                   <div className="relative flex-1">
                     <input
                       type="text"
-                      className="input !py-2 !px-3 text-sm font-bold text-slate-900 w-full bg-white border-amber-300 focus:border-amber-500 focus:ring-amber-400/20 shadow-2xs"
+                      className="input !py-1.5 !px-2.5 text-xs sm:text-sm font-bold text-slate-900 w-full bg-white border-amber-300 focus:border-amber-500 focus:ring-amber-400/20 shadow-2xs"
                       value={f.guestTeamName}
                       onChange={(e) => set({ guestTeamName: e.target.value })}
-                      placeholder="e.g. Guest 1, Kovai Kings XI"
+                      placeholder="e.g. Guest Team 1, Kovai Kings XI"
                       maxLength={60}
                     />
                   </div>
                   <button
                     type="button"
                     onClick={() => setGuestModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 px-3.5 py-2 text-xs sm:text-sm font-black text-white shadow-xs shrink-0 transition active:scale-95 min-h-[40px]"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 px-3 py-1.5 text-xs font-black text-white shadow-xs shrink-0 transition active:scale-95 min-h-[36px]"
                     title="Customize 11 players"
                   >
-                    <Users className="h-4 w-4" />
+                    <Users className="h-3.5 w-3.5" />
                     <span>11 Players</span>
                   </button>
                 </div>
@@ -532,7 +592,7 @@ export default function CreateMatch() {
             {errors.overs && <span className="text-xs text-red-600 font-bold block">{errors.overs}</span>}
           </div>
 
-          {/* 3. COMPACT WHO WON THE TOSS SECTION */}
+          {/* 3. WHO WON THE TOSS SECTION (FULL WIDTH NAMES - NO TRUNCATION) */}
           <div className="rounded-2xl border border-slate-200 bg-white p-3 sm:p-3.5 space-y-2.5 shadow-2xs">
             <div className="flex items-center justify-between">
               <span className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-1">
@@ -540,44 +600,46 @@ export default function CreateMatch() {
                 <span className="text-red-500">*</span>
               </span>
 
-              {/* 3D Coin Toss Arena Popup Button */}
-              <button
-                type="button"
-                onClick={() => setCoinModalOpen(true)}
-                disabled={!home || !effectiveAway}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 px-3.5 py-1.5 text-xs font-black text-slate-950 transition active:scale-95 shadow-sm min-h-[34px]"
-                title="Open 3D Coin Toss Arena"
-              >
-                <Coins className="h-3.5 w-3.5 text-slate-950" />
-                <span>Flip Coin 🪙</span>
-              </button>
+              {/* 3D Coin Toss Arena Popup Button (Only if enabled in Settings) */}
+              {showCoinFlip && (
+                <button
+                  type="button"
+                  onClick={() => setCoinModalOpen(true)}
+                  disabled={!home || !effectiveAway}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 px-3 py-1.5 text-xs font-black text-slate-950 transition active:scale-95 shadow-sm border border-amber-300 min-h-[34px]"
+                  title="Open 3D Coin Toss Arena"
+                >
+                  <Coins className="h-4 w-4 text-amber-950" />
+                  <span>Flip Coin 🪙</span>
+                </button>
+              )}
             </div>
 
-            {/* Team Toss Winner Selector - Compact Horizontal Cards */}
-            <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
+            {/* Team Toss Winner Selector - Full Width Stacked Cards so Full Team Name is Always Visible */}
+            <div className="space-y-2">
               {/* Home Team Button */}
               {home && (
                 <button
                   type="button"
                   onClick={() => set({ tossWinner: home.id })}
-                  className={`flex items-center justify-between gap-2 p-2.5 sm:p-3 rounded-2xl border-2 transition-all min-h-[48px] ${
+                  className={`w-full flex items-center justify-between gap-3 p-2.5 sm:p-3 rounded-2xl border-2 transition-all min-h-[44px] ${
                     isHomeWinner
                       ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white border-emerald-500 shadow-sm'
                       : 'bg-emerald-50/40 text-slate-800 border-emerald-200/80 hover:bg-emerald-50'
                   }`}
                 >
-                  <div className="flex items-center gap-2 min-w-0 flex-1 text-left">
-                    <TeamLogo team={home} size={22} />
-                    <span className="text-xs sm:text-sm font-black truncate">{home.name}</span>
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1 text-left">
+                    <TeamLogo team={home} size={24} />
+                    <span className="text-xs sm:text-sm font-black leading-snug break-words">{home.name}</span>
                   </div>
                   <span
-                    className={`text-[9.5px] sm:text-[10px] font-black uppercase px-2 py-0.5 rounded-md shrink-0 ${
+                    className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-lg shrink-0 ${
                       isHomeWinner
-                        ? 'bg-white/20 text-white'
+                        ? 'bg-white/20 text-white ring-1 ring-white/30'
                         : 'bg-emerald-100 text-emerald-800'
                     }`}
                   >
-                    {isHomeWinner ? '✓ Won' : 'Home'}
+                    {isHomeWinner ? '✓ Won Toss' : 'Home Team'}
                   </span>
                 </button>
               )}
@@ -587,34 +649,34 @@ export default function CreateMatch() {
                 <button
                   type="button"
                   onClick={() => set({ tossWinner: effectiveAway.id })}
-                  className={`flex items-center justify-between gap-2 p-2.5 sm:p-3 rounded-2xl border-2 transition-all min-h-[48px] ${
+                  className={`w-full flex items-center justify-between gap-3 p-2.5 sm:p-3 rounded-2xl border-2 transition-all min-h-[44px] ${
                     isAwayWinner
                       ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-blue-500 shadow-sm'
                       : 'bg-blue-50/40 text-slate-800 border-blue-200/80 hover:bg-blue-50'
                   }`}
                 >
-                  <div className="flex items-center gap-2 min-w-0 flex-1 text-left">
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1 text-left">
                     {effectiveAway.isGuest ? (
-                      <Users className="h-4.5 w-4.5 text-amber-500 shrink-0" />
+                      <Users className="h-5 w-5 text-amber-500 shrink-0" />
                     ) : (
-                      <TeamLogo team={effectiveAway} size={22} />
+                      <TeamLogo team={effectiveAway} size={24} />
                     )}
-                    <span className="text-xs sm:text-sm font-black truncate">{effectiveAway.name}</span>
+                    <span className="text-xs sm:text-sm font-black leading-snug break-words">{effectiveAway.name}</span>
                   </div>
                   <span
-                    className={`text-[9.5px] sm:text-[10px] font-black uppercase px-2 py-0.5 rounded-md shrink-0 ${
+                    className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-lg shrink-0 ${
                       isAwayWinner
-                        ? 'bg-white/20 text-white'
+                        ? 'bg-white/20 text-white ring-1 ring-white/30'
                         : 'bg-blue-100 text-blue-800'
                     }`}
                   >
-                    {isAwayWinner ? '✓ Won' : isOpponentGuest ? 'Guest XI' : 'Opponent'}
+                    {isAwayWinner ? '✓ Won Toss' : isOpponentGuest ? 'Guest XI' : 'Opponent'}
                   </span>
                 </button>
               )}
             </div>
 
-            {/* Toss Decision: Bat or Bowl - Compact */}
+            {/* Toss Decision: Bat or Bowl - Default: Bat First */}
             <div className="pt-2 border-t border-slate-100 flex items-center gap-2">
               <span className="text-xs font-black text-slate-600 shrink-0">
                 Elected to:
@@ -630,7 +692,7 @@ export default function CreateMatch() {
                       key={v}
                       type="button"
                       onClick={() => set({ tossDecision: v })}
-                      className={`rounded-xl py-2 px-3 text-xs sm:text-sm font-black border transition-all min-h-[42px] ${
+                      className={`rounded-xl py-2 px-3 text-xs sm:text-sm font-black border transition-all min-h-[40px] ${
                         active
                           ? 'bg-slate-900 text-white border-slate-900 shadow-sm font-black'
                           : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
@@ -642,16 +704,6 @@ export default function CreateMatch() {
                 })}
               </div>
             </div>
-
-            {/* Compact Live Toss Status Note */}
-            {tossWinnerTeam && (
-              <div className="text-[11px] text-center font-bold text-blue-900 bg-blue-50/80 border border-blue-200/80 rounded-xl py-1 px-3">
-                🏆 <strong className="font-black text-blue-950">{tossWinnerTeam.name}</strong> won toss & chose to{' '}
-                <span className="font-black text-emerald-800 underline uppercase">
-                  {f.tossDecision === 'bat' ? 'Bat First' : 'Bowl First'}
-                </span>
-              </div>
-            )}
           </div>
 
           {/* 4. OPTIONAL MATCH DETAILS TOGGLE (WITH CLEAR DATE PLACEHOLDER) */}
@@ -712,14 +764,26 @@ export default function CreateMatch() {
           <button
             type="submit"
             disabled={busy}
-            className="w-full relative overflow-hidden inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-600 hover:from-emerald-400 hover:to-teal-500 py-3.5 sm:py-4 text-sm sm:text-base font-black text-white shadow-lg shadow-emerald-900/30 active:scale-98 transition-all disabled:opacity-60 min-h-[52px]"
+            className={`w-full relative overflow-hidden inline-flex items-center justify-center gap-2 rounded-2xl py-3.5 sm:py-4 text-sm sm:text-base font-black text-white shadow-lg active:scale-98 transition-all disabled:opacity-60 min-h-[52px] ${
+              f.mode === 'offline'
+                ? 'bg-gradient-to-r from-amber-500 via-amber-600 to-orange-600 hover:from-amber-400 hover:to-orange-500 shadow-amber-900/30'
+                : 'bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-600 hover:from-emerald-400 hover:to-teal-500 shadow-emerald-900/30'
+            }`}
           >
             {busy ? (
               <Loader2 className="h-4.5 w-4.5 animate-spin" />
+            ) : f.mode === 'offline' ? (
+              <WifiOff className="h-4.5 w-4.5 text-white" />
             ) : (
               <Zap className="h-4.5 w-4.5 text-yellow-300 drop-shadow animate-pulse" />
             )}
-            <span>{busy ? 'Launching match…' : '⚡ START LIVE SCORING'}</span>
+            <span>
+              {busy
+                ? 'Launching match…'
+                : f.mode === 'offline'
+                ? '⚡ START OFFLINE MATCH (SAVED LOCALLY)'
+                : '⚡ START LIVE SCORING'}
+            </span>
           </button>
         </form>
       </div>

@@ -14,9 +14,11 @@ import {
   MapPin,
   Clock,
   Sparkles,
+  WifiOff,
 } from 'lucide-react';
 import { api, qs } from '../api.js';
 import { useFetch } from '../useFetch.js';
+import { getOfflineMatches, deleteOfflineMatch } from '../utils/offlineStorage.js';
 import {
   ConfirmDialog,
   Empty,
@@ -86,6 +88,24 @@ export default function Matches() {
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState('');
   const [copiedId, setCopiedId] = useState(null);
+  const [offlineTick, setOfflineTick] = useState(0);
+
+  const offlineMatches = useMemo(() => {
+    return getOfflineMatches().map((m) => {
+      const inn1 = m.innings?.[0]?.state;
+      const inn2 = m.innings?.[1]?.state;
+      const scores = [];
+      if (inn1) scores.push({ team: m.innings[0].battingTeam, runs: inn1.runs, wickets: inn1.wickets, overs: inn1.overs });
+      if (inn2) scores.push({ team: m.innings[1].battingTeam, runs: inn2.runs, wickets: inn2.wickets, overs: inn2.overs });
+      return {
+        ...m,
+        isOffline: true,
+        canManage: true,
+        scores,
+        resultSummary: m.result?.summary,
+      };
+    });
+  }, [offlineTick]);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -96,13 +116,33 @@ export default function Matches() {
   }, [search]);
 
   const { data, error, loading, reload } = useFetch(
-    `/matches${qs({ search: q, status, page, limit: 8 })}`,
+    `/matches${qs({ search: q, status: status === 'offline' ? '' : status, page, limit: 8 })}`,
     { poll: 20000 }
   );
+
+  const combinedItems = useMemo(() => {
+    const serverItems = data?.items || [];
+    let off = offlineMatches;
+    if (q) {
+      const lower = q.toLowerCase();
+      off = off.filter((m) => m.name?.toLowerCase().includes(lower) || m.homeTeam?.name?.toLowerCase().includes(lower) || m.awayTeam?.name?.toLowerCase().includes(lower));
+    }
+    if (status === 'offline') return off;
+    if (status && status !== 'offline') {
+      off = off.filter((m) => m.status === status);
+    }
+    return [...off, ...serverItems];
+  }, [data?.items, offlineMatches, q, status]);
 
   const doDelete = async () => {
     setBusy(true);
     try {
+      if (del?.isOffline) {
+        deleteOfflineMatch(del.id);
+        setDel(null);
+        setOfflineTick((t) => t + 1);
+        return;
+      }
       await api(`/matches/${del.id}`, { method: 'DELETE' });
       setDel(null);
       reload();
@@ -147,6 +187,7 @@ export default function Matches() {
   const statusChips = [
     { value: '', label: 'All Matches' },
     { value: 'live', label: 'Live', isLive: true },
+    { value: 'offline', label: 'Offline Local', isOfflineChip: true },
     { value: 'scheduled', label: 'Scheduled' },
     { value: 'completed', label: 'Completed' },
   ];
@@ -261,7 +302,7 @@ export default function Matches() {
         <SkeletonMatchCard count={4} />
       ) : error ? (
         <ErrorBox message={error} onRetry={reload} />
-      ) : (data?.items?.length ?? 0) === 0 ? (
+      ) : combinedItems.length === 0 ? (
         <Empty
           icon={Trophy}
           title={q || status ? 'No matches match your filter' : 'No matches yet'}
@@ -287,7 +328,7 @@ export default function Matches() {
       ) : (
         <>
           <ul className="space-y-2.5 sm:space-y-3">
-            {(data?.items || []).map((m) => {
+            {combinedItems.map((m) => {
               const isLive = m.status === 'live';
               const isCompleted = m.status === 'completed';
               const isScheduled = m.status === 'scheduled';
@@ -317,6 +358,11 @@ export default function Matches() {
                         </Link>
 
                         <div className="flex items-center gap-1.5 shrink-0">
+                          {m.isOffline && (
+                            <span className="badge bg-amber-100 text-amber-950 border border-amber-300 text-[9px] font-black py-0.2 px-1.5 rounded shrink-0 flex items-center gap-1">
+                              <WifiOff className="h-3 w-3 text-amber-600" /> Offline
+                            </span>
+                          )}
                           <StatusBadge status={m.status} />
                         </div>
                       </div>

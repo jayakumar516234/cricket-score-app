@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { api } from './api.js';
+import { api, pingServer } from './api.js';
 import { useAuth } from './context/AuthContext.jsx';
 import Layout from './components/Layout.jsx';
 import CricketAppLoader from './components/CricketAppLoader.jsx';
@@ -79,14 +79,32 @@ export default function App() {
   const { user, loading } = useAuth();
   const location = useLocation();
 
-  // Background warmup ping to keep Render server awake
+  // Proactive warmup ping to wake up and keep Render server awake
   useEffect(() => {
-    const ping = () => {
-      fetch('https://cricket-score-api-9xe0.onrender.com/api/health', { method: 'GET', mode: 'cors' }).catch(() => {});
+    pingServer();
+
+    const handleWakeup = () => {
+      if (typeof document === 'undefined' || document.visibilityState === 'visible') {
+        pingServer();
+      }
     };
-    ping();
-    const timer = setInterval(ping, 8 * 60 * 1000); // every 8 minutes
-    return () => clearInterval(timer);
+
+    window.addEventListener('visibilitychange', handleWakeup);
+    window.addEventListener('focus', handleWakeup);
+    window.addEventListener('online', handleWakeup);
+
+    const timer = setInterval(() => {
+      if (typeof document === 'undefined' || document.visibilityState === 'visible') {
+        pingServer();
+      }
+    }, 8 * 60 * 1000); // every 8 minutes while tab is active
+
+    return () => {
+      window.removeEventListener('visibilitychange', handleWakeup);
+      window.removeEventListener('focus', handleWakeup);
+      window.removeEventListener('online', handleWakeup);
+      clearInterval(timer);
+    };
   }, []);
 
   // Save current route for seamless app restoration

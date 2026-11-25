@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -30,12 +30,33 @@ function ShimmerBar({ className = '' }) {
 
 // Progressive skeleton loader for Dashboard
 function DashboardSkeleton({ isAdmin }) {
+  const [isSlow, setIsSlow] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setIsSlow(true), 2500);
+    return () => clearTimeout(t);
+  }, []);
+
   return (
     <div className="space-y-3.5 sm:space-y-5">
       {/* Page Title Skeleton */}
       <div className="flex items-center justify-between">
         <ShimmerBar className="h-6 w-28" />
       </div>
+
+      {/* Auto-loading / Cold-start Status Banner */}
+      {isSlow && (
+        <div className="flex items-center justify-between p-2.5 sm:p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-200 text-xs shadow-2xs">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
+            </span>
+            <span className="font-semibold text-amber-200">Connecting to server & loading stats...</span>
+          </div>
+          <span className="text-[10px] text-amber-400 font-mono hidden sm:inline">Auto-retrying</span>
+        </div>
+      )}
 
       {/* Hero Banner Skeleton */}
       <section className="rounded-2xl border border-navy-800 bg-gradient-to-br from-navy-950 via-navy-900 to-navy-850 p-4 sm:p-5 shadow-sm">

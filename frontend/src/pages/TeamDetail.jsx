@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
   Eye,
@@ -17,6 +17,7 @@ import {
   Phone,
   UserCheck,
   Shield,
+  Trash2,
 } from 'lucide-react';
 import { api } from '../api.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -28,10 +29,26 @@ const slug = (name) => name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^
 
 export default function TeamDetail() {
   const { id } = useParams();
+  const nav = useNavigate();
   const { user } = useAuth();
   const { data, error, loading, reload } = useFetch(`/teams/${id}`);
   const [tab, setTab] = useState('squad');
   const [copied, setCopied] = useState(false);
+  const [delOpen, setDelOpen] = useState(false);
+  const [delBusy, setDelBusy] = useState(false);
+  const [delError, setDelError] = useState('');
+
+  const handleDeleteTeam = async () => {
+    setDelBusy(true);
+    setDelError('');
+    try {
+      await api(`/teams/${id}`, { method: 'DELETE' });
+      nav('/teams', { replace: true });
+    } catch (err) {
+      setDelError(err.message || 'Failed to delete team');
+      setDelBusy(false);
+    }
+  };
 
   if (loading && !data) return <SkeletonTeamDetail />;
   if (error && !data) return <ErrorBox message={error} onRetry={reload} />;
@@ -41,11 +58,47 @@ export default function TeamDetail() {
 
   return (
     <div className="space-y-3 sm:space-y-4">
+      {delError && <ErrorBox message={delError} />}
       <div className="flex items-center gap-2">
         <Link to="/teams" className="btn btn-ghost !p-1.5 sm:!p-2" aria-label="Back to teams"><ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" /></Link>
-        <h1 className="flex-1 text-lg sm:text-xl font-bold text-slate-900 leading-tight">{team.name}</h1>
-        {team.canManage && <Link to={`/teams/${team.id}/edit`} className="btn btn-outline text-xs sm:text-sm !py-1.5 !px-3"><Pencil className="h-3.5 w-3.5 mr-1" /> Update Team</Link>}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-lg sm:text-xl font-bold text-slate-900 leading-tight truncate">{team.name}</h1>
+            {(team.isGuest || team.isOpponent) && (
+              <span className="badge bg-amber-500/15 text-amber-800 border border-amber-300 text-[10px] font-bold py-0.5 px-2 rounded">
+                Guest Team
+              </span>
+            )}
+          </div>
+        </div>
+        {team.canManage && (
+          <div className="flex items-center gap-1.5">
+            <Link to={`/teams/${team.id}/edit`} className="btn btn-outline text-xs sm:text-sm !py-1.5 !px-3">
+              <Pencil className="h-3.5 w-3.5 mr-1" /> Update Team
+            </Link>
+            {(user?.role === 'superadmin' || team.isGuest || team.isOpponent) && (
+              <button
+                type="button"
+                onClick={() => setDelOpen(true)}
+                className="btn btn-ghost !p-2 text-red-600 hover:bg-red-50 rounded-xl"
+                title="Delete Guest Team"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        )}
       </div>
+
+      <ConfirmDialog
+        open={delOpen}
+        title={`Delete ${team.name}?`}
+        confirmLabel={delBusy ? 'Deleting...' : 'Delete Team'}
+        busy={delBusy}
+        onCancel={() => setDelOpen(false)}
+        onConfirm={handleDeleteTeam}
+        message={`This permanently deletes ${team.name} and all its players. Teams that have existing matches cannot be deleted.`}
+      />
 
       <section className="card p-3.5 sm:p-4">
         <div className="flex flex-col gap-3.5 sm:flex-row sm:items-center">

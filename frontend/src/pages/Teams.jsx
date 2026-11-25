@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Pencil, Plus, Search, Shield, Trash2, Handshake, Copy, Check, Clock,
@@ -50,7 +50,7 @@ export default function Teams() {
   const [oppSending, setOppSending] = useState(false);
   const [oppMsg, setOppMsg] = useState('');
   const [oppErr, setOppErr] = useState('');
-  const [manualName, setManualName] = useState('Fire Boys');
+  const [manualName, setManualName] = useState('Guest Team 1');
   const [manualLocation, setManualLocation] = useState('');
   const [manualPlayers, setManualPlayers] = useState(createDefaultPlayers);
   const [copied, setCopied] = useState(false);
@@ -86,6 +86,38 @@ export default function Teams() {
     ...data.myTeam,
     playerCount: myTeamItem?.playerCount ?? 11,
   } : null;
+
+  // Calculate next default guest team name (Guest Team 1, Guest Team 2, ...)
+  const computeNextGuestName = useCallback(() => {
+    const allTeams = [...(data?.items || []), ...(connData?.connected?.map((c) => c.team) || [])];
+    const guestNums = new Set();
+    const regex = /^guest\s*team(?:\s*(\d+))?$/i;
+
+    for (const tm of allTeams) {
+      const n = (tm?.name || '').trim();
+      const m = n.match(regex);
+      if (m) {
+        guestNums.add(m[1] ? parseInt(m[1], 10) : 1);
+      }
+    }
+
+    let n = 1;
+    while (guestNums.has(n)) n++;
+    return `Guest Team ${n}`;
+  }, [data?.items, connData?.connected]);
+
+  // Synchronize default guest team name whenever the modal is opened
+  useEffect(() => {
+    if (showAddOpponent && oppTab === 'manual') {
+      const nextName = computeNextGuestName();
+      setManualName((prev) => {
+        if (!prev || prev === 'Fire Boys' || /^guest\s*team(?:\s*\d+)?$/i.test(prev.trim())) {
+          return nextName;
+        }
+        return prev;
+      });
+    }
+  }, [showAddOpponent, oppTab, computeNextGuestName]);
 
   const doDelete = async () => {
     setBusy(true);
@@ -201,7 +233,7 @@ export default function Teams() {
       });
       setActionSuccess(res.message || `Opponent team "${manualName.trim()}" added!`);
       setShowAddOpponent(false);
-      setManualName('Fire Boys');
+      setManualName(computeNextGuestName());
       setManualLocation('');
       setManualPlayers(createDefaultPlayers());
       reload();
@@ -386,7 +418,7 @@ export default function Teams() {
         <>
           <ul className="space-y-2">
             {sortedItems.map((t) => {
-              const canEditOrDelete = t.isOwn || isSuper;
+              const canEditOrDelete = t.isOwn || isSuper || t.canManage || (t.createdBy && String(t.createdBy) === String(user?.id));
               const showCode = canSeeCode && t.code && (t.isOwn || isSuper || t.canManage);
 
               // Distinct Styling:
@@ -418,13 +450,19 @@ export default function Teams() {
                           </span>
                         )}
 
+                        {(t.isGuest || t.isOpponent) && !t.isOwn && (
+                          <span className="badge bg-amber-500/15 text-amber-800 border border-amber-300 text-[9px] font-bold uppercase tracking-wider py-0.2 px-1.5 rounded shadow-2xs flex items-center gap-1">
+                            <Users className="h-2.5 w-2.5 text-amber-600" /> Guest Team
+                          </span>
+                        )}
+
                         {t.isConnectedOpponent && (
                           <span className="badge bg-blue-600 text-white text-[9px] font-bold uppercase tracking-wider py-0.2 px-1.5 rounded shadow-2xs flex items-center gap-0.5">
                             <Handshake className="h-2.5 w-2.5" /> Opponent
                           </span>
                         )}
 
-                        {!t.isOwn && !t.isConnectedOpponent && (
+                        {!t.isOwn && !t.isConnectedOpponent && !t.isGuest && !t.isOpponent && (
                           <span className="badge bg-slate-100 text-slate-600 text-[9px] font-medium border border-slate-200">
                             Club
                           </span>
@@ -479,8 +517,8 @@ export default function Teams() {
                     )}
 
                     <div className="flex items-center gap-1.5 ml-auto sm:ml-0">
-                      {/* Play Match Button for Connected Opponents */}
-                      {t.isConnectedOpponent && myTeamId && (
+                      {/* Play Match Button for Connected Opponents / Guest Teams */}
+                      {t.isConnectedOpponent && myTeamId && !t.isOwn && (
                         <Link
                           to={`/matches/new?home=${myTeamId}&away=${t.id}`}
                           className="btn btn-green text-xs !py-1.5 !px-3 font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs flex items-center gap-1"
@@ -500,13 +538,13 @@ export default function Teams() {
                           >
                             <Pencil className="h-3 w-3 mr-1" /> Edit
                           </button>
-                          {/* Only superadmin can delete other teams; your team delete is disabled */}
-                          {isSuper && !t.isOwn && (
+                          {/* Super Admin can delete any team; user can delete their manual guest/opponent teams! */}
+                          {(isSuper || t.canDelete || ((t.isGuest || t.isOpponent) && (t.canManage || String(t.createdBy) === String(user?.id)))) && !t.isOwn && (
                             <button
-                              className="btn btn-ghost !p-1.5 text-red-600 hover:bg-red-50 rounded-lg"
+                              className="btn btn-ghost !p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition"
                               onClick={() => setDel(t)}
                               aria-label={`Delete ${t.name}`}
-                              title="Delete Team"
+                              title="Delete Guest Team"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                             </button>
@@ -569,7 +607,7 @@ export default function Teams() {
                 onClick={() => { setOppTab('manual'); setOppErr(''); setOppMsg(''); }}
                 className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-1.5 transition ${oppTab === 'manual' ? 'bg-white text-slate-900 shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'}`}
               >
-                <Plus className="h-3.5 w-3.5" /> Create Manually
+                <Users className="h-3.5 w-3.5" /> Create Guest Team
               </button>
             </div>
 
@@ -619,11 +657,11 @@ export default function Teams() {
                 <div className="space-y-3 overflow-y-auto pr-1 flex-1">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <div>
-                      <label className="label text-xs font-bold text-slate-700" htmlFor="m-team-name">Opponent Team Name *</label>
+                      <label className="label text-xs font-bold text-slate-700" htmlFor="m-team-name">Guest Opponent Team Name *</label>
                       <input
                         id="m-team-name"
                         type="text"
-                        placeholder="e.g. Fire Boys"
+                        placeholder="e.g. Guest Team 1"
                         value={manualName}
                         onChange={(e) => setManualName(e.target.value)}
                         className="input text-xs font-bold"
@@ -716,7 +754,7 @@ export default function Teams() {
                     className="btn btn-primary text-xs !py-1.5 !px-3.5 font-bold"
                   >
                     {oppSending && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />}
-                    Create & Add Opponent
+                    Create Guest Opponent
                   </button>
                 </div>
               </form>

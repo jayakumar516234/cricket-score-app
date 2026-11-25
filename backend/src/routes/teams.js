@@ -190,9 +190,16 @@ router.get('/', wrap(async (req, res) => {
     items: teams.map((t) => teamOut(t, {
       playerCount: countMap[String(t._id)] || 0,
       canManage: canManageTeam(req.user, t),
-      isOwn: String(t.createdBy) === String(req.user._id),
-      isConnectedOpponent: connectedTeamIds.has(String(t._id)),
+      isOwn: Boolean(myTeamDoc && String(t._id) === String(myTeamDoc._id)),
+      isGuest: Boolean(t.isGuest || t.isOpponent),
+      isOpponent: Boolean(t.isOpponent),
+      isConnectedOpponent: connectedTeamIds.has(String(t._id)) || (Boolean(t.isOpponent) && String(t.createdBy) === String(req.user._id)),
       isPendingOpponent: pendingOutgoingTeamIds.has(String(t._id)),
+      canDelete: Boolean(
+        req.user.role === 'superadmin' ||
+        req.user.role === 'admin' ||
+        ((t.isOpponent || t.isGuest) && canManageTeam(req.user, t))
+      ),
     }, req.user)),
     total,
     page,
@@ -521,10 +528,14 @@ router.post('/:id/manual-opponent', wrap(async (req, res) => {
 
   const data = parse(manualOpponentSchema, req.body);
 
-  let teamName = data.name;
-  let counter = 1;
+  let teamName = (data.name || 'Guest Team 1').trim();
+  const matchNum = teamName.match(/^(.*?)(?:\s+(\d+))?$/);
+  const baseName = (matchNum ? matchNum[1] : teamName).trim();
+  let num = matchNum && matchNum[2] ? parseInt(matchNum[2], 10) : 1;
+
   while (await Team.findOne({ name: teamName }).collation({ locale: 'en', strength: 2 })) {
-    teamName = `${data.name} (${counter++})`;
+    num++;
+    teamName = `${baseName} ${num}`;
   }
 
   let code;
@@ -822,11 +833,19 @@ router.delete('/:id', wrap(async (req, res) => {
   const team = await Team.findById(req.params.id);
   if (!team) throw new HttpError(404, 'Team not found');
   if (!canManageTeam(req.user, team)) throw new HttpError(403, 'You can only delete your own teams');
+
+  // Protect primary team from deletion for non-admins (user's main squad must remain intact)
+  const isPrimaryTeam = !team.isGuest && !team.isOpponent && (req.user.role !== 'superadmin' && req.user.role !== 'admin');
+  if (isPrimaryTeam) {
+    throw new HttpError(400, 'Your primary team cannot be deleted. You can edit team details or players instead.');
+  }
+
   if (await Match.exists({ $or: [{ homeTeam: team._id }, { awayTeam: team._id }] })) {
     throw new HttpError(409, 'This team has matches and cannot be deleted. Delete its matches first');
   }
   await Player.deleteMany({ team: team._id });
   await User.deleteMany({ viewTeam: team._id, role: 'viewer' });
+  await TeamConnection.deleteMany({ $or: [{ fromTeam: team._id }, { toTeam: team._id }] });
   await team.deleteOne();
   await audit(req.user, 'team.delete', 'Team', team._id, { name: team.name });
   res.json({ ok: true });

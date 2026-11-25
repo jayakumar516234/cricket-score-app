@@ -886,7 +886,7 @@ export function DropdownSelect({
         onClick={() => setOpen((prev) => !prev)}
         className={`input flex w-full items-center justify-between text-left ${error ? 'input-error' : ''} ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${buttonClassName}`}
       >
-        <span className={`truncate ${!selectedOption && (value === '' || value === undefined) ? 'text-slate-400' : 'text-slate-900 font-medium'}`}>
+        <span className={`break-words text-left flex-1 min-w-0 pr-2 ${!selectedOption && (value === '' || value === undefined) ? 'text-slate-400' : 'text-slate-900 font-bold'}`}>
           {selectedOption ? selectedOption.label : placeholder}
         </span>
         <ChevronDown className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} />
@@ -908,16 +908,16 @@ export function DropdownSelect({
               <div
                 key={`${String(opt.value)}_${idx}`}
                 onClick={() => { onChange(opt.value); setOpen(false); }}
-                className={`flex cursor-pointer items-center justify-between px-3.5 py-2 text-sm transition ${
+                className={`flex cursor-pointer items-center justify-between px-3.5 py-2.5 text-sm transition ${
                   isSelected ? 'bg-pitch-50 font-bold text-pitch-900' : 'text-slate-800 hover:bg-slate-50'
                 }`}
               >
-                <div className="flex items-center gap-2 truncate">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
                   {opt.icon && <span className="shrink-0">{opt.icon}</span>}
-                  <span className="truncate">{opt.label}</span>
-                  {opt.badge && <span className="badge bg-pitch-100 text-pitch-800 text-[10px]">{opt.badge}</span>}
+                  <span className="break-words whitespace-normal text-left flex-1 leading-snug">{opt.label}</span>
+                  {opt.badge && <span className="badge bg-pitch-100 text-pitch-800 text-[10px] shrink-0">{opt.badge}</span>}
                 </div>
-                {isSelected && <Check className="h-4 w-4 text-pitch-600 shrink-0" />}
+                {isSelected && <Check className="h-4 w-4 text-pitch-600 shrink-0 ml-2" />}
               </div>
             );
           })}
