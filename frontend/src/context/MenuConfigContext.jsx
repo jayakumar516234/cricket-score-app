@@ -11,8 +11,16 @@ const ALWAYS_VISIBLE = ['home', 'settings'];
 export function MenuConfigProvider({ children }) {
   const { user } = useAuth();
   const [visibleKeys, setVisibleKeys] = useState(null); // null = not yet loaded
+  const [features, setFeatures] = useState({ offlineModeEnabled: false, liveMatchEnabled: true });
 
   const loadConfig = useCallback(async () => {
+    try {
+      const featRes = await api('/config/features/public').catch(() => null);
+      if (featRes?.features) {
+        setFeatures(featRes.features);
+      }
+    } catch {}
+
     if (!user) {
       setVisibleKeys(null);
       return;
@@ -40,7 +48,7 @@ export function MenuConfigProvider({ children }) {
   );
 
   return (
-    <MenuConfigContext.Provider value={{ visibleKeys, isVisible, reload: loadConfig }}>
+    <MenuConfigContext.Provider value={{ visibleKeys, isVisible, features, reload: loadConfig }}>
       {children}
     </MenuConfigContext.Provider>
   );

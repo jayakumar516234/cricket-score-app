@@ -65,13 +65,14 @@ router.get('/features', requireAuth, requireRole('superadmin'), wrap(async (req,
 
 // PUT /api/config/features — update feature flags (Super Admin only)
 router.put('/features', requireAuth, requireRole('superadmin'), wrap(async (req, res) => {
-  const { liveMatchEnabled, liveChatEnabled, tournamentsEnabled, allowAllUsersOnline } = req.body;
+  const { liveMatchEnabled, liveChatEnabled, tournamentsEnabled, allowAllUsersOnline, offlineModeEnabled } = req.body;
   const current = (await AppConfig.findOne({ configKey: 'feature_flags' }).lean())?.value || DEFAULT_FEATURE_FLAGS;
   const updated = {
     liveMatchEnabled: typeof liveMatchEnabled === 'boolean' ? liveMatchEnabled : current.liveMatchEnabled,
     liveChatEnabled: typeof liveChatEnabled === 'boolean' ? liveChatEnabled : current.liveChatEnabled,
     tournamentsEnabled: typeof tournamentsEnabled === 'boolean' ? tournamentsEnabled : (current.tournamentsEnabled ?? true),
     allowAllUsersOnline: typeof allowAllUsersOnline === 'boolean' ? allowAllUsersOnline : (current.allowAllUsersOnline ?? false),
+    offlineModeEnabled: typeof offlineModeEnabled === 'boolean' ? offlineModeEnabled : (current.offlineModeEnabled ?? false),
   };
   await AppConfig.findOneAndUpdate(
     { configKey: 'feature_flags' },

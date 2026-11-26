@@ -22,6 +22,7 @@ import {
 import { api } from '../api.js';
 import { useFetch } from '../useFetch.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useMenuConfig } from '../context/MenuConfigContext.jsx';
 import { ErrorBox, SkeletonForm, TeamLogo, DropdownSelect, Modal } from '../components/ui.jsx';
 import { playCoinFlipSound, playCoinWinSound } from '../utils/audio.js';
 import { createOfflineMatch, getOfflineTeams, saveOfflineTeam } from '../utils/offlineStorage.js';
@@ -32,6 +33,8 @@ export default function CreateMatch() {
   const nav = useNavigate();
   const [searchParams] = useSearchParams();
   const { user, isSuper } = useAuth();
+  const { features } = useMenuConfig() || {};
+  const showOfflineFeature = Boolean(features?.offlineModeEnabled);
   const isAdmin = isSuper || user?.role === 'admin';
 
   const { data, loading, error } = useFetch('/teams?limit=100');
@@ -479,8 +482,8 @@ export default function CreateMatch() {
         <form onSubmit={submit} noValidate className="p-3.5 sm:p-4 space-y-3 bg-slate-50/50">
           <ErrorBox message={formError} />
 
-          {/* Scoring Mode Switcher: Admin-only feature (hidden from regular users) */}
-          {isAdmin && (
+          {/* Scoring Mode Switcher: Visible if Super Admin enabled Offline Mode AND user is Admin */}
+          {showOfflineFeature && isAdmin && (
             <>
               <div className="flex items-center justify-between p-1 rounded-2xl bg-white border border-slate-200 shadow-2xs gap-1">
                 <button

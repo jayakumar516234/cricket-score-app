@@ -115,7 +115,7 @@ export default function Login() {
               className="btn w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-black text-xs sm:text-sm py-2.5 shadow-xs flex items-center justify-center gap-2 rounded-xl active:scale-98 transition"
             >
               <Zap className="h-4 w-4 text-yellow-200 fill-current" />
-              <span>{t('login.continueOfflineBtn') || '⚡ Continue in Offline Mode (ஆஃப்லைனில் தொடரவும்)'}</span>
+              <span>{t('login.continueOfflineBtn') || '⚡ Continue in Offline Mode'}</span>
             </button>
           </div>
         )}

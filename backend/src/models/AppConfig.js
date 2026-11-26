@@ -30,4 +30,5 @@ export const DEFAULT_FEATURE_FLAGS = {
   liveChatEnabled: true,        // Master switch for live match fan chat & reactions
   tournamentsEnabled: true,     // Master switch for Tournaments module
   allowAllUsersOnline: false,   // Master switch: when false, regular users are default offline
+  offlineModeEnabled: false,    // Master switch: when false, offline mode is completely hidden from users
 };

@@ -279,6 +279,37 @@ export default function SuperAdminConfig() {
               />
             </button>
           </div>
+
+          {/* Offline Mode Master Switch */}
+          <div className="rounded-xl bg-white/5 border border-white/10 p-3 flex items-center justify-between gap-3 sm:col-span-2">
+            <div>
+              <div className="flex items-center gap-2">
+                <Wifi className="h-4 w-4 text-emerald-400" />
+                <span className="text-xs sm:text-sm font-bold text-white">Offline Scoring Feature</span>
+              </div>
+              <p className="text-[10px] text-slate-300 mt-0.5">
+                {features.offlineModeEnabled
+                  ? 'ON: Offline local scoring mode, local squads, and offline login are visible to users.'
+                  : 'OFF (Hidden): The app behaves purely online. Offline mode options are completely hidden from regular users.'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setFeatures((prev) => ({ ...prev, offlineModeEnabled: !prev.offlineModeEnabled }));
+                setSaved(false);
+              }}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                features.offlineModeEnabled ? 'bg-emerald-500' : 'bg-slate-700'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                  features.offlineModeEnabled ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
         </div>
       </div>
 

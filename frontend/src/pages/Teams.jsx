@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { api, qs } from '../api.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useMenuConfig } from '../context/MenuConfigContext.jsx';
 import { useFetch } from '../useFetch.js';
 import { getOfflineTeams, deleteOfflineTeam } from '../utils/offlineStorage.js';
 import {
@@ -32,6 +33,8 @@ export default function Teams() {
   const nav = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
+  const { features } = useMenuConfig() || {};
+  const showOfflineFeature = Boolean(features?.offlineModeEnabled);
   const isSuper = user?.role === 'superadmin';
   const isAdmin = isSuper || user?.role === 'admin';
   const isViewer = user?.role === 'viewer';
@@ -404,104 +407,108 @@ export default function Teams() {
         </div>
       )}
 
-      {/* ─── 📱 Local / Offline Teams Section (Always visible, stored locally on this device) ─── */}
-      <div className="rounded-2xl border border-purple-200/90 bg-gradient-to-br from-purple-50/70 via-slate-50 to-white p-3.5 shadow-xs space-y-2.5">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-100 text-purple-700">
-              <Smartphone className="h-4 w-4" />
+      {/* ─── Local / Offline Teams Section (Only visible when Super Admin turns ON Offline Mode) ─── */}
+      {showOfflineFeature && (
+        <div className="rounded-2xl border border-purple-200/90 bg-gradient-to-br from-purple-50/70 via-slate-50 to-white p-3.5 shadow-xs space-y-2.5">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-100 text-purple-700">
+                <Smartphone className="h-4 w-4" />
+              </div>
+              <div>
+                <h2 className="text-xs sm:text-sm font-black text-slate-900 leading-tight flex items-center gap-1.5">
+                  <span>Local / Offline Teams</span>
+                  <span className="badge bg-purple-200/80 text-purple-900 text-[9px] font-bold py-0.5 px-1.5 rounded-full">
+                    {localTeams.length}
+                  </span>
+                </h2>
+                <p className="text-[10px] text-slate-500">
+                  Teams saved locally on this device
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-xs sm:text-sm font-black text-slate-900 leading-tight flex items-center gap-1.5">
-                <span>📱 Local / Offline Teams</span>
-                <span className="badge bg-purple-200/80 text-purple-900 text-[9px] font-bold py-0.5 px-1.5 rounded-full">
-                  {localTeams.length}
-                </span>
-              </h2>
-              <p className="text-[10px] text-slate-500">
-                உங்கள் சாதனத்தில் உள்ள லோக்கல் டீம்கள் · இன்டர்நெட் தேவையின்றி அதிவேகமாக விளையாடலாம்
+            <Link
+              to="/teams/new"
+              className="btn btn-primary bg-purple-600 hover:bg-purple-700 text-white text-[11px] !py-1 !px-2.5 shadow-xs font-bold flex items-center gap-1"
+            >
+              <Plus className="h-3 w-3" /> New Local Squad
+            </Link>
+          </div>
+
+          {localTeams.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-purple-200 bg-white/70 p-3 text-center">
+              <p className="text-[11px] text-slate-500">
+                No local teams created yet.
               </p>
             </div>
-          </div>
-          <Link
-            to="/teams/new"
-            className="btn btn-primary bg-purple-600 hover:bg-purple-700 text-white text-[11px] !py-1 !px-2.5 shadow-xs font-bold flex items-center gap-1"
-          >
-            <Plus className="h-3 w-3" /> New Local Squad
-          </Link>
-        </div>
-
-        {localTeams.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-purple-200 bg-white/70 p-3 text-center">
-            <p className="text-[11px] text-slate-500">
-              லோக்கல் டீம்கள் எதுவும் இன்னும் இல்லை. நெட்வொர்க் இல்லாமல் விளையாட புதிய லோக்கல் டீம் ஒன்றை உருவாக்கலாம்.
-            </p>
-          </div>
-        ) : (
-          <div className="grid gap-2 sm:grid-cols-2">
-            {localTeams.map((lt) => (
-              <div
-                key={lt.id}
-                className="flex items-center justify-between gap-2 rounded-xl border border-purple-100 bg-white p-2.5 shadow-2xs hover:border-purple-300 transition"
-              >
-                <Link to={`/teams/${lt.id}`} className="flex items-center gap-2.5 min-w-0 flex-1">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-purple-100 text-purple-800 font-black text-xs">
-                    {lt.name.slice(0, 2).toUpperCase()}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="font-bold text-slate-900 text-xs truncate">{lt.name}</div>
-                    <div className="text-[10px] text-slate-500">
-                      {lt.playerCount || lt.players?.length || 11} Players{lt.location ? ` · ${lt.location}` : ''}
+          ) : (
+            <div className="grid gap-2 sm:grid-cols-2">
+              {localTeams.map((lt) => (
+                <div
+                  key={lt.id}
+                  className="flex items-center justify-between gap-2 rounded-xl border border-purple-100 bg-white p-2.5 shadow-2xs hover:border-purple-300 transition"
+                >
+                  <Link to={`/teams/${lt.id}`} className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-purple-100 text-purple-800 font-black text-xs">
+                      {lt.name.slice(0, 2).toUpperCase()}
                     </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-bold text-slate-900 text-xs truncate">{lt.name}</div>
+                      <div className="text-[10px] text-slate-500">
+                        {lt.playerCount || lt.players?.length || 11} Players{lt.location ? ` · ${lt.location}` : ''}
+                      </div>
+                    </div>
+                  </Link>
+                  <div className="flex items-center gap-1">
+                    <Link
+                      to={`/matches/new?home=${lt.id}`}
+                      className="btn btn-green text-[11px] !py-1 !px-2 font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs"
+                      title="Start Match"
+                    >
+                      Play
+                    </Link>
+                    <Link
+                      to={`/teams/${lt.id}/edit`}
+                      className="btn btn-outline text-[11px] !py-1 !px-2 text-slate-700"
+                      title="Edit Squad"
+                    >
+                      <Pencil className="h-3 w-3" />
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={(e) => handleDeleteLocalTeam(e, lt)}
+                      className="btn btn-ghost !p-1 text-red-500 hover:bg-red-50 rounded-lg"
+                      title="Delete"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
                   </div>
-                </Link>
-                <div className="flex items-center gap-1">
-                  <Link
-                    to={`/matches/new?home=${lt.id}`}
-                    className="btn btn-green text-[11px] !py-1 !px-2 font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs"
-                    title="Start Match"
-                  >
-                    Play
-                  </Link>
-                  <Link
-                    to={`/teams/${lt.id}/edit`}
-                    className="btn btn-outline text-[11px] !py-1 !px-2 text-slate-700"
-                    title="Edit Squad"
-                  >
-                    <Pencil className="h-3 w-3" />
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={(e) => handleDeleteLocalTeam(e, lt)}
-                    className="btn btn-ghost !p-1 text-red-500 hover:bg-red-50 rounded-lg"
-                    title="Delete"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
                 </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ─── Teams List Section ─── */}
+      <div className={`space-y-2.5 ${showOfflineFeature ? 'pt-2 border-t border-slate-200' : ''}`}>
+        {showOfflineFeature && (
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
+                <Globe className="h-4 w-4" />
               </div>
-            ))}
+              <div>
+                <h2 className="text-xs sm:text-sm font-black text-slate-900 leading-tight">
+                  Online Server Teams
+                </h2>
+                <p className="text-[10px] text-slate-500">
+                  Clubs and registered squads
+                </p>
+              </div>
+            </div>
           </div>
         )}
-      </div>
-
-      {/* ─── ☁️ Online Cloud Teams Section ─── */}
-      <div className="space-y-2.5 pt-2 border-t border-slate-200">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
-              <Globe className="h-4 w-4" />
-            </div>
-            <div>
-              <h2 className="text-xs sm:text-sm font-black text-slate-900 leading-tight">
-                ☁️ Online Cloud Teams (சர்வர் டீம்கள்)
-              </h2>
-              <p className="text-[10px] text-slate-500">
-                ஆன்லைன் எதிரணிகள் மற்றும் சர்வர் கிளப்புகள்
-              </p>
-            </div>
-          </div>
-        </div>
 
         {/* ─── Search Bar (Directly below Add Opponent / Edit Squad) ─── */}
         <div className="relative">

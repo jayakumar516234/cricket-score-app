@@ -220,7 +220,7 @@ export function TournamentCreateModal({ open, onClose, onCreated }) {
             {/* 4. Visibility Control */}
             <div className="rounded-2xl bg-slate-50 border border-slate-200/80 p-4 space-y-2.5">
               <label className="label font-black text-slate-800 text-xs sm:text-sm mb-0">
-                👁️ Tournament Visibility (யாருக்கு தெரிய வேண்டும்?)
+                👁️ Tournament Visibility
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <button
@@ -233,10 +233,10 @@ export function TournamentCreateModal({ open, onClose, onCreated }) {
                   }`}
                 >
                   <div className="font-bold text-xs sm:text-sm text-slate-900 flex items-center gap-1.5">
-                    <span>🌐 Public (அனைவருக்கும்)</span>
+                    <span>🌐 Public</span>
                   </div>
                   <p className="text-[11px] text-slate-500 mt-1">
-                    எல்லா பயனர்களுக்கும் டோர்னமென்ட் லிஸ்ட்டில் காட்டப்படும்.
+                    Visible to all users in the tournaments directory.
                   </p>
                 </button>
 
@@ -250,10 +250,10 @@ export function TournamentCreateModal({ open, onClose, onCreated }) {
                   }`}
                 >
                   <div className="font-bold text-xs sm:text-sm text-slate-900 flex items-center gap-1.5">
-                    <span>🔒 Invited Only (அணிகளுக்கு மட்டும்)</span>
+                    <span>🔒 Invited Only</span>
                   </div>
                   <p className="text-[11px] text-slate-500 mt-1">
-                    அமைப்பாளர் மற்றும் சேர்க்கப்பட்ட எதிரணி அணிகளுக்கு மட்டுமே தெரியும்.
+                    Visible only to the organizer and participating teams.
                   </p>
                 </button>
               </div>

@@ -477,11 +477,11 @@ export default function TournamentDetail() {
                   </span>
                   {tournament.visibility === 'invited' ? (
                     <span className="inline-flex items-center gap-1 text-[10.5px] font-bold px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-100 border border-amber-400/30">
-                      🔒 Invited Only (அணிகளுக்கு மட்டும்)
+                      🔒 Invited Only
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1 text-[10.5px] font-bold px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-100 border border-emerald-400/30">
-                      🌐 Public (அனைவருக்கும்)
+                      🌐 Public
                     </span>
                   )}
                 </div>
@@ -1448,10 +1448,10 @@ export default function TournamentDetail() {
           {/* MY TEAM TAB: organizer's own registered teams not yet in this tournament */}
           {addTeamTab === 'myteam' && (
             <div className="space-y-2">
-              <p className="text-xs text-slate-500 font-medium">உங்களுடைய டீம்கள் – ஒரு கிளிக்கில் டோர்னமென்டில் சேர்க்கலாம்:</p>
+              <p className="text-xs text-slate-500 font-medium">Your Teams – Add to tournament with one click:</p>
               {apiMyOwnTeams.length === 0 ? (
                 <p className="text-sm text-slate-500 text-center py-4 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                  உங்கள் அனைத்து டீம்களும் ஏற்கனவே டோர்னமென்டில் சேர்க்கப்பட்டுவிட்டன.
+                  All your teams are already participating in this tournament.
                 </p>
               ) : (
                 <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
@@ -1485,7 +1485,7 @@ export default function TournamentDetail() {
           {addTeamTab === 'code' && (
             <form onSubmit={handleAddTeam} className="space-y-4 text-sm">
               <div className="space-y-2">
-                <label className="label font-bold text-slate-700">Team Code (6 எழுத்து கோட்)</label>
+                <label className="label font-bold text-slate-700">Team Code</label>
                 <input
                   type="text"
                   placeholder="e.g. TM-4892"
@@ -1496,7 +1496,7 @@ export default function TournamentDetail() {
                   autoFocus
                 />
                 <p className="text-xs text-slate-500">
-                  எதிரணி கேப்டனிடம் அவர்களின் Team Code கேளுங்கள். ஆப்பில் பதிவு இல்லாத அணிகளுக்கு <strong>"Guest Team"</strong> tab பயன்படுத்துங்கள்.
+                  Ask the opponent manager for their Team Code. If they are not registered on the app, use the <strong>"Guest Team"</strong> tab.
                 </p>
               </div>
               <div className="flex gap-2 justify-end pt-1">
@@ -1513,7 +1513,7 @@ export default function TournamentDetail() {
             <form onSubmit={handleAddTeam} className="space-y-3 text-sm">
               {/* Team Name */}
               <div>
-                <label className="label font-bold text-slate-700">அணி பெயர் *</label>
+                <label className="label font-bold text-slate-700">Team Name *</label>
                 <input
                   type="text"
                   placeholder="e.g. Kanchipuram Super Kings"
@@ -1526,7 +1526,7 @@ export default function TournamentDetail() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="label font-bold text-slate-700">ஊர் / நகரம் (Optional)</label>
+                  <label className="label font-bold text-slate-700">Location / City (Optional)</label>
                   <input
                     type="text"
                     placeholder="e.g. Kanchipuram"
@@ -1536,7 +1536,7 @@ export default function TournamentDetail() {
                   />
                 </div>
                 <div>
-                  <label className="label font-bold text-slate-700">கேப்டன் / தொடர்பு (Optional)</label>
+                  <label className="label font-bold text-slate-700">Captain / Contact (Optional)</label>
                   <input
                     type="text"
                     placeholder="e.g. Kumar - 9876543210"
@@ -1556,17 +1556,17 @@ export default function TournamentDetail() {
                 >
                   <span className="flex items-center gap-1.5">
                     <Users className="h-3.5 w-3.5 text-amber-700" />
-                    11 பேர் பெயர் போடு (வீரர் பட்டியல்)
+                    Squad Players (11 Players)
                   </span>
                   <span className="text-amber-600 text-[10px] font-bold">
-                    {showGuestPlayers ? '▲ மூடு' : '▼ திற'}
+                    {showGuestPlayers ? '▲ Close' : '▼ Open'}
                   </span>
                 </button>
 
                 {showGuestPlayers && (
                   <div className="px-3 pb-3 space-y-1.5 border-t border-amber-200">
                     <p className="text-[10px] text-amber-700 font-medium pt-2">
-                      வீரர் பெயர் மாத்துக்கலாம் — default-ஆ Player 1–11 இருக்கும்.
+                      Customise player names — defaults to Player 1–11.
                     </p>
                     <div className="space-y-1 max-h-56 overflow-y-auto pr-0.5">
                       {guestPlayers.map((player, idx) => (
@@ -1608,7 +1608,7 @@ export default function TournamentDetail() {
               </div>
 
               <p className="text-xs text-slate-500 bg-amber-50 border border-amber-200/60 p-2.5 rounded-xl">
-                💡 ஆப்பில் அக்கவுண்ட் இல்லாத அணிகளை இப்படி நேரடியாக சேர்க்கலாம். GST கோட் கிடைக்கும் — மேட்ச் உடனே நடத்தலாம்.
+                💡 Teams without an account can be added here directly. A code will be generated and matches can be scheduled immediately.
               </p>
               <div className="flex gap-2 justify-end pt-1">
                 <button type="button" onClick={() => setAddTeamOpen(false)} className="btn btn-outline flex-1 sm:flex-initial py-2.5">Cancel</button>

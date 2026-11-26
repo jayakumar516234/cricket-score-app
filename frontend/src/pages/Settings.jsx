@@ -78,9 +78,6 @@ export default function Settings() {
   const [coinFlipEnabled, setCoinFlipEnabled] = useState(
     localStorage.getItem('cricket_coin_flip') === 'true'
   );
-  const [scoringMode, setScoringMode] = useState(
-    localStorage.getItem('cricket_scoring_mode') || 'online'
-  );
 
   // Danger Zone / Delete Account State
   const [deletePass, setDeletePass] = useState('');
@@ -195,13 +192,6 @@ export default function Settings() {
     const next = !coinFlipEnabled;
     setCoinFlipEnabled(next);
     localStorage.setItem('cricket_coin_flip', String(next));
-  };
-
-  // Toggle Scoring Mode (Online Live vs Offline Local-only)
-  const toggleScoringMode = () => {
-    const next = scoringMode === 'online' ? 'offline' : 'online';
-    setScoringMode(next);
-    localStorage.setItem('cricket_scoring_mode', next);
   };
 
   // Handle Account Deletion
@@ -461,42 +451,6 @@ export default function Settings() {
               <span
                 className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
                   coinFlipEnabled ? 'translate-x-5' : 'translate-x-0'
-                }`}
-              />
-            </button>
-          </div>
-
-          {/* Scoring Mode Toggle (Online Live vs Offline Local-only) */}
-          <div className="pt-2.5 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              {scoringMode === 'online' ? (
-                <Wifi className="h-4 w-4 text-emerald-600" />
-              ) : (
-                <WifiOff className="h-4 w-4 text-amber-500" />
-              )}
-              <div>
-                <span className="text-xs sm:text-sm font-bold text-slate-800 block leading-tight">
-                  Scoring Mode: {scoringMode === 'online' ? 'Online Live' : 'Offline Local'}
-                </span>
-                <span className="text-[10px] text-slate-400">
-                  {scoringMode === 'online'
-                    ? 'Cloud sync & public spectator live stream'
-                    : 'Saved 100% locally on device · Ultra fast & private'}
-                </span>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={toggleScoringMode}
-              className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                scoringMode === 'online' ? 'bg-emerald-600' : 'bg-amber-500'
-              }`}
-              role="switch"
-              aria-checked={scoringMode === 'online'}
-            >
-              <span
-                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
-                  scoringMode === 'online' ? 'translate-x-5' : 'translate-x-0'
                 }`}
               />
             </button>
