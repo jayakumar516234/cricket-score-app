@@ -42,6 +42,7 @@ const teamSchema = z.object({
   location: z.string().trim().max(80).optional().default(''),
   description: z.string().trim().max(500).optional().default(''),
   ballType: z.string().optional().default('Leather Ball'),
+  allowOnlineScoring: z.boolean().optional(),
   players: z.array(playerSchema)
     .min(MIN_SQUAD, `A team needs at least ${MIN_SQUAD} players`)
     .max(MAX_SQUAD, `A team can have at most ${MAX_SQUAD} players`),
@@ -105,6 +106,7 @@ const teamOut = (t, extra = {}, user = null) => {
     createdBy: t.createdBy ? String(t.createdBy) : undefined,
     isGuest: Boolean(t.isGuest),
     isOpponent: Boolean(t.isOpponent),
+    allowOnlineScoring: Boolean(t.allowOnlineScoring),
     ...extra,
   };
 };
@@ -297,6 +299,9 @@ router.put('/:id', wrap(async (req, res) => {
   team.location = data.location;
   team.description = data.description;
   team.ballType = data.ballType;
+  if ((req.user.role === 'superadmin' || req.user.role === 'admin') && typeof data.allowOnlineScoring === 'boolean') {
+    team.allowOnlineScoring = data.allowOnlineScoring;
+  }
   try {
     await team.save();
   } catch (e) {

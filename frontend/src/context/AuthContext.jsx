@@ -31,7 +31,17 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     setUnauthorizedHandler(logout);
-    if (!getToken()) {
+    const t = getToken();
+    if (!t) {
+      setLoading(false);
+      return;
+    }
+    // If user is operating in offline mode with offline token, restore cached offline session immediately!
+    if (t === 'offline_token') {
+      const stored = localStorage.getItem('cricket_user');
+      if (stored) {
+        try { setUser(JSON.parse(stored)); } catch {}
+      }
       setLoading(false);
       return;
     }
@@ -56,7 +66,7 @@ export function AuthProvider({ children }) {
   // Detects if the session has been invalidated by another device login,
   // even while the user is idle or returning to the app tab.
   useEffect(() => {
-    if (!user || !getToken()) return;
+    if (!user || !getToken() || getToken() === 'offline_token') return;
 
     let isChecking = false;
     const checkSession = async () => {
@@ -99,6 +109,9 @@ export function AuthProvider({ children }) {
     try {
       localStorage.setItem('cricket_user', JSON.stringify(d.user));
       sessionStorage.removeItem('auth_notice');
+      if (d.user?.role !== 'superadmin' && d.user?.role !== 'admin') {
+        localStorage.setItem('cricket_scoring_mode', 'offline');
+      }
     } catch {}
     return d.user;
   };
@@ -110,6 +123,9 @@ export function AuthProvider({ children }) {
     try {
       localStorage.setItem('cricket_user', JSON.stringify(d.user));
       sessionStorage.removeItem('auth_notice');
+      if (d.user?.role !== 'superadmin' && d.user?.role !== 'admin') {
+        localStorage.setItem('cricket_scoring_mode', 'offline');
+      }
     } catch {}
   };
 
@@ -119,7 +135,29 @@ export function AuthProvider({ children }) {
     try {
       localStorage.setItem('cricket_user', JSON.stringify(newUser));
       sessionStorage.removeItem('auth_notice');
+      if (newUser?.role !== 'superadmin' && newUser?.role !== 'admin') {
+        localStorage.setItem('cricket_scoring_mode', 'offline');
+      }
     } catch {}
+  };
+
+  const loginOffline = (name = 'Offline Scorer') => {
+    const offlineUser = {
+      _id: 'offline_user_id',
+      id: 'offline_user_id',
+      name: name || 'Offline Scorer',
+      username: 'offline_scorer',
+      role: 'admin',
+      isOfflineUser: true,
+    };
+    setToken('offline_token');
+    setUser(offlineUser);
+    try {
+      localStorage.setItem('cricket_user', JSON.stringify(offlineUser));
+      localStorage.setItem('cricket_scoring_mode', 'offline');
+      sessionStorage.removeItem('auth_notice');
+    } catch {}
+    return offlineUser;
   };
 
   const isSuper = user?.role === 'superadmin';
@@ -137,5 +175,5 @@ export function AuthProvider({ children }) {
   };
   const updateToken = (newToken) => setToken(newToken);
 
-  return <AuthContext.Provider value={{ user, loading, login, register, loginWithToken, logout, updateUser, updateToken, isSuper, isAdmin, isViewer }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ user, loading, login, register, loginOffline, loginWithToken, logout, updateUser, updateToken, isSuper, isAdmin, isViewer }}>{children}</AuthContext.Provider>;
 }

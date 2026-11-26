@@ -2,11 +2,13 @@ import { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Pencil, Plus, Search, Shield, Trash2, Handshake, Copy, Check, Clock,
-  Trophy, X, Loader2, Share2, Users, ExternalLink, ArrowRight, UserCheck
+  Trophy, X, Loader2, Share2, Users, ExternalLink, ArrowRight, UserCheck,
+  Smartphone, WifiOff, Globe
 } from 'lucide-react';
 import { api, qs } from '../api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useFetch } from '../useFetch.js';
+import { getOfflineTeams, deleteOfflineTeam } from '../utils/offlineStorage.js';
 import {
   ConfirmDialog, Empty, ErrorBox, Pagination, Spinner, SkeletonList,
   SkeletonTeamsPage, TeamLogo
@@ -296,7 +298,19 @@ export default function Teams() {
     }
   };
 
-  if (loading && !data) return <SkeletonTeamsPage />;
+  const [localTeams, setLocalTeams] = useState(() => getOfflineTeams());
+  const reloadLocal = () => setLocalTeams(getOfflineTeams());
+
+  const handleDeleteLocalTeam = (e, t) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!window.confirm(`Delete local team "${t.name}"?`)) return;
+    deleteOfflineTeam(t.id);
+    reloadLocal();
+    setActionSuccess(`Local team "${t.name}" deleted.`);
+  };
+
+  if (loading && !data && localTeams.length === 0) return <SkeletonTeamsPage />;
 
   const sortedItems = [...(data?.items || [])].sort((a, b) => {
     if (a.isOwn && !b.isOwn) return -1;
@@ -390,36 +404,146 @@ export default function Teams() {
         </div>
       )}
 
-      {/* ─── Search Bar (Directly below Add Opponent / Edit Squad) ─── */}
-      <div className="relative">
-        <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" aria-hidden />
-        <input
-          className="input !pl-9 text-xs sm:text-sm"
-          placeholder="Search teams by name or location..."
-          aria-label="Search teams"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+      {/* ─── 📱 Local / Offline Teams Section (Always visible, stored locally on this device) ─── */}
+      <div className="rounded-2xl border border-purple-200/90 bg-gradient-to-br from-purple-50/70 via-slate-50 to-white p-3.5 shadow-xs space-y-2.5">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-100 text-purple-700">
+              <Smartphone className="h-4 w-4" />
+            </div>
+            <div>
+              <h2 className="text-xs sm:text-sm font-black text-slate-900 leading-tight flex items-center gap-1.5">
+                <span>📱 Local / Offline Teams</span>
+                <span className="badge bg-purple-200/80 text-purple-900 text-[9px] font-bold py-0.5 px-1.5 rounded-full">
+                  {localTeams.length}
+                </span>
+              </h2>
+              <p className="text-[10px] text-slate-500">
+                உங்கள் சாதனத்தில் உள்ள லோக்கல் டீம்கள் · இன்டர்நெட் தேவையின்றி அதிவேகமாக விளையாடலாம்
+              </p>
+            </div>
+          </div>
+          <Link
+            to="/teams/new"
+            className="btn btn-primary bg-purple-600 hover:bg-purple-700 text-white text-[11px] !py-1 !px-2.5 shadow-xs font-bold flex items-center gap-1"
+          >
+            <Plus className="h-3 w-3" /> New Local Squad
+          </Link>
+        </div>
+
+        {localTeams.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-purple-200 bg-white/70 p-3 text-center">
+            <p className="text-[11px] text-slate-500">
+              லோக்கல் டீம்கள் எதுவும் இன்னும் இல்லை. நெட்வொர்க் இல்லாமல் விளையாட புதிய லோக்கல் டீம் ஒன்றை உருவாக்கலாம்.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-2 sm:grid-cols-2">
+            {localTeams.map((lt) => (
+              <div
+                key={lt.id}
+                className="flex items-center justify-between gap-2 rounded-xl border border-purple-100 bg-white p-2.5 shadow-2xs hover:border-purple-300 transition"
+              >
+                <Link to={`/teams/${lt.id}`} className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-purple-100 text-purple-800 font-black text-xs">
+                    {lt.name.slice(0, 2).toUpperCase()}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-bold text-slate-900 text-xs truncate">{lt.name}</div>
+                    <div className="text-[10px] text-slate-500">
+                      {lt.playerCount || lt.players?.length || 11} Players{lt.location ? ` · ${lt.location}` : ''}
+                    </div>
+                  </div>
+                </Link>
+                <div className="flex items-center gap-1">
+                  <Link
+                    to={`/matches/new?home=${lt.id}`}
+                    className="btn btn-green text-[11px] !py-1 !px-2 font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs"
+                    title="Start Match"
+                  >
+                    Play
+                  </Link>
+                  <Link
+                    to={`/teams/${lt.id}/edit`}
+                    className="btn btn-outline text-[11px] !py-1 !px-2 text-slate-700"
+                    title="Edit Squad"
+                  >
+                    <Pencil className="h-3 w-3" />
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={(e) => handleDeleteLocalTeam(e, lt)}
+                    className="btn btn-ghost !p-1 text-red-500 hover:bg-red-50 rounded-lg"
+                    title="Delete"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* ─── Teams List (Logged-in User's Team First in Green, Opponents below) ─── */}
-      {loading && !data ? (
-        <SkeletonList count={6} />
-      ) : error ? (
-        <ErrorBox message={error} onRetry={reload} />
-      ) : (data?.items || []).length === 0 ? (
-        <Empty
-          icon={Shield}
-          title={q ? 'No teams match your search' : 'No teams yet'}
-          text={q ? 'Try a different name or location.' : 'Create a team with 11 players to get started.'}
-          action={!q && data?.canCreate && <Link to="/teams/new" className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md">Create Team</Link>}
-        />
-      ) : (
-        <>
-          <ul className="space-y-2">
-            {sortedItems.map((t) => {
-              const canEditOrDelete = t.isOwn || isSuper || t.canManage || (t.createdBy && String(t.createdBy) === String(user?.id));
-              const showCode = canSeeCode && t.code && (t.isOwn || isSuper || t.canManage);
+      {/* ─── ☁️ Online Cloud Teams Section ─── */}
+      <div className="space-y-2.5 pt-2 border-t border-slate-200">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
+              <Globe className="h-4 w-4" />
+            </div>
+            <div>
+              <h2 className="text-xs sm:text-sm font-black text-slate-900 leading-tight">
+                ☁️ Online Cloud Teams (சர்வர் டீம்கள்)
+              </h2>
+              <p className="text-[10px] text-slate-500">
+                ஆன்லைன் எதிரணிகள் மற்றும் சர்வர் கிளப்புகள்
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* ─── Search Bar (Directly below Add Opponent / Edit Squad) ─── */}
+        <div className="relative">
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" aria-hidden />
+          <input
+            className="input !pl-9 text-xs sm:text-sm"
+            placeholder="Search teams by name or location..."
+            aria-label="Search teams"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+
+        {/* ─── Teams List (Logged-in User's Team First in Green, Opponents below) ─── */}
+        {error || (!navigator.onLine && (!data || (data?.items || []).length === 0)) ? (
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50/90 p-5 text-center">
+            <WifiOff className="h-6 w-6 text-slate-400 mx-auto mb-1.5" />
+            <div className="font-bold text-slate-700 text-xs sm:text-sm">
+              Connect to Network to View Online Cloud Teams
+            </div>
+            <p className="text-[10px] sm:text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+              சர்வர் டீம்களைக் காணவும் ஆன்லைனில் விளையாடவும் இணைய இணைப்பு தேவை. உங்கள் லோக்கல் டீம்களுடன் ஆஃப்லைனிலேயே எப்போது வேண்டுமானாலும் மேட்ச் விளையாடலாம்!
+            </p>
+            <button type="button" onClick={reload} className="btn btn-outline text-xs !py-1 !px-3 mt-3">
+              Try Reconnecting
+            </button>
+          </div>
+        ) : loading && !data ? (
+          <SkeletonList count={6} />
+        ) : (data?.items || []).length === 0 ? (
+          <Empty
+            icon={Shield}
+            title={q ? 'No teams match your search' : 'No teams yet'}
+            text={q ? 'Try a different name or location.' : 'Create a team with 11 players to get started.'}
+            action={!q && data?.canCreate && <Link to="/teams/new" className="btn btn-green bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md">Create Team</Link>}
+          />
+        ) : (
+          <>
+            <ul className="space-y-2">
+              {sortedItems.map((t) => {
+                const canEditOrDelete = isAdmin; // Only admin can edit server teams
+                const showCode = canSeeCode && t.code && (t.isOwn || isSuper || t.canManage);
 
               // Distinct Styling:
               // 1. Own Team: Highlighted Green border & background gradient
@@ -465,6 +589,12 @@ export default function Teams() {
                         {!t.isOwn && !t.isConnectedOpponent && !t.isGuest && !t.isOpponent && (
                           <span className="badge bg-slate-100 text-slate-600 text-[9px] font-medium border border-slate-200">
                             Club
+                          </span>
+                        )}
+
+                        {t.allowOnlineScoring && (
+                          <span className="badge bg-emerald-50 text-emerald-700 border border-emerald-300 text-[9px] font-bold py-0.2 px-1.5 rounded flex items-center gap-0.5">
+                            <Globe className="h-2.5 w-2.5" /> Online Live
                           </span>
                         )}
                       </div>
@@ -560,6 +690,7 @@ export default function Teams() {
           <Pagination page={data.page} pages={data.pages} total={data.total} onPage={setPage} />
         </>
       )}
+      </div>
 
       {/* Delete confirmation dialog */}
       <ConfirmDialog

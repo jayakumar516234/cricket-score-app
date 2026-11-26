@@ -1,19 +1,21 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Eye, EyeOff, Lock, User, Loader2, AlertTriangle, LogIn } from 'lucide-react';
+import { Eye, EyeOff, Lock, User, Loader2, AlertTriangle, LogIn, WifiOff, Zap } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { ErrorBox, CricketBallIcon } from '../components/ui.jsx';
 import { LanguageSelect } from '../components/LanguageSwitcher.jsx';
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, loginOffline } = useAuth();
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [isNetworkError, setIsNetworkError] = useState(() => typeof navigator !== 'undefined' && !navigator.onLine);
 
   const [sessionNotice] = useState(() => {
     try {
@@ -25,15 +27,35 @@ export default function Login() {
     }
   });
 
+  const handleContinueOffline = () => {
+    loginOffline(identifier.trim() || 'Offline Scorer');
+    navigate('/');
+  };
+
   const submit = async (e) => {
     e.preventDefault();
     if (!identifier.trim() || !password) return setError(t('login.errorEmpty') || 'Enter username and password');
     setBusy(true);
     setError('');
+    setIsNetworkError(false);
     try {
       await login(identifier.trim(), password);
     } catch (err) {
-      setError(err.message || 'Login failed');
+      const isOffline =
+        !navigator.onLine ||
+        err.message?.toLowerCase().includes('fetch') ||
+        err.message?.toLowerCase().includes('network') ||
+        err.message?.toLowerCase().includes('timeout') ||
+        err.status === 502 ||
+        err.status === 503 ||
+        err.status === 504;
+
+      if (isOffline) {
+        setIsNetworkError(true);
+        setError('Server is offline or no internet connection available.');
+      } else {
+        setError(err.message || 'Login failed');
+      }
       setBusy(false);
     }
   };
@@ -72,6 +94,31 @@ export default function Login() {
         )}
 
         <ErrorBox message={error} />
+
+        {/* 📴 Smart Offline Assistance Card when network error occurs or device is offline */}
+        {isNetworkError && (
+          <div className="rounded-2xl border-2 border-amber-300 bg-gradient-to-r from-amber-50 via-orange-50/50 to-amber-50 p-3.5 space-y-2.5 shadow-sm animate-in fade-in">
+            <div className="flex items-start gap-2.5">
+              <WifiOff className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+              <div className="min-w-0 flex-1">
+                <h3 className="text-xs sm:text-sm font-black text-amber-950">
+                  {t('login.offlineTitle') || 'Server Offline / No Internet'}
+                </h3>
+                <p className="text-[11px] sm:text-xs text-amber-800 font-medium leading-relaxed mt-0.5">
+                  {t('login.offlineHelp') || 'You are offline. You can jump straight into the app and score matches with zero internet.'}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleContinueOffline}
+              className="btn w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-black text-xs sm:text-sm py-2.5 shadow-xs flex items-center justify-center gap-2 rounded-xl active:scale-98 transition"
+            >
+              <Zap className="h-4 w-4 text-yellow-200 fill-current" />
+              <span>{t('login.continueOfflineBtn') || '⚡ Continue in Offline Mode (ஆஃப்லைனில் தொடரவும்)'}</span>
+            </button>
+          </div>
+        )}
 
         {/* Username or Mobile */}
         <div>
@@ -139,6 +186,22 @@ export default function Login() {
               <span>{t('login.loginBtn') || 'Login'}</span>
             </>
           )}
+        </button>
+
+        {/* Quick Offline Scoring Mode Option */}
+        <div className="relative flex py-1 items-center">
+          <div className="flex-grow border-t border-slate-200"></div>
+          <span className="flex-shrink mx-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">or</span>
+          <div className="flex-grow border-t border-slate-200"></div>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleContinueOffline}
+          className="w-full rounded-xl border border-amber-300 bg-amber-50/80 hover:bg-amber-100 text-amber-900 py-2.5 px-3 text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition shadow-2xs active:scale-98"
+        >
+          <WifiOff className="h-4 w-4 text-amber-600 shrink-0" />
+          <span>Quick Offline Scoring (No Internet Needed)</span>
         </button>
 
         {/* Sign Up Link */}

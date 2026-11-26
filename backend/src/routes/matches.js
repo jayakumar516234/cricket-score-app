@@ -262,6 +262,15 @@ router.post('/', wrap(async (req, res) => {
   if (!home) throw new HttpError(404, 'Your team not found');
   if (!canManageTeam(req.user, home)) throw new HttpError(403, 'You can only create matches for your own team');
 
+  const isPrivileged = req.user.role === 'superadmin' || req.user.role === 'admin';
+  if (!isPrivileged) {
+    const cfgDoc = await AppConfig.findOne({ configKey: 'feature_flags' }).lean();
+    const allowAllOnline = Boolean(cfgDoc?.value?.allowAllUsersOnline);
+    if (!allowAllOnline && !home.allowOnlineScoring) {
+      throw new HttpError(403, 'Online live scoring is currently disabled by Admin for this team. Please score this match in Offline Mode.');
+    }
+  }
+
   const homeCount = await Player.countDocuments({ team: home._id });
   if (homeCount < MIN_SQUAD) throw new HttpError(400, `${home.name} needs at least ${MIN_SQUAD} players before a match can be created`);
 

@@ -24,7 +24,7 @@ import { useFetch } from '../useFetch.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { ErrorBox, SkeletonForm, TeamLogo, DropdownSelect, Modal } from '../components/ui.jsx';
 import { playCoinFlipSound, playCoinWinSound } from '../utils/audio.js';
-import { createOfflineMatch } from '../utils/offlineStorage.js';
+import { createOfflineMatch, getOfflineTeams, saveOfflineTeam } from '../utils/offlineStorage.js';
 
 const QUICK_OVERS = [6, 8, 10, 12, 15, 20, 50];
 
@@ -70,14 +70,52 @@ export default function CreateMatch() {
 
   const set = (patch) => setF((p) => ({ ...p, ...patch }));
 
+  const offlineTeamsList = useMemo(() => {
+    const list = getOfflineTeams();
+    if (list.length === 0) {
+      const t1 = {
+        id: 'local_team_1',
+        name: 'Team Alpha',
+        isLocal: true,
+        canManage: true,
+        playerCount: 11,
+        players: Array.from({ length: 11 }, (_, i) => ({
+          name: `Alpha Player ${i + 1}`,
+          role: i < 4 ? 'Batsman' : i === 4 ? 'Wicket Keeper' : i < 7 ? 'All-rounder' : 'Bowler',
+        })),
+      };
+      const t2 = {
+        id: 'local_team_2',
+        name: 'Team Beta',
+        isLocal: true,
+        canManage: true,
+        playerCount: 11,
+        players: Array.from({ length: 11 }, (_, i) => ({
+          name: `Beta Player ${i + 1}`,
+          role: i < 4 ? 'Batsman' : i === 4 ? 'Wicket Keeper' : i < 7 ? 'All-rounder' : 'Bowler',
+        })),
+      };
+      return [t1, t2];
+    }
+    return list;
+  }, []);
+
+  const combinedTeams = useMemo(() => {
+    const onlineList = data?.items || [];
+    if (f.mode === 'offline') {
+      return [...offlineTeamsList, ...onlineList];
+    }
+    return onlineList.length > 0 ? onlineList : offlineTeamsList;
+  }, [data, f.mode, offlineTeamsList]);
+
   const myTeams = useMemo(
-    () => (data?.items || []).filter((t) => t.canManage && t.playerCount >= 11),
-    [data]
+    () => (combinedTeams || []).filter((t) => (t.canManage !== false) && (t.playerCount || 11) >= 11),
+    [combinedTeams]
   );
 
   // Fetch connections for selected homeTeam if not admin
   const { data: connData, loading: connLoading } = useFetch(
-    f.homeTeam && !isAdmin ? `/teams/${f.homeTeam}/connections` : null
+    f.homeTeam && !isAdmin && f.mode !== 'offline' ? `/teams/${f.homeTeam}/connections` : null
   );
 
   useEffect(() => {
@@ -87,13 +125,13 @@ export default function CreateMatch() {
   }, [myTeams, f.homeTeam]);
 
   const opponents = useMemo(() => {
-    if (isAdmin) {
-      return (data?.items || []).filter((t) => t.id !== f.homeTeam && (t.playerCount || 11) >= 11);
+    if (isAdmin || f.mode === 'offline') {
+      return (combinedTeams || []).filter((t) => t.id !== f.homeTeam && (t.playerCount || 11) >= 11);
     }
     if (!f.homeTeam) return [];
     const connectedList = connData?.connected?.map((c) => c.team) || [];
     return connectedList.filter((t) => (t.playerCount || 11) >= 11);
-  }, [isAdmin, data, f.homeTeam, connData]);
+  }, [isAdmin, f.mode, combinedTeams, f.homeTeam, connData]);
 
   // Options for opponent select dropdown (Regular opponents + Saved Guest Opponents + New Guest XI)
   const opponentOptions = useMemo(() => {
@@ -140,9 +178,9 @@ export default function CreateMatch() {
     }
   }, [f.homeTeam, connLoading, opponents, f.awayTeam]);
 
-  const home = data?.items.find((t) => t.id === f.homeTeam);
+  const home = combinedTeams.find((t) => t.id === f.homeTeam);
   const awayDoc =
-    (data?.items || []).find((t) => t.id === f.awayTeam) ||
+    (combinedTeams || []).find((t) => t.id === f.awayTeam) ||
     connData?.connected?.map((c) => c.team).find((t) => t.id === f.awayTeam);
   const isOpponentGuest = f.awayTeam === 'guest' || Boolean(awayDoc?.isGuest);
   const effectiveAway = isOpponentGuest
@@ -319,10 +357,10 @@ export default function CreateMatch() {
     }
   };
 
-  if (loading && myTeams.length === 0) return <SkeletonForm />;
-  if (error && myTeams.length === 0) return <ErrorBox message={error} />;
+  if (loading && myTeams.length === 0 && f.mode !== 'offline') return <SkeletonForm />;
+  if (error && myTeams.length === 0 && f.mode !== 'offline') return <ErrorBox message={error} />;
 
-  if (myTeams.length === 0) {
+  if (myTeams.length === 0 && f.mode !== 'offline') {
     return (
       <div className="mx-auto max-w-md w-full py-6 px-3">
         <div className="rounded-3xl bg-white p-6 text-center shadow-xl border border-slate-200">
@@ -468,6 +506,19 @@ export default function CreateMatch() {
               <span>Offline Local Match</span>
             </button>
           </div>
+
+          {f.mode === 'online' && home && !home.allowOnlineScoring && !isAdmin && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-2.5 text-[11px] text-amber-900 flex items-center justify-between gap-2">
+              <span>⚠️ இந்த டீமிற்கு அட்மின் ஆன்லைன் லைவ் அனுமதி தரவில்லை. ஆஃப்லைனில் உடனடியாக ஸ்கோர் செய்யலாம்!</span>
+              <button
+                type="button"
+                onClick={() => set({ mode: 'offline' })}
+                className="btn btn-outline text-[10px] !py-0.5 !px-2 bg-white text-amber-900 font-bold shrink-0"
+              >
+                Switch to Offline
+              </button>
+            </div>
+          )}
 
           {/* 1. TEAM SELECTION DROPDOWNS - STACKED 1-BY-1 FOR FULL VISIBILITY */}
           <div className="rounded-2xl border border-slate-200 bg-white p-2.5 sm:p-3 space-y-2 shadow-2xs">

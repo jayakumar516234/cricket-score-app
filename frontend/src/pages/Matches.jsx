@@ -298,9 +298,9 @@ export default function Matches() {
       </div>
 
       {/* ─── Matches List ─── */}
-      {loading && !data ? (
+      {loading && !data && combinedItems.length === 0 ? (
         <SkeletonMatchCard count={4} />
-      ) : error ? (
+      ) : error && combinedItems.length === 0 ? (
         <ErrorBox message={error} onRetry={reload} />
       ) : combinedItems.length === 0 ? (
         <Empty

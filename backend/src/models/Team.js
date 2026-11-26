@@ -29,6 +29,7 @@ const teamSchema = new mongoose.Schema(
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     isGuest: { type: Boolean, default: false, index: true },
     isOpponent: { type: Boolean, default: false, index: true },
+    allowOnlineScoring: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

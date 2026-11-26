@@ -24,14 +24,27 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useFetch } from '../useFetch.js';
 import { ConfirmDialog, ErrorBox, Field, Modal, Spinner, SkeletonTeamDetail, SkeletonList, TeamLogo } from '../components/ui.jsx';
 import { PlayerCardModal } from '../components/PlayerCardModal.jsx';
+import { getOfflineTeams } from '../utils/offlineStorage.js';
 
 const slug = (name) => name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 20);
 
 export default function TeamDetail() {
   const { id } = useParams();
   const nav = useNavigate();
-  const { user } = useAuth();
-  const { data, error, loading, reload } = useFetch(`/teams/${id}`);
+  const { user, isSuper } = useAuth();
+  const isAdmin = isSuper || user?.role === 'admin';
+  const isLocal = id?.startsWith('local_');
+  const localDoc = isLocal ? getOfflineTeams().find((t) => t.id === id) : null;
+
+  const { data: serverData, error, loading, reload } = useFetch(isLocal ? null : `/teams/${id}`);
+  const data = isLocal && localDoc
+    ? {
+        team: { ...localDoc, canManage: true, isLocal: true },
+        players: localDoc.players || [],
+        record: { played: 0, won: 0, lost: 0, tied: 0 },
+      }
+    : serverData;
+
   const [tab, setTab] = useState('squad');
   const [copied, setCopied] = useState(false);
   const [delOpen, setDelOpen] = useState(false);
@@ -50,11 +63,12 @@ export default function TeamDetail() {
     }
   };
 
-  if (loading && !data) return <SkeletonTeamDetail />;
-  if (error && !data) return <ErrorBox message={error} onRetry={reload} />;
+  if (loading && !data && !isLocal) return <SkeletonTeamDetail />;
+  if (error && !data && !isLocal) return <ErrorBox message={error} onRetry={reload} />;
   if (!data?.team) return <ErrorBox message={error || 'Team not found'} onRetry={reload} />;
   const { team, players = [], record = { played: 0, won: 0, lost: 0, tied: 0 } } = data;
   const canSeeCode = user?.role !== 'viewer' && (user?.role === 'superadmin' || user?.role === 'admin' || team.canManage);
+  const canEditTeam = isAdmin || isLocal;
 
   return (
     <div className="space-y-3 sm:space-y-4">
@@ -64,14 +78,24 @@ export default function TeamDetail() {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-lg sm:text-xl font-bold text-slate-900 leading-tight truncate">{team.name}</h1>
-            {(team.isGuest || team.isOpponent) && (
+            {isLocal && (
+              <span className="badge bg-purple-100 text-purple-800 border border-purple-200 text-[10px] font-bold py-0.5 px-2 rounded">
+                📱 Offline Local Team
+              </span>
+            )}
+            {team.allowOnlineScoring && (
+              <span className="badge bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] font-bold py-0.5 px-2 rounded">
+                🌐 Online Live Allowed
+              </span>
+            )}
+            {(team.isGuest || team.isOpponent) && !isLocal && (
               <span className="badge bg-amber-500/15 text-amber-800 border border-amber-300 text-[10px] font-bold py-0.5 px-2 rounded">
                 Guest Team
               </span>
             )}
           </div>
         </div>
-        {team.canManage && (
+        {canEditTeam && (
           <div className="flex items-center gap-1.5">
             <Link to={`/teams/${team.id}/edit`} className="btn btn-outline text-xs sm:text-sm !py-1.5 !px-3">
               <Pencil className="h-3.5 w-3.5 mr-1" /> Update Team

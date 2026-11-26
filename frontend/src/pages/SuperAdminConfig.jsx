@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Shield, Eye, EyeOff, Save, RotateCcw, Loader2, CheckCircle2, Info, Radio, MessageSquare, Zap, Trophy } from 'lucide-react';
+import { Shield, Eye, EyeOff, Save, RotateCcw, Loader2, CheckCircle2, Info, Radio, MessageSquare, Zap, Trophy, Globe, Wifi } from 'lucide-react';
 import { api } from '../api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 
@@ -244,6 +244,37 @@ export default function SuperAdminConfig() {
               <span
                 className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
                   features.tournamentsEnabled !== false ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* All Users Online Scoring Permission Switch */}
+          <div className="rounded-xl bg-white/5 border border-white/10 p-3 flex items-center justify-between gap-3 sm:col-span-2">
+            <div>
+              <div className="flex items-center gap-2">
+                <Globe className="h-4 w-4 text-sky-400" />
+                <span className="text-xs sm:text-sm font-bold text-white">All Users Online Scoring</span>
+              </div>
+              <p className="text-[10px] text-slate-300 mt-0.5">
+                {features.allowAllUsersOnline
+                  ? 'ON: Every user can score online on server and broadcast live.'
+                  : 'OFF (Default): Regular users score fast offline on device. Only Admin-approved teams broadcast online.'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setFeatures((prev) => ({ ...prev, allowAllUsersOnline: !prev.allowAllUsersOnline }));
+                setSaved(false);
+              }}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                features.allowAllUsersOnline ? 'bg-sky-500' : 'bg-slate-700'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                  features.allowAllUsersOnline ? 'translate-x-5' : 'translate-x-0'
                 }`}
               />
             </button>

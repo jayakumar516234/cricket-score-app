@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, ChevronDown, Loader2, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, ChevronDown, Loader2, Plus, Trash2, Globe, WifiOff } from 'lucide-react';
 import { api } from '../api.js';
+import { useAuth } from '../context/AuthContext.jsx';
+import { getOfflineTeams, saveOfflineTeam } from '../utils/offlineStorage.js';
 import { ErrorBox, Field, ImagePicker, Spinner, SkeletonForm, DropdownSelect } from '../components/ui.jsx';
 
 const ROLES = ['Batsman', 'Bowler', 'All-rounder', 'Wicket Keeper'];
@@ -15,9 +17,14 @@ export default function TeamForm() {
   const { id } = useParams();
   const editing = !!id;
   const nav = useNavigate();
+  const { user, isSuper } = useAuth();
+  const isAdmin = isSuper || user?.role === 'admin';
+  const isLocalTeam = editing && id.startsWith('local_');
+  const isOfflineMode = (typeof window !== 'undefined' && localStorage.getItem('cricket_scoring_mode') === 'offline') || !navigator.onLine;
+
   const [loading, setLoading] = useState(editing);
   const [loadError, setLoadError] = useState('');
-  const [team, setTeam] = useState({ name: '', logo: '', location: '', description: '' });
+  const [team, setTeam] = useState({ name: '', logo: '', location: '', description: '', allowOnlineScoring: false });
   const [players, setPlayers] = useState(Array.from({ length: MIN_SQUAD }, blankPlayer));
   const [open, setOpen] = useState(0);
   const [errors, setErrors] = useState({});
@@ -26,14 +33,48 @@ export default function TeamForm() {
 
   useEffect(() => {
     if (!editing) return;
+    if (isLocalTeam) {
+      const local = getOfflineTeams().find((t) => t.id === id);
+      if (local) {
+        setTeam({
+          name: local.name,
+          logo: local.logo || '',
+          location: local.location || '',
+          description: local.description || '',
+          allowOnlineScoring: false,
+        });
+        if (local.players?.length) {
+          setPlayers(local.players.map((p, idx) => ({ _key: p.id || `p-${idx}`, ...p })));
+        }
+      }
+      setLoading(false);
+      return;
+    }
+
     api(`/teams/${id}`)
       .then((d) => {
-        setTeam({ name: d.team.name, logo: d.team.logo || '', location: d.team.location || '', description: d.team.description || '' });
+        setTeam({
+          name: d.team.name,
+          logo: d.team.logo || '',
+          location: d.team.location || '',
+          description: d.team.description || '',
+          allowOnlineScoring: Boolean(d.team.allowOnlineScoring),
+        });
         setPlayers(d.players.map((p) => ({ _key: p.id, _id: p.id, name: p.name, photo: p.photo || '', jerseyNumber: p.jerseyNumber ?? '', age: p.age ?? '', role: p.role, battingStyle: p.battingStyle || '', bowlingStyle: p.bowlingStyle || '' })));
       })
-      .catch((e) => setLoadError(e.message))
+      .catch((e) => {
+        const local = getOfflineTeams().find((t) => t.id === id);
+        if (local) {
+          setTeam({ name: local.name, logo: local.logo || '', location: local.location || '', description: local.description || '', allowOnlineScoring: false });
+          if (local.players?.length) {
+            setPlayers(local.players.map((p, idx) => ({ _key: p.id || `p-${idx}`, ...p })));
+          }
+        } else {
+          setLoadError(e.message);
+        }
+      })
       .finally(() => setLoading(false));
-  }, [editing, id]);
+  }, [editing, id, isLocalTeam]);
 
   const setP = (i, patch) => setPlayers((ps) => ps.map((p, idx) => (idx === i ? { ...p, ...patch } : p)));
 
@@ -75,10 +116,42 @@ export default function TeamForm() {
     }
     setBusy(true);
     try {
+      if (isLocalTeam || (isOfflineMode && !editing)) {
+        saveOfflineTeam({
+          id: editing ? id : undefined,
+          name: team.name.trim(),
+          logo: team.logo,
+          location: team.location,
+          description: team.description,
+          players: players.map(({ _key, ...p }) => ({
+            ...p,
+            jerseyNumber: p.jerseyNumber === '' ? null : Number(p.jerseyNumber),
+            age: p.age === '' ? null : Number(p.age),
+          })),
+        });
+        nav('/teams');
+        return;
+      }
+
       const body = { ...team, players: players.map(({ _key, ...p }) => ({ ...p, jerseyNumber: p.jerseyNumber === '' ? null : Number(p.jerseyNumber), age: p.age === '' ? null : Number(p.age) })) };
       const res = await api(editing ? `/teams/${id}` : '/teams', { method: editing ? 'PUT' : 'POST', body });
       nav(`/teams/${res.team.id}`);
     } catch (err) {
+      if (!navigator.onLine || err.message?.includes('network') || err.message?.includes('fetch')) {
+        saveOfflineTeam({
+          name: team.name.trim(),
+          logo: team.logo,
+          location: team.location,
+          description: team.description,
+          players: players.map(({ _key, ...p }) => ({
+            ...p,
+            jerseyNumber: p.jerseyNumber === '' ? null : Number(p.jerseyNumber),
+            age: p.age === '' ? null : Number(p.age),
+          })),
+        });
+        nav('/teams');
+        return;
+      }
       setFormError(err.message);
       setBusy(false);
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -111,6 +184,26 @@ export default function TeamForm() {
         <Field label="Team Description (optional)" htmlFor="tdesc">
           <textarea id="tdesc" rows={2} className="input" value={team.description} onChange={(e) => setTeam({ ...team, description: e.target.value })} maxLength={500} />
         </Field>
+
+        {isAdmin && !isLocalTeam && (
+          <div className="flex items-center justify-between p-3 rounded-xl bg-sky-50 border border-sky-200">
+            <div>
+              <div className="flex items-center gap-1.5 font-bold text-sky-900 text-xs">
+                <Globe className="h-4 w-4 text-sky-600" />
+                <span>Enable Online Live Scoring & Cloud Broadcast</span>
+              </div>
+              <p className="text-[10px] text-sky-700 mt-0.5">
+                Admin privilege: When enabled, this team can score online and broadcast live scores to spectators.
+              </p>
+            </div>
+            <input
+              type="checkbox"
+              checked={Boolean(team.allowOnlineScoring)}
+              onChange={(e) => setTeam({ ...team, allowOnlineScoring: e.target.checked })}
+              className="h-4 w-4 rounded text-sky-600 focus:ring-sky-500 cursor-pointer"
+            />
+          </div>
+        )}
       </section>
 
       <section>
