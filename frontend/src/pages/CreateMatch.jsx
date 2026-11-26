@@ -48,7 +48,7 @@ export default function CreateMatch() {
     tossWinner: '',
     tossDecision: 'bat',
     tieBreaker: 'tie',
-    mode: (typeof window !== 'undefined' && localStorage.getItem('cricket_scoring_mode') === 'offline') ? 'offline' : 'online',
+    mode: 'offline', // Default always offline; admin can switch to online
   });
 
   const [guestPlayers, setGuestPlayers] = useState(
@@ -479,45 +479,49 @@ export default function CreateMatch() {
         <form onSubmit={submit} noValidate className="p-3.5 sm:p-4 space-y-3 bg-slate-50/50">
           <ErrorBox message={formError} />
 
-          {/* Scoring Mode Switcher: Online Live vs Offline Local Match */}
-          <div className="flex items-center justify-between p-1 rounded-2xl bg-white border border-slate-200 shadow-2xs gap-1">
-            <button
-              type="button"
-              onClick={() => set({ mode: 'online' })}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-black transition-all ${
-                f.mode === 'online'
-                  ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-              }`}
-            >
-              <Wifi className="h-3.5 w-3.5" />
-              <span>Online Live</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => set({ mode: 'offline' })}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-black transition-all ${
-                f.mode === 'offline'
-                  ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-              }`}
-            >
-              <WifiOff className="h-3.5 w-3.5" />
-              <span>Offline Local Match</span>
-            </button>
-          </div>
+          {/* Scoring Mode Switcher: Admin-only feature (hidden from regular users) */}
+          {isAdmin && (
+            <>
+              <div className="flex items-center justify-between p-1 rounded-2xl bg-white border border-slate-200 shadow-2xs gap-1">
+                <button
+                  type="button"
+                  onClick={() => set({ mode: 'online' })}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-black transition-all ${
+                    f.mode === 'online'
+                      ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  }`}
+                >
+                  <Wifi className="h-3.5 w-3.5" />
+                  <span>Online Live</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => set({ mode: 'offline' })}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-black transition-all ${
+                    f.mode === 'offline'
+                      ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  }`}
+                >
+                  <WifiOff className="h-3.5 w-3.5" />
+                  <span>Offline Local Match</span>
+                </button>
+              </div>
 
-          {f.mode === 'online' && home && !home.allowOnlineScoring && !isAdmin && (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-2.5 text-[11px] text-amber-900 flex items-center justify-between gap-2">
-              <span>⚠️ இந்த டீமிற்கு அட்மின் ஆன்லைன் லைவ் அனுமதி தரவில்லை. ஆஃப்லைனில் உடனடியாக ஸ்கோர் செய்யலாம்!</span>
-              <button
-                type="button"
-                onClick={() => set({ mode: 'offline' })}
-                className="btn btn-outline text-[10px] !py-0.5 !px-2 bg-white text-amber-900 font-bold shrink-0"
-              >
-                Switch to Offline
-              </button>
-            </div>
+              {f.mode === 'online' && home && !home.allowOnlineScoring && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-2.5 text-[11px] text-amber-900 flex items-center justify-between gap-2">
+                  <span>⚠️ இந்த டீமிற்கு ஆன்லைன் லைவ் அனுமதி இல்லை. Online scoring-ஐ enable பண்ண team settings திருத்தவும்.</span>
+                  <button
+                    type="button"
+                    onClick={() => set({ mode: 'offline' })}
+                    className="btn btn-outline text-[10px] !py-0.5 !px-2 bg-white text-amber-900 font-bold shrink-0"
+                  >
+                    Switch to Offline
+                  </button>
+                </div>
+              )}
+            </>
           )}
 
           {/* 1. TEAM SELECTION DROPDOWNS - STACKED 1-BY-1 FOR FULL VISIBILITY */}
